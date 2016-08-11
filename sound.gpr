@@ -1,0 +1,15 @@
+project sound is
+	for Languages use ("C", "Ada");
+	for Exec_Dir use "bin";
+	for Object_Dir use "obj";
+	for Source_Dirs use (".", "src", "includes", "src/utilities", "includes/utilities", "src/output", "includes/output", "c_files");
+	for Main use ("sound");
+
+	package Compiler is
+	   for Default_Switches ("Ada") use ("-gnaty", "-Wall");
+	end Compiler;
+
+	package Linker is
+	   for Default_Switches ("Ada") use ("-lportaudio");
+	end Linker;
+end sound;

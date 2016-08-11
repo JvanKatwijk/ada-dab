@@ -1,0 +1,29 @@
+===========================================================================
+ada-dabreceiver is a simple re-implementation of
+the dab software of the sdr-j project using the Ada programming
+language (and the Gnat compiling system in particular).
+
+My interest in the Ada language is old. 35 years ago I was 
+involved in the development of an Ada compiler, and I participated in the
+review of the 95 version of the  Ada language.
+However then I went on doing other things.
+
+This implementation is based on a revival of my interest in writing decent
+programs (i.e. readable and comprehensable for non-authors of the programs)
+and on the interest how Ada developed.
+Learning a language from a book does not work - at least
+for me - so I decided to write an Ada program.
+
+For compiling the program you will need
+a. Ada (preferably Gnat)
+b. GtkAda for the very, very simple GUI
+c. libraries for portaudio, fftw3, rtlsdr and faad
+
+The GPR file, for generating an exectable is in the main directory of the
+sources. Settings are for including a library for the airspy and
+for the SDRplay. Just adapt to your needs.
+
+==============================================================================
+
+Sources are available under GPLV2/V3.
+
