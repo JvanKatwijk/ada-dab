@@ -102,6 +102,7 @@ use header. complexTypes;
 	   raise exit_ofdmProcessing;
 	end if;
 
+	begin
 	if amount > Object. bufferContent
 	then
 	   Object. bufferContent := Object. Samples_amount. all;
@@ -118,20 +119,31 @@ use header. complexTypes;
 	end if;
 --	we have samples, let's get them
 	Object. fetchSamples (outV, amount);
---	myDevice. getSamples (outV, amount);
 	Object. bufferContent :=  Object. bufferContent - amount;
+
+	exception
+	   when Error: others		=> Put ("Exception in getsamples: loc_1 ");
+	                           Put_Line (Exception_Name (Error));
+	end;
 --	first: adjust frequency. We need Hz accuracy
 	for i in outV' Range loop
+	   begin
 	   Object. currentPhase		:=
 	                  (Object. currentPhase - phase) mod inputRate;
 	   outV (i)		:= outV (i) *
 	                           Object. oscillatorTable (Object.currentPhase);
 	   Object. sLevel	:= 0.00001 * abs outV (i) +
 	                           (1.0 - 0.00001) * Object. sLevel;
+	exception
+	   when Error: others		=> Put ("Exception in getsamples: loc_2 ");
+	                           put (i' Image);
+	                           put (Integer' Image (Object. currentPhase));
+	                           Put_Line (Exception_Name (Error));
+	end;
 	end loop;
 --
 --	currently, tokenlength is not used
-	Object. tokenLength	:= Object. tokenLength + amount;
+--	Object. tokenLength	:= Object. tokenLength + amount;
 	Object. sampleCounter	:= Object. sampleCounter + amount;
 	if Object. sampleCounter >=  inputRate
 	then
@@ -140,10 +152,10 @@ use header. complexTypes;
 	   simple_messages. message_queue. Put ((COARSE_CORRECTOR_SIGNAL,
 	                                         Object. coarseCorrector));
 	   Object. sampleCounter:= 0;
---	   put ("sLevel = "); put (float' Image (Object. sLevel));
---	   put (" strength ");
---	   put_line (float' Image (Object. currentStrength / 50.0));
 	end if; 
+	exception
+	   when Error: others		=> Put ("Exception in getsamples: ");
+	                           Put_Line (Exception_Name (Error));
 end getSamples;
 --
 --
@@ -443,7 +455,10 @@ begin
 
 --	here we look only at computing a coarse offset when needed
 --	first check 
-	Object. f2Correction	:= not fic_handler. syncReached;
+	if not Object. f2Correction
+	then
+	   Object. f2Correction	:= not fic_handler. syncReached;
+	end if;
 	if Object. f2Correction
 	then
 	   declare
@@ -532,7 +547,7 @@ begin
 
 	exception
 	   when exit_ofdmProcessing	=> put ("normal termination"); New_Line (1);
-	   when Error: others		=> Put ("Exception: ");
+	   when Error: others		=> Put ("Exception in ofdmProcessor: ");
 	                           Put_Line (Exception_Name (Error));
 end ofdmWorker;
 

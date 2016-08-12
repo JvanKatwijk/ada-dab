@@ -83,8 +83,6 @@ begin
 	then
 	   put ("probleem init"); put_line (err' Image);
 	   raise HardwareError;
-	else
-	  put ("New worker will start with"); put (sps' Image); put_line ("samples");
 	end if;
 	mir_sdr_SetDcMode (4, 1);
 	mir_sdr_SetDcTrackTime (63);
@@ -137,7 +135,7 @@ begin
 	            end case;
 	         end loop;
 	      exception
-	         when Others => put_line ("It is happening here");
+	         when Others => put_line ("You shouldnt be here at all");
 	      end;
 	   end loop;
 	   mir_sdr_UnInit;

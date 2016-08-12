@@ -106,7 +106,7 @@ package body gui is
 	   then
 	      msc_handler. set_audioData (data);
 	   else
-	      put_line ("sorry, do not where to find the audio right now");
+	      put_line ("sorry, do not know where to find the audio right now");
 	   end if;
 	end programSelector_clicked;
 

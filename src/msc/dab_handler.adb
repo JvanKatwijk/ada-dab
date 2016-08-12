@@ -31,27 +31,19 @@ interleaveDelays	: constant  shortArray (0 .. 16 - 1) :=
 	(15, 7, 11, 3, 13, 5, 9, 1, 14, 6, 10, 2, 12, 4, 8, 0);
 task body dabProcessor is
         procedure Free_uepProcessor is new Ada. Unchecked_DeAllocation (
-	   Object => uepProcessor, Name => uepProcessor_P);
-	procedure Free_eepProcessor is new Ada. Unchecked_DeAllocation (
-	   Object => eepProcessor, Name => eepProcessor_P);
+	   Object => uepProcessor, Name	=> uepProcessor_P);
+        procedure Free_eepProcessor is new Ada. Unchecked_DeAllocation (
+	   Object => eepProcessor, Name	=> eepProcessor_P);
 	outV			: byteArray (0 ..  Integer (bitRate * 24 - 1));
 	interleaveData		: shortBlock (0 .. fragmentSize - 1, 0 .. 15);
 	countforInterleaver	: short_Integer;
 	the_protectionProcessor	: protection_handler. protectionProcessor_P;
-	the_uepProcessor	: uep_handler. uepProcessor_P;
-	the_eepProcessor	: eep_handler. eepProcessor_P;
 	audioProcessor		: mp4_handler. mp4Processor_P;
 	tempBuffer		: shortArray (0 .. fragmentSize - 1);
 begin
 	interleaveData		:= (others => (others => 0));
 	countforInterleaver	:= 0;
 
---	if uepFlag = 0
---	then
---	   the_uepProcessor := new uepProcessor (bitRate, protLevel);
---	else
---	   the_eepProcessor := new eepProcessor (bitRate, protLevel);
---	end if;
 	if uepFlag = 0
 	then
 	   the_protectionProcessor := new uepProcessor (bitRate, protLevel);
@@ -59,15 +51,18 @@ begin
 	   the_protectionProcessor := new eepProcessor (bitRate, protLevel);
 	end if;
 	audioProcessor	:= new mp4Processor (bitRate);
-
+--
+--	It looks strange to me that we can use a single pointer to these
+--	two processors and that then deallocation should be as clumsy
+--	as below
 	loop
 	   select
 	      accept	stop;
 	      if uepFlag = 0
 	      then
-	         Free_uepProcessor	(the_uepProcessor);
+	         Free_uepProcessor	(uepProcessor_P (the_protectionProcessor));
 	      else
-	         Free_eepProcessor	(the_eepProcessor);
+	         Free_eepProcessor	(eepProcessor_P (the_protectionProcessor));
 	      end if;
 	      exit;
 	   or 
@@ -86,6 +81,8 @@ begin
 	                            interleaveDelays (index) loop
 	               interleaveData (i, j - 1) := interleaveData (i, j);
 	            end loop;
+	         exception
+	            when Others => put_line ("in interleaver");
 	         end;
 	      end loop;
 

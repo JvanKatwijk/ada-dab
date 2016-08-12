@@ -33,8 +33,6 @@ with Gtk. Enums;	use Gtk. Enums;
 with simple_messages; use simple_messages;
 with ofdm_handler;
 with header; use header;
--- Note that the rtlsdr device works, while the airspy apparently
--- cannot deal with the high speeds 
 --with rtlsdr_wrapper; use rtlsdr_wrapper;
 --with rawfiles; use rawfiles;
 --with airspy_wrapper; use airspy_wrapper;
