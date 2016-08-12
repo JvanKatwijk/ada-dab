@@ -26,9 +26,9 @@ with Interfaces; use Interfaces;
 with viterbi_handler; use viterbi_handler;
 package eep_handler is
 
-   type eepProcessor (bitRate	: short_Integer;
-	              protLevel	: short_Integer) 
-	               is new protectionProcessor with private; 
+--   type eepProcessor (bitRate	: short_Integer;
+--	              protLevel	: short_Integer) 
+	type eepProcessor  is new protectionProcessor with private; 
    type eepProcessor_P is access all eepProcessor;
    procedure deconvolve (Object		: in out eepProcessor;
 	                 inBuffer	: shortArray;
@@ -36,9 +36,9 @@ package eep_handler is
 private
    procedure Initialize	(Object: in out eepProcessor);
    procedure Finalize	(Object: in out eepProcessor);
-   type eepProcessor (bitRate	: short_Integer;
-	              protLevel	: short_Integer) 
-	               is new protectionProcessor with 
+--   type eepProcessor (bitRate	: short_Integer;
+--	              protLevel	: short_Integer) 
+	type eepProcessor  is new protectionProcessor with 
 	record 
 	   outSize		: short_Integer;
 	   viterbi		: viterbiProcessor_P;

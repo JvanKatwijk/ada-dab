@@ -27,8 +27,9 @@ with viterbi_handler; use viterbi_handler;
 
 package uep_handler is
 
-   type uepProcessor (bitRate	: short_Integer;
-	              protLevel	: short_Integer) is
+--type uepProcessor (bitRate	: short_Integer;
+--	              protLevel	: short_Integer) is
+   type uepProcessor  is
 	                        new protectionProcessor with private;
    type uepProcessor_P is access all uepProcessor;
    overriding
@@ -40,9 +41,9 @@ private
 	                   protLevel	: short_Integer) return short_Integer;
    procedure Initialize	(Object: in out uepProcessor);
    procedure Finalize	(Object: in out uepProcessor);
-   type uepProcessor (bitRate	: short_Integer;
-	              protLevel	: short_Integer) is
-	                        new protectionProcessor with 
+-- type uepProcessor (bitRate	: short_Integer;
+--	              protLevel	: short_Integer) is
+	type uepProcessor is                        new protectionProcessor with 
 	record 
 	   outSize		: short_Integer;
 	   viterbi		: viterbiProcessor_P;

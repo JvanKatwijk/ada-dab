@@ -172,11 +172,7 @@ begin
 	   Corrector (0) 	:= 0;
 
 --	and compute a new error
-	   begin
 	   error	:= syndromes (K);	
-	   exception
-	      when others => put ("fase aaa"); put_Line (K' Image);
-           end;
 	   for i in 1 .. K loop
 	      error := addPoly (error,
 	                        multiplyPoly (syndromes (K - i),

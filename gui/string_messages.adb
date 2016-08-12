@@ -41,7 +41,7 @@ package body string_messages is
 	      return Count;
 	   end;
 	
-	   entry Cleanup when Count > 0 is
+	   entry Cleanup when Count >= 0 is
 	   begin
 	      Next_In		:= 1;
 	      Next_Out		:= 1;

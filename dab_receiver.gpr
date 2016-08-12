@@ -7,10 +7,10 @@ project dab_receiver is
 	for Exec_dir use "bin";
 	for Source_Dirs use (".", "input/dabstick", "input/rawfiles", "input/airspy", "input/sdrplay", "src", "src/utilities", "src/ofdm", "src/backend", "src/msc", "src/output", "includes", "includes/utilities", "includes/ofdm", "includes/backend", "includes/msc", "includes/output", "src/deconvolution", "gui",  "c_files");
 package Compiler is
-	for Default_Switches ("Ada") use ("-flto");
+	for Default_Switches ("Ada") use ("-g");
 end Compiler;
 package Linker is
-	for Default_Switches ("Ada") use ("-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm", "-flto");
+	for Default_Switches ("Ada") use ("-g","-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
 end Linker;
 end dab_receiver;
 

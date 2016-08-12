@@ -102,7 +102,6 @@ use header. complexTypes;
 	   raise exit_ofdmProcessing;
 	end if;
 
-	begin
 	if amount > Object. bufferContent
 	then
 	   Object. bufferContent := Object. Samples_amount. all;
@@ -121,25 +120,14 @@ use header. complexTypes;
 	Object. fetchSamples (outV, amount);
 	Object. bufferContent :=  Object. bufferContent - amount;
 
-	exception
-	   when Error: others		=> Put ("Exception in getsamples: loc_1 ");
-	                           Put_Line (Exception_Name (Error));
-	end;
 --	first: adjust frequency. We need Hz accuracy
 	for i in outV' Range loop
-	   begin
 	   Object. currentPhase		:=
 	                  (Object. currentPhase - phase) mod inputRate;
 	   outV (i)		:= outV (i) *
 	                           Object. oscillatorTable (Object.currentPhase);
 	   Object. sLevel	:= 0.00001 * abs outV (i) +
 	                           (1.0 - 0.00001) * Object. sLevel;
-	exception
-	   when Error: others		=> Put ("Exception in getsamples: loc_2 ");
-	                           put (i' Image);
-	                           put (Integer' Image (Object. currentPhase));
-	                           Put_Line (Exception_Name (Error));
-	end;
 	end loop;
 --
 --	currently, tokenlength is not used
@@ -156,6 +144,7 @@ use header. complexTypes;
 	exception
 	   when Error: others		=> Put ("Exception in getsamples: ");
 	                           Put_Line (Exception_Name (Error));
+	                           raise;
 end getSamples;
 --
 --
@@ -548,7 +537,7 @@ begin
 	exception
 	   when exit_ofdmProcessing	=> put ("normal termination"); New_Line (1);
 	   when Error: others		=> Put ("Exception in ofdmProcessor: ");
-	                           Put_Line (Exception_Name (Error));
+	                                    Put_Line (Exception_Name (Error));
 end ofdmWorker;
 
 end ofdm_handler;

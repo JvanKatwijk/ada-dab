@@ -284,8 +284,8 @@ begin
 	result		:= true;
 	exception
 	when Error: others		=> Put ("Exception in mp4 processor: ");
-	                                Put_Line (Exception_Name (Error));
-	                                raise;
+	                                Put (Exception_Name (Error));
+	                                Put_Line ("frame ignored");
 end processSuperframe;
 
 procedure	reset (Object : in out mp4Processor) is
