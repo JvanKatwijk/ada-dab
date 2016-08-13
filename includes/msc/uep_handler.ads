@@ -27,10 +27,7 @@ with viterbi_handler; use viterbi_handler;
 
 package uep_handler is
 
---type uepProcessor (bitRate	: short_Integer;
---	              protLevel	: short_Integer) is
-   type uepProcessor  is
-	                        new protectionProcessor with private;
+   type uepProcessor  is new protectionProcessor with private;
    type uepProcessor_P is access all uepProcessor;
    overriding
    procedure deconvolve (Object		: in out uepProcessor;

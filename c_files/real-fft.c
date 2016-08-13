@@ -63,7 +63,6 @@ void	deleteDescriptor (my_fft *the_fft) {
 
 extern void execute_fft (my_fft *the_fft,
 	                 fftwf_complex *vector) {
-int i;
 	memcpy (the_fft -> fft_Vector,
 	        vector,
 	        the_fft -> fft_size * sizeof (fftwf_complex));

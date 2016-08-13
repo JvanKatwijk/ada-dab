@@ -22,12 +22,14 @@ with header; use header;
 with system;
 with ringbuffer;
 with portaudioada; use portaudioada;
+with fir_filters; use fir_filters;
 with Ada. Finalization; use Ada. Finalization;
 --	a first attempt to interface - using the portaudioada package -
 --	to create an interface to the soundcard (just for output, and
 --	in this version just to defaultoutput
 package audiopackage is
-	package pa_ringBuffer is new ringbuffer (float);
+use complexTypes;
+	package pa_ringBuffer is new ringbuffer (complex);
 	use pa_ringBuffer;
 	subtype audioData is pa_ringBuffer. buffer_data;
 	type outputLatency is (LOW_LATENCY, HIGH_LATENCY);
@@ -39,8 +41,17 @@ package audiopackage is
 	procedure portAudio_start	(s: in out audioSink;
 	                                 result: out boolean);
 	procedure portAudio_stop	(s: in out audioSink);
-	procedure putSamples		(s: in out audioSink;
-	                                 data: buffer_data);	
+	procedure putSamples		(s	: in out audioSink;
+	                                 data	: buffer_data;
+	                                 sampleRate : uint64_t);	
+	procedure putSamples_16		(s	: in out audioSink;
+	                                 data	: buffer_data);
+	procedure putSamples_24		(s	: in out audioSink;
+	                                 data	: buffer_data);
+	procedure putSamples_32		(s	: in out audioSink;
+	                                 data	: buffer_data);
+	procedure putSamples_48		(s	: in out audioSink;
+	                                 data	: buffer_data);
 	procedure selectDefaultDevice	(s: in out audioSink; res: out boolean);
 	procedure selectDevice	(s: in out audioSink;
 	                         res: out boolean; deviceIndex: PaDeviceIndex);

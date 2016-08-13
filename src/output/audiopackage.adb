@@ -25,10 +25,16 @@ with Interfaces. C;
 with Text_IO; use Text_IO;
 package body audiopackage is
 package IC renames Interfaces.C;
+f_16	: fir_filters. lowPass_filter (5, 16000, 48000);
+f_24	: fir_filters. lowPass_filter (5, 24000, 48000);
+f_32	: fir_filters. lowPass_filter (5, 32000, 96000);
 --	In the callback we have to transform the
 --	System. Address values to pointers to the right type
 --	So, we dig deep and end up with address_to_access_conversions
 --	It all seems a little messy to me, but it seems to work
+--
+--	Note that we enter with complexes, where one complex number
+--	happily matches one "frame"
 function paCallback (input 	:	System. Address;
 	             output	:	System. Address;
 	             frameCount	:	IC.unsigned_long;
@@ -37,7 +43,7 @@ function paCallback (input 	:	System. Address;
 	             userData 	:	System. Address)
 	                        return PaStreamCallbackResult is
 subtype localBufferType is
-	         pa_ringBuffer. buffer_data (0 .. 2 * integer (frameCount) - 1);
+	         pa_ringBuffer. buffer_data (0 .. integer (frameCount) - 1);
 package environmentConverter is
 	         new System. Address_To_Access_Conversions (audiosink);
 package arrayConverter is
@@ -61,9 +67,10 @@ begin
 
 	pa_ringBuffer.
 	       getDataFromBuffer (my_environment. buffer, mybuffer. all, amount);
-	if amount / 2 <  Integer (frameCount)
+	if amount <  Integer (frameCount)
 	then
-	   mybuffer. all (amount .. mybuffer. all' Last) := (Others => 0.0);
+	   mybuffer. all (amount .. mybuffer. all' Last) :=
+	                                      (Others =>  (0.0, 0.0));
 	end if;
 	return my_environment. callbackReturn;
 end paCallBack;
@@ -218,12 +225,87 @@ begin
 	size	:= pa_ringbuffer. GetRingBufferReadAvailable (s. buffer);
 end portAudio_stop;
 
-procedure putSamples	(s: in out audiosink; data: buffer_data) is
+procedure putSamples	(s		: in out audiosink;
+	                 data		: buffer_data; 
+	                 sampleRate	: uint64_t) is
 available	: integer := pa_ringbuffer. GetRingBufferWriteAvailable (
 	                             s. buffer);
 begin
-	pa_ringBuffer. putDataIntoBuffer (s. buffer, data);
+	case sampleRate is
+	   when 16000	=> putSamples_16 (s, data);
+	   when 24000	=> putSamples_24 (s, data);
+	   when 32000	=> putSamples_32 (s, data);
+	   when 48000	=> putSamples_48 (s, data);
+	   when Others	=> null;		--just ignore the stuff
+	end case;
 end putSamples;
+--
+--	scaling from 16000 -> 48000 is easy, just add
+--	zero samples and filter
+procedure putSamples_16	(s		: in out audiosink;
+	                 data		: buffer_data) is
+buffer	: buffer_data (0 .. 3 * data' Length - 1);
+begin	
+	for i in data' Range loop
+	   declare
+	      index : Integer := Integer (i - data' first);
+	   begin
+	      buffer (3 * index)	:= f_16. Pass (data (index));
+	      buffer (3 * index + 1)	:= f_16. Pass ((0.0, 0.0));
+	      buffer (3 * index + 2)	:= f_16. Pass ((0.0, 0.0));
+	   end;
+	end loop;
+	pa_ringBuffer. putDataIntoBuffer (s. buffer, buffer);
+end putSamples_16;
+--
+--	mapping from 24000 -> 48000 is simple, just
+--	add a zero sample to each input sample
+procedure putSamples_24	(s		: in out audiosink;
+	                 data		: buffer_data) is
+buffer	: buffer_data (0 .. 2 * data' Length - 1);
+begin
+	for i in data' Range loop
+	   declare
+	      index : Integer := Integer (i - data' First);
+	   begin
+	      buffer (2 * index)	:= f_24. Pass (data (i));
+	      buffer (2 * index + 1)	:= f_24. Pass ((0.0, 0.0));
+	   end;
+	end loop;
+	pa_ringBuffer. putDataIntoBuffer (s. buffer, buffer);
+end putSamples_24;
+--
+--
+--	Converting the rate from 32000 -> 48000 is in 2 steps,
+--	step 1 is upconverting to 96000,
+--	step 2 is downconverting by a factor of 2
+procedure putSamples_32	(s		: in out audiosink;
+	                 data		: buffer_data) is
+buffer_1	: buffer_data (0 .. 3 * data' Length - 1);
+buffer_2	: buffer_data (0 .. buffer_1' Length / 2 - 1);
+begin
+	for i in data' Range loop
+	   declare
+	      index : Integer := Integer (i - data' first);
+	   begin
+	      buffer_1 (3 * index)	:= f_32. Pass (data (i));
+	      buffer_1 (3 * index + 1)	:= f_32. Pass ((0.0, 0.0));
+	      buffer_1 (3 * index + 2)	:= f_32. Pass ((0.0, 0.0));
+	   end;
+	end loop;
+
+	for i in buffer_2' Range loop	-- we know it is 0 .. X
+	   buffer_2 (i)		:= buffer_1 (2 * i);
+	end loop;
+	pa_ringBuffer. putDataIntoBuffer (s. buffer, buffer_2);
+end putSamples_32;
+--
+--	This one is easy, just pass on the data
+procedure putSamples_48	(s		: in out audiosink;
+	                 data		: buffer_data) is
+begin
+	pa_ringBuffer. putDataIntoBuffer (s. buffer, data);
+end putSamples_48;
 --
 end audiopackage;
 

@@ -160,16 +160,35 @@ begin
 	            new System. Address_to_Access_Conversions (localOutput);
 	   theBuffer	: arrayConverter. Object_Pointer :=
 	                            arrayConverter. To_Pointer (outBuffer);
-	   outBuf	: audiopackage. audioData (0 .. samples - 1);
 	begin
-	   for i in 0 .. samples - 1 loop
-	      outBuf (i) := Float (theBuffer. all (i)) / 32768.0;
-	   end loop;
 	   if channels = 2
 	   then
-	      audio. putSamples (outBuf);
+	      declare
+--	Note: outBuf is an array of complex
+	         outBuf	: audiopackage. audioData (0 .. samples / 2 - 1);
+	      begin
+	         for i in 0 .. samples / 2 - 1 loop
+	            outBuf (i) := (Float (theBuffer. all (2 * i)) / 32768.0,
+	                           Float (theBuffer. all (2 * i + 1)) / 32768.0);
+	         end loop;
+	         audio. putSamples (outBuf, sample_rate);
+	      end;
+	   elsif channels = 1
+	   then
+	      declare
+--	Note: outBuf is an array of complex
+	         outBuf	: audiopackage. audioData (0 .. samples - 1);
+	      begin
+	         for i in 0 .. samples - 1 loop
+	            outBuf (i) := (Float (theBuffer. all (i)) / 32768.0,
+	                           0.0);
+	         end loop;
+	         audio. putSamples (outBuf, sample_rate);
+	      end;
+	   else
+	      null;	-- for ever
 	   end if;
-	   exception
+	exception
 	   when Error: others		=> Put ("Exception in faad: ");
 	                                Put_Line (Exception_Name (Error));
 	   
