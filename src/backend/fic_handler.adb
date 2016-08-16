@@ -71,7 +71,7 @@ begin
 	fic_processor. reset;
 end reset;
 
-procedure dataforAudioService (s: programmeName; d: out audioData) is
+procedure dataforAudioService (s: String; d: out audioData) is
 begin
 	fic_processor. dataforAudioService (s, d);
 end dataforAudioService;

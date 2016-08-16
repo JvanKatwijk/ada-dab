@@ -25,6 +25,7 @@ with System;
 with header; use header;
 with Interfaces; use Interfaces;
 with Interfaces.C;
+with audiopackage;
 package faad_decoder is
 procedure mp42pcm (dacRate	: short_Integer;
 	           sbrFlag	: short_Integer;
@@ -32,7 +33,8 @@ procedure mp42pcm (dacRate	: short_Integer;
 	           aacChannelMode	: short_Integer;
 	           buffer	: byteArray;
 	           bufferLength	: uint16_t;
-	           samples_out	: out Integer);
+	           samples_out	: out Integer;
+	           pcmHandler	: audiopackage. audioSink_P);
 procedure	reset;
 private
 type channelPositions	is Array (0 .. 63) of uint8_t;

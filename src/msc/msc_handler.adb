@@ -38,11 +38,12 @@ with Text_IO;	use Text_IO;
 with Ada. Exceptions; use Ada. Exceptions;
 with Ada. Unchecked_Deallocation;
 with dab_handler; use dab_handler;
+with audiopackage;
 package body msc_handler is
 	mode		: dabMode	:= Mode_1;	-- default
 	bitsperBlock	: Integer	:= 2 * 1536;	-- default
 	blocksperCIF	: Integer	:= 18;		-- default;
-
+	audio		: audiopackage. audioSink_P;
 	task msc_processor is
 	   entry set_Mode	(mode	: dabMode);
 	   entry reset;
@@ -147,7 +148,8 @@ package body msc_handler is
 	                                    Integer (theData. Length) * CUSize,
 	                                             theData. bitRate,
 	                                             theData. uepFlag,
-	                                             theData. protLevel);
+	                                             theData. protLevel,
+	                                             audio);
 
 	      or
 	         accept process_mscBlock (fbits	: shortArray;
@@ -177,6 +179,23 @@ package body msc_handler is
 	                                   Put_Line (Exception_Name (Error));
 	   
 	end msc_processor;
+res	: Boolean;
+begin
+
+	audio		:= new  audiopackage.
+	                              audioSink (48000,
+	                                         32768,
+	                                         audiopackage. HIGH_LATENCY);
+	audio. selectDefaultDevice (res);
+	if res
+	then
+	   put_line ("setting default device succeeded");
+	end if;
+	audio. portAudio_start (res);
+	if res
+	then
+	   put_line ("starting device succeeded");
+	end if;
 end msc_handler;
 
 

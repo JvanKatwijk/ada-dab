@@ -1,7 +1,8 @@
 --
+--
 --    Copyright (C) 2016
 --    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--    Lazy Chair Computing
 --
 --    This file is part of the SDR-J (JSDR).
 --    SDR-J is free software; you can redistribute it and/or modify
@@ -18,14 +19,24 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
+-- 	generic audio handler for the ada-da decoder
+
+
 with header; use header;
-package fic_handler is
-	procedure	process_ficBlock (data	: shortArray;
-	                                  blkno	: Integer);
-	procedure	set_bitsperBlock (mode: dabMode);
-	procedure	stop;
-	procedure	reset;
-	procedure	dataforAudioService (s: String; d: out audioData);
-	function syncReached return Boolean;
-end fic_handler;
+with Ada. Finalization; use Ada. Finalization;
+with Interfaces; use Interfaces;
+with audiopackage;
+package audio_handler is
+   type audioProcessor (bitRate		: short_Integer;
+	                pcmHandler	: audiopackage. audioSink_P) is
+	                new Ada. Finalization. Controlled with
+	record
+	   null;
+	end record;
+   type audioProcessor_P is access all audioProcessor' Class;
+
+   procedure addtoFrame (Object	: in out audioProcessor;
+	                 V	: byteArray;
+	                 nbits	: short_Integer);
+end audio_handler;
 

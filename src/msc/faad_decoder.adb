@@ -21,10 +21,9 @@
 with faad_decoder;
 with Text_IO; use Text_IO;
 with System. Address_To_Access_Conversions;
-with audiopackage; use audiopackage;
+with audiopackage; 
 with Ada. Exceptions; use  Ada. Exceptions;
 package body faad_decoder is
-audio	: audioSink_P;
 res	: Boolean;
 amount	: Integer	:= 0;
 function get_aac_channel_configuration (m_mpeg_surround_config	: short_Integer;
@@ -54,7 +53,8 @@ procedure mp42pcm (dacRate	: short_Integer;
 	           aacChannelMode	: short_Integer;
 	           buffer	: byteArray;
 	           bufferLength	: uint16_t;
-	           samples_out	: out Integer) is
+	           samples_out	: out Integer;
+	           pcmHandler	: audiopackage. audioSink_P) is
 samples		: Integer;
 channels	: uint8_t;
 sample_rate	: uint64_t;
@@ -165,25 +165,25 @@ begin
 	   then
 	      declare
 --	Note: outBuf is an array of complex
-	         outBuf	: audiopackage. audioData (0 .. samples / 2 - 1);
+	         outBuf	: complexArray (0 .. samples / 2 - 1);
 	      begin
 	         for i in 0 .. samples / 2 - 1 loop
 	            outBuf (i) := (Float (theBuffer. all (2 * i)) / 32768.0,
 	                           Float (theBuffer. all (2 * i + 1)) / 32768.0);
 	         end loop;
-	         audio. putSamples (outBuf, sample_rate);
+	         pcmhandler. putSamples (outBuf, sample_rate);
 	      end;
 	   elsif channels = 1
 	   then
 	      declare
 --	Note: outBuf is an array of complex
-	         outBuf	: audiopackage. audioData (0 .. samples - 1);
+	         outBuf	: complexArray (0 .. samples - 1);
 	      begin
 	         for i in 0 .. samples - 1 loop
 	            outBuf (i) := (Float (theBuffer. all (i)) / 32768.0,
 	                           0.0);
 	         end loop;
-	         audio. putSamples (outBuf, sample_rate);
+	         pcmHandler. putSamples (outBuf, sample_rate);
 	      end;
 	   else
 	      null;	-- for ever
@@ -198,17 +198,6 @@ begin
 end mp42pcm;
 
 begin
-	audio		:= new audiosink (48000, 32768, HIGH_LATENCY);
-	audio. selectDefaultDevice (res);
-	if res
-	then
-	   put_line ("setting default device succeeded");
-	end if;
-	audio. portAudio_start (res);
-	if res
-	then
-	   put_line ("starting device succeeded");
-	end if;
 	baudRate	:= 48000;		-- default
 	NeAACDecGetCapabilities;
 	aacHandle	:= NeAACDecOpen;

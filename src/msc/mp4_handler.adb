@@ -144,6 +144,7 @@ RSDims		: Integer renames Object. RSDims;
 tmp		: Integer;
 begin
 --
+	result		:= False;	-- always a good start
 --	apply reed-solomon error repair
 --	OK, what we now have is a vector with RSDims * 120 uint8_t's
 --	the superframe, containing parity bytes for error repair
@@ -275,7 +276,8 @@ begin
 	                                short_Integer (aacChannelMode),
 	                                theAU,
 	                                aac_frame_length,
-	                                tmp);
+	                                tmp,
+	                                Object. pcmHandler);
 	      else
 	         Object. au_errors	:= Object. au_errors + 1;
 	      end if;

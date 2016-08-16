@@ -44,6 +44,7 @@ begin
 	init_viterbi (Object. handler, 0);
 	for i in 0 .. (Object. wordLength + (K - 1)) * rate - 1 loop
 	   temp	:= Integer (-input (Integer (i))) + 127;
+	
 	   if temp < 0
 	   then
 	      temp := 0;
@@ -63,9 +64,6 @@ begin
 	   output (Integer (i)) := getBit (data (Integer (Shift_Right (i, 3))),
 	                                         Integer (i and 8#07#));
 	end loop;
-	exception
-	   when others => put (" foutj toch ergens hier\n");
-	   raise;
 end deconvolve;
 end viterbi_handler;
 

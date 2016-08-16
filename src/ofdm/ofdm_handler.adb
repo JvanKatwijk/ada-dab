@@ -143,8 +143,8 @@ use header. complexTypes;
 	end if; 
 	exception
 	   when Error: others		=> Put ("Exception in getsamples: ");
-	                           Put_Line (Exception_Name (Error));
-	                           raise;
+	                                   Put_Line (Exception_Name (Error));
+	                                   raise;
 end getSamples;
 --
 --

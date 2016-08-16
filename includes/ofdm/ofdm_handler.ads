@@ -25,7 +25,7 @@ with phase_handler;
 with fft_handler;
 with freq_interleaver;
 package ofdm_handler is
-	type ofdmProcessor (mode	: dabMode;
+	type ofdmProcessor (mode		: dabMode;
 	                    fetchSamples	: getSamples_access;
 	                    Samples_amount	: Samples_access) is new
 	                    Ada. Finalization. Controlled with private;

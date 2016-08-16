@@ -1,13 +1,13 @@
 with header; use header;
 with Interfaces;	use Interfaces;
-with mp4_handler;	use mp4_handler;
-
+with audiopackage;	use audiopackage;
 package dab_handler is
 	task type dabProcessor (dabModus	: dataMode;
 	                        fragmentSize	: Integer;
 	                        bitRate		: short_Integer;
 	                        uepFlag		: short_Integer;
-	                        protLevel	: short_Integer) is
+	                        protLevel	: short_Integer;
+	                        audio		: audiopackage. audioSink_P) is
 	   entry stop;
 	   entry process (Data		: shortArray);
 	end dabProcessor;

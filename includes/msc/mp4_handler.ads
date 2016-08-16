@@ -29,11 +29,11 @@
 
 
 with header; use header;
-with Ada. Finalization; use Ada. Finalization;
+with audio_handler;
 with Interfaces; use Interfaces;
+with audio_handler;
 package mp4_handler is
-   type mp4Processor (bitRate: short_Integer) is
-	          new Ada. Finalization. Controlled with private;
+   type mp4Processor  is new audio_handler. audioProcessor with private;
    type mp4Processor_P is access all mp4Processor;
 
    procedure addtoFrame (Object	: in out mp4Processor;
@@ -50,8 +50,7 @@ function dabPlus_crc	(msg	: byteArray;
 	                 start	: uint16_t;
 	                 length	: uint16_t) return Boolean;
 
-   	type mp4Processor (bitRate: short_Integer) is
-	                   new Ada. Finalization. Controlled with
+   	type mp4Processor is new audio_handler. audioProcessor with
 	record
 	   superFramesize	: Integer;
 	   RSDims		: Integer;

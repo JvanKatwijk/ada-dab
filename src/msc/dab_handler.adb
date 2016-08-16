@@ -26,6 +26,9 @@ with header;	use header;
 with Text_IO;	use Text_IO;
 with Ada. Unchecked_Deallocation;
 with Ada. Exceptions; use Ada. Exceptions;
+with audio_handler;
+with mp4_handler;
+with mp2_handler;
 package body dab_handler is
 interleaveDelays	: constant  shortArray (0 .. 16 - 1) := 
 	(15, 7, 11, 3, 13, 5, 9, 1, 14, 6, 10, 2, 12, 4, 8, 0);
@@ -34,12 +37,18 @@ task body dabProcessor is
 	   Object => uepProcessor, Name	=> uepProcessor_P);
         procedure Free_eepProcessor is new Ada. Unchecked_DeAllocation (
 	   Object => eepProcessor, Name	=> eepProcessor_P);
+	procedure Free_mp2Processor is new Ada. Unchecked_Deallocation (
+	   Object	=> mp2_handler. mp2Processor,
+	   Name		=> mp2_handler. mp2Processor_P);
+	procedure Free_mp4Processor is new Ada. Unchecked_Deallocation (
+	   Object	=> mp4_handler. mp4Processor,
+	   Name		=> mp4_handler. mp4Processor_P);
 	outV			: byteArray (0 ..  Integer (bitRate * 24 - 1));
 	interleaveData		: shortBlock (0 .. fragmentSize - 1, 0 .. 15);
 	countforInterleaver	: short_Integer;
 	the_protectionProcessor	: protection_handler. protectionProcessor_P;
-	audioProcessor		: mp4_handler. mp4Processor_P;
 	tempBuffer		: shortArray (0 .. fragmentSize - 1);
+	the_audioProcessor	: audio_handler. audioProcessor_P;
 begin
 	interleaveData		:= (others => (others => 0));
 	countforInterleaver	:= 0;
@@ -50,7 +59,14 @@ begin
 	else
 	   the_protectionProcessor := new eepProcessor (bitRate, protLevel);
 	end if;
-	audioProcessor	:= new mp4Processor (bitRate);
+	if dabModus = DAB
+	then
+	   the_audioProcessor	:= new mp2_handler. mp2Processor (bitRate,
+	                                                          audio);
+	else
+	   the_audioProcessor	:= new mp4_handler. mp4Processor (bitRate,
+	                                                          audio);
+	end if;
 --
 --	It looks strange to me that we can use a single pointer to these
 --	two processors and that then deallocation should be as clumsy
@@ -63,6 +79,14 @@ begin
 	         Free_uepProcessor	(uepProcessor_P (the_protectionProcessor));
 	      else
 	         Free_eepProcessor	(eepProcessor_P (the_protectionProcessor));
+	      end if;
+	      if dabModus = DAB
+	      then
+	         Free_mp2Processor	(mp2_handler.
+	                                  mp2Processor_P (the_audioProcessor));
+	      else
+	         Free_mp4Processor	(mp4_handler.
+	                                  mp4Processor_P (the_audioProcessor));
 	      end if;
 	      exit;
 	   or 
@@ -108,7 +132,7 @@ begin
 	               end;
 	            end loop;
 	         end;
-	         audioProcessor. addtoFrame (outV, 24 * bitRate);
+	         the_audioProcessor. addtoFrame (outV, 24 * bitRate);
 	      end if;
 	      end select;
 	end loop;

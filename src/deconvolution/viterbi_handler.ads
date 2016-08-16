@@ -1,6 +1,5 @@
-
 --
---	straightforward wrapper around a viterbi decoder generatoed
+--	straightforward wrapper around the generic viterbi decoder from
 --	by the spiral project
 with header; use header;
 with Ada. Finalization; use Ada. Finalization;
@@ -47,7 +46,6 @@ procedure	update_viterbi_blk (handle	: system. Address;
 	                            symbols	: system. Address;
 	                            nbits	: Integer);
 pragma Import (C, update_viterbi_blk, "update_viterbi_blk_GENERIC");
---pragma Import (C, update_viterbi_blk, "update_viterbi_blk_SPIRAL");
 
 procedure	chainback_viterbi (handle	: system. Address;
 	                           output	: system. Address;

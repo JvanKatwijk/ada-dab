@@ -226,7 +226,7 @@ begin
 end portAudio_stop;
 
 procedure putSamples	(s		: in out audiosink;
-	                 data		: buffer_data; 
+	                 data		: complexArray; 
 	                 sampleRate	: uint64_t) is
 available	: integer := pa_ringbuffer. GetRingBufferWriteAvailable (
 	                             s. buffer);
@@ -243,7 +243,7 @@ end putSamples;
 --	scaling from 16000 -> 48000 is easy, just add
 --	zero samples and filter
 procedure putSamples_16	(s		: in out audiosink;
-	                 data		: buffer_data) is
+	                 data		: complexArray) is
 buffer	: buffer_data (0 .. 3 * data' Length - 1);
 begin	
 	for i in data' Range loop
@@ -261,7 +261,7 @@ end putSamples_16;
 --	mapping from 24000 -> 48000 is simple, just
 --	add a zero sample to each input sample
 procedure putSamples_24	(s		: in out audiosink;
-	                 data		: buffer_data) is
+	                 data		: complexArray) is
 buffer	: buffer_data (0 .. 2 * data' Length - 1);
 begin
 	for i in data' Range loop
@@ -280,7 +280,7 @@ end putSamples_24;
 --	step 1 is upconverting to 96000,
 --	step 2 is downconverting by a factor of 2
 procedure putSamples_32	(s		: in out audiosink;
-	                 data		: buffer_data) is
+	                 data		: complexArray) is
 buffer_1	: buffer_data (0 .. 3 * data' Length - 1);
 buffer_2	: buffer_data (0 .. buffer_1' Length / 2 - 1);
 begin
@@ -302,9 +302,9 @@ end putSamples_32;
 --
 --	This one is easy, just pass on the data
 procedure putSamples_48	(s		: in out audiosink;
-	                 data		: buffer_data) is
+	                 data		: complexArray) is
 begin
-	pa_ringBuffer. putDataIntoBuffer (s. buffer, data);
+	pa_ringBuffer. putDataIntoBuffer (s. buffer, buffer_data (data));
 end putSamples_48;
 --
 end audiopackage;
