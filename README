@@ -27,3 +27,46 @@ for the SDRplay. Just adapt to your needs.
 
 Sources are available under GPLV2/V3.
 
+==============================================================================
+Notes on the program structure
+
+The sructure of the Ada version slightly differs from the C++ one. In
+Ada we make use of the "server" facilities provided by Ada tasking.
+
+The task "ofdmProcessor" is an actor task: it will read samples (the
+functions used for reading are passed as parameter) and it will do
+the whole ofdm handling (i.e. synchronizing in time and frequency
+and decoding).
+
+The output of the "ofdmProcessor" is sent to either the ficProcessor
+or the mscProcessor, depending on the block in the DAB frame that was
+decoded.
+
+Both the ficProcessor and the MSC processor are implemented as a server
+task, so that - next to the ofdmProcessor - access from the GUI can be
+served (Note that the GUI can request to select a different channel or a
+different program, requiring a reset in FIC or MSC).
+
+The ficProcessor will - using the functions from the fibHandler -
+built a structure (kind of a directoy structure) with the data
+describing the (elements of) the ensemble, carrier in the channel.
+The ficProcessor as as one of its entries an entry where the GUI
+can ask for the data describing a program.
+
+The mscProcessor will accept all data from the MSC blocks, 
+passed on by the ofdmProcessor. It will build up the co-called
+CIF's. If a program is selected, the MSC processor will have been told
+where the sequence of bits for the selected program is to be found,
+it extracts the sequence of bits and passes it on - after 
+de-interleaving - to the appropriate sound handler.
+
+The sound handler selected is either the MP2 handler, using the kjmp2
+library from Martin Fiedler, or using the MP4 handler.
+In the MP4 handler, first 5 consecutive segments are collected
+to form a superframe. The frame is sent through a Reed-Solomon decoder
+(based on Phil Karn's one), the aac frames are extracted and
+send to the faad library from Nero.
+
+The resulting sound is send to an audioSink, a package interfacing
+to the portaudio library.
+
