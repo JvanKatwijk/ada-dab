@@ -81,7 +81,7 @@ begin
 	                         sps' Address);
 	if err /= 0
 	then
-	   put ("probleem init"); put_line (err' Image);
+	   put ("probleem init"); put_line (Integer' Image (err));
 	   raise HardwareError;
 	end if;
 	mir_sdr_SetDcMode (4, 1);
@@ -108,7 +108,7 @@ begin
 	                               fsc' Address);
 	   if err /= 0
 	   then
-	      put ("error with reading"); put_line (err' Image);
+	      put ("error with reading"); put_line (Integer' Image (err));
 	   end if;
 --	currently, we are not interested in the results other than the
 --	actual data
@@ -179,7 +179,6 @@ end bankFor_sdr;
 procedure	setVFOFrequency	(newFrequency : Integer)  is
 res	: Boolean;
 begin
-	put ("request for frequency "); put_line (newFrequency' Image);
 	if bankFor_sdr (newFrequency) = -1
 	then
 	   return;
@@ -262,7 +261,7 @@ end Samples;
 procedure setupGainTable  (gainSelector: Gtk_Combo_Box_Text) is
 begin
 	for i in 1 .. 102 loop
-	   gainSelector. Insert_text (Glib. Gint (i), i' Image);
+	   gainSelector. Insert_text (Glib. Gint (i), Integer' Image (i));
 	end loop;
 end setupGainTable;
 

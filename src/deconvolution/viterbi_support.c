@@ -34,7 +34,7 @@ typedef union {
 	COMPUTETYPE t[NUMSTATES];
 } metric_t __attribute__ ((aligned (16)));
 
-inline void renormalize(COMPUTETYPE* X, COMPUTETYPE threshold){
+void renormalize(COMPUTETYPE* X, COMPUTETYPE threshold){
 int i;
 
 	if (X[0] > threshold){

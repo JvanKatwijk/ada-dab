@@ -14,3 +14,14 @@ The GPR file, for generating an executable is in the main directory of the
 sources. Settings are for including a library for the airspy and
 for the SDRplay. Just adapt to your needs.
 
+It is a little primitive right now, but for selecting an input device
+one needs to adapt the gui/gui.ads file
+
+a. uncomment the "with XXX"  for the package handling the input device
+   and comment out the others
+b. uncomment the appropriate line 
+--	package myDevice renames rtlsdr_wrapper;
+--	package myDevice renames airspy_wrapper;
+	package myDevice renames sdrplay_wrapper;
+c. add/remove the library names in the build file.
+

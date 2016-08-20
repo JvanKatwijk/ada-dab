@@ -161,7 +161,7 @@ begin
 	deviceBufferSize :=
 	 2 * integer (float (selectedLatency) * float (s. cardRate));
 	put ("selected bufferSize ");
-	put (deviceBufferSize' image); New_Line (1);
+	put_line (Integer' Image (deviceBufferSize));
 
 	error	:= Pa_OpenStream (s. ostream,
 	                          null,

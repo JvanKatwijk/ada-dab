@@ -50,7 +50,7 @@ task fic_processor is
 	entry process_ficInput (buffer: ficBlock; ficno	: Integer);
 	entry stop;
 	entry reset;
-	entry dataforAudioService (s: programmeName;
+	entry dataforAudioService (s: String;
 	                           d: out audioData);
 end fic_processor;
 
@@ -219,7 +219,7 @@ begin
 	         end;
 	      end loop;
 	   or
-	      accept dataforAudioService (s: programmeName;
+	      accept dataforAudioService (s: String;
 	                                  d: out audioData) do
 	         fib_handler. dataforAudioService (s, d);
 	      end dataforAudioService;

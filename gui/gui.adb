@@ -95,12 +95,18 @@ package body gui is
 	   fic_handler. dataforAudioService (el, data);
 	   if data. dataisThere
 	   then
-	      put ("startaddress "); put_line (data. startAddr' Image);
-	      put ("Length ");       put_line (data. length' Image);
-	      put ("bitRate ");      put_line (data. bitRate' Image);
-	      put ("ASCTy");         put_line (data. ASCTy' Image);
-	      put ("protLevel");     put_line (data. protLevel' Image);
-	      put ("uepFlag ");      put_line (data. uepFlag' Image);
+	      put ("startaddress ");
+	      put_line (short_Integer' Image (data. startAddr));
+	      put ("Length ");
+	      put_line (short_Integer' Image (data. length));
+	      put ("bitRate ");
+	      put_line (short_Integer' Image (data. bitRate));
+	      put ("ASCTy");
+	      put_line (short_Integer' Image (data. ASCTy));
+	      put ("protLevel");
+	      put_line (short_Integer' Image (data. protLevel));
+	      put ("uepFlag ");
+	      put_line (short_Integer' Image (data. uepFlag));
 	   end if;
 	   if data. length > 0 and then data. bitrate > 0
 	   then

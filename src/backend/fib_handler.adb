@@ -487,7 +487,8 @@ begin
 	   begin
 	   listofServices (i). inUse	:= false;
 	   exception 
-	      when others => put ("listofservices kraakt "); put_line (i' Image);
+	      when others => put ("listofservices kraakt ");
+	                     put_line (short_Integer' Image (i));
 	   end;
 	end loop;
 
@@ -495,7 +496,8 @@ begin
 	   begin
 	   components (i). inUse	:= false;
 	   exception
-	      when others => put ("components kraakt "); put_line (i' image);
+	      when others => put ("components kraakt ");
+	                     put_line (short_Integer' Image (i));
 	   end;
 	end loop;
 end reset;
@@ -506,7 +508,7 @@ begin
 end syncReached;
 --
 --
-procedure dataforAudioService (s: programmeName; d: out audioData) is
+procedure dataforAudioService (s: String; d: out audioData) is
 selectedService	: uint32_t;
 begin
 --	first we locate the serviceId

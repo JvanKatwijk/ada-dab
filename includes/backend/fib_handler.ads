@@ -27,7 +27,7 @@ package fib_handler is
    procedure process_FIB (p: fib_buffer); --
    procedure reset;
    function syncReached return Boolean;
-   procedure dataforAudioService (s: programmeName; d: out audioData);
+   procedure dataforAudioService (s: String; d: out audioData);
 private
 --	FIB;s are segments of 256 bits. When here
 --	we already passed the crc and start unpacking

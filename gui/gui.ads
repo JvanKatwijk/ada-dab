@@ -34,9 +34,9 @@ with simple_messages; use simple_messages;
 with ofdm_handler;
 with header; use header;
 --with rtlsdr_wrapper; use rtlsdr_wrapper;
-with rawfiles; use rawfiles;
+--with rawfiles; use rawfiles;
 --with airspy_wrapper; use airspy_wrapper;
---with sdrplay_wrapper; use sdrplay_wrapper;
+with sdrplay_wrapper; use sdrplay_wrapper;
 with Text_IO; use Text_IO;
 with Ada. Unchecked_Deallocation;
 with Gdk.Event;
@@ -46,10 +46,10 @@ package gui is
 	procedure setup_GUI;
 	gainSelector	: Gtk_Combo_Box_Text;
 	channelSelector	: Gtk_Combo_Box_Text;
-	package myDevice renames rawfiles;
+--	package myDevice renames rawfiles;
 --	package myDevice renames rtlsdr_wrapper;
 --	package myDevice renames airspy_wrapper;
---	package myDevice renames sdrplay_wrapper;
+	package myDevice renames sdrplay_wrapper;
 	my_P		: ofdm_handler. ofdmProcessor_P;
 	running		: Boolean	:= false;
 private	
