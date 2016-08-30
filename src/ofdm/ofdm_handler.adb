@@ -91,7 +91,10 @@ use header. complexTypes;
 	   Free_interleaver (Object. myMapper);
 	   Free_phaseSynchronizer (Object. my_phaseSynchronizer);
 	end Finalize;
-
+--
+--	Someone (external to this function) will eventually
+--	set running to false, indicating that the task, which
+--	will call getSamples, need to terminate
 	procedure getSamples (Object	: in out ofdmProcessor;
 	                      outV	: out complexArray;
 	                      phase	: Integer) is

@@ -46,6 +46,10 @@ package gui is
 	procedure setup_GUI;
 	gainSelector	: Gtk_Combo_Box_Text;
 	channelSelector	: Gtk_Combo_Box_Text;
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+-- to select an input device, uncomment the line for
+--	and the appropriate line "with xxxx"
 --	package myDevice renames rawfiles;
 --	package myDevice renames rtlsdr_wrapper;
 --	package myDevice renames airspy_wrapper;

@@ -51,9 +51,9 @@ end doRead;
 procedure restartReader (res : out Boolean) is
 begin
 	put_line ("restart called");
-	doRead. Start ("/usr/shared/dab-testfiles/mux-12a.raw");
+--	doRead. Start ("/usr/shared/dab-testfiles/mux-12a.raw");
 --	doRead. Start ("/usr/shared/dab-testfiles/mux-12C-a.raw");
---	doRead. Start ("/usr/shared/dab-testfiles/7b-radio-bremen.raw");
+	doRead. Start ("/usr/shared/dab-testfiles/7b-radio-bremen.raw");
 	res	:= true;
 end restartReader;
 

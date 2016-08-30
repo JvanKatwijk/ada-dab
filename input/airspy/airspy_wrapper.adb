@@ -1,4 +1,29 @@
-
+--
+--    Copyright (C) 2016
+--    Jan van Katwijk (J.vanKatwijk@gmail.com)
+--    Lazy Chair Programming
+--
+--    This file is part of the SDR-J (JSDR).
+--    SDR-J is free software; you can redistribute it and/or modify
+--    it under the terms of the GNU General Public License as published by
+--    the Free Software Foundation; either version 2 of the License, or
+--    (at your option) any later version.
+--
+--    SDR-J is distributed in the hope that it will be useful,
+--    but WITHOUT ANY WARRANTY; without even the implied warranty of
+--    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--    GNU General Public License for more details.
+--
+--    You should have received a copy of the GNU General Public License
+--    along with SDR-J; if not, write to the Free Software
+--    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+--
+--
+--	Wrapper around the airspy library.
+--	The airspy delivers samples at a selectable rate.
+--	We select the rate closest to 2048000 and downsample
+--	The rates of the airspy are obtained by "asking" the device
+--	and it shows that they are different between airspy and airspy mini
 with Gtk.Main;
 with Glib;
 with airspy_wrapper;
@@ -8,22 +33,17 @@ package body airspy_wrapper is
 package airspy_buffer is new ringBuffer (header. complexTypes. complex);
 use header. complexTypes;
 use airspy_buffer;
-size_2500	: constant Integer 	:= 5000;
-size_2048	: constant Integer	:= 4096;
-
+inputRate		: Integer	:= 2500000;	-- default
 theBuffer		: airspy_buffer. ringBuffer_data (16 * 32768);
 -- buffer for transfer to data into the ringbuffer
-localBuffer		: airspy_buffer. buffer_data (0 .. size_2048 - 1);
+localBuffer		: airspy_buffer. buffer_data (0 .. 2048000 / 500 - 1);
 --
---	we have to map 2500000 s/s -> 2048000 s/s, so we take
---	segments of 5000 input samples to 4096 output samples
---	one more than converted
-conversionBuffer 	: complexArray (0 .. size_2500);
+conversionBuffer 	: complexArray_P;
 conversionIndex	:	Integer	:= 0;
 ---
 ---
-mapTable_int 		: FloatArray	(0 .. size_2048 - 1);
-mapTable_float 		: FloatArray	(0 .. size_2048 - 1);
+mapTable_int 		: FloatArray	(0 .. 2048000 / 500 - 1);
+mapTable_float 		: FloatArray	(0 .. 2048000 / 500 - 1);
 --
 --
 result	: airspyError;
@@ -113,7 +133,6 @@ end stopReader;
 --
 --
 function airspy_Callback (transfer : airspy_transfer_P) return Integer is
-valuesRead	: Integer;
 begin
 	if transfer = null
 	then
@@ -132,9 +151,9 @@ begin
 	      conversionBuffer (conversionIndex) :=
 	                      (my_buffer (2 * i), my_buffer (2 * i + 1));
 	      conversionIndex := conversionIndex + 1;
-	      if conversionIndex > size_2500
+	      if conversionIndex > inputRate / 500
 	      then
-	         for j in localBuffer' Range loop	-- i.e. size_2048
+	         for j in localBuffer' Range loop	-- i.e. 2048000 / 500
 	            declare
 	               inpBase	: Float		:= mapTable_int (j);
 	               inpRatio	: Float		:= mapTable_float (j);
@@ -154,7 +173,7 @@ begin
 --
 --	shift the sample at the end to the beginning, it is needed
 --	as the starting sample for the next time
-                 conversionBuffer (0)	:= conversionBuffer (size_2500);
+                 conversionBuffer (0)	:= conversionBuffer (inputRate / 500);
                  conversionIndex 	:= 1;
 	      end if;
 	   end loop;
@@ -165,7 +184,7 @@ end airspy_Callback;
 procedure setupGainTable  (gainSelector: Gtk_Combo_Box_Text) is
 begin
 	for i in 0 .. 15 loop
-	   gainSelector. Insert_text (Glib. Gint (i), i' Image);
+	   gainSelector. Insert_text (Glib. Gint (i), Integer' Image (i));
 	end loop;
 end setupGainTable;
 --
@@ -204,22 +223,6 @@ begin
 	lnaGain		:= 11;
 	running		:= False;
 	Valid		:= False;
---
---	the maptable and convTable are used to convert the 2500000 rate
---	into a 2048000 rate
-
-	for i in 0 .. size_2048 - 1 loop
-	   declare 
-	      intPart	: Float := Float' Floor (
-	                Float (i) * Float (size_2500) / Float (4096.0));
-	   begin
-	      mapTable_int (i)		:= intPart;
-	      mapTable_float (i)	:= 
-	                Float (i) * Float (size_2500) / Float (4096.0) -
-	                                         Float (mapTable_int (i));
-	   end;
-	end loop;
-
 	put_line ("Klaar voor init");
 	result		:= airspy_init;
 	if result /= AIRSPY_SUCCESS
@@ -234,6 +237,42 @@ begin
 	   put_line ("airspy_open failed");
 	   goto l_end;
 	end if;
+
+	inputRate	:= 10000000;
+	declare
+	   rateCount	: Integer	:= 0;
+	   the_rateBuffer	: rateBuffer;
+	begin
+	   airspy_get_samplerates (device_P. all, the_rateBuffer, 0);
+	   rateCount	:= the_rateBuffer (0);
+	   airspy_get_samplerates (device_P. all, the_rateBuffer, rateCount);
+
+	   for i in 0 .. rateCount - 1 loop
+	      if the_rateBuffer (i) > 2048000 and then
+	         the_rateBuffer (i) < inputRate
+	      then
+	         inputRate := the_rateBuffer (i);
+	      end if;
+	   end loop;
+	end;
+--
+--	the maptable and convTable are used to convert the inputRate
+--	into a 2048000 rate
+--	It is known that we take every 2 millisecond input
+
+	for i in mapTable_int' Range loop
+	   declare 
+	      intPart	: Float := Float' Floor (
+	                Float (i) * Float (inputRate / 500) / 4096.0);
+	   begin
+	      mapTable_int (i)		:= intPart;
+	      mapTable_float (i)	:= 
+	                Float (i) * Float (inputRate / 500) / 4096.0 -
+	                                         Float (mapTable_int (i));
+	   end;
+	end loop;
+
+	conversionBuffer	:= new complexArray (0 .. inputRate / 500);
 	valid	:= true;
 	running	:= false;
 <<l_end>>

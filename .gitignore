@@ -1,2 +1,6 @@
 bin/*
 obj/*
+obj_fast/*
+obj_normal/*
+
+

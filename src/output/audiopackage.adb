@@ -25,9 +25,14 @@ with Interfaces. C;
 with Text_IO; use Text_IO;
 package body audiopackage is
 package IC renames Interfaces.C;
+--
+--	the output samplerate will be 48000 in all cases, so
+--	in those cases that the PCM rate differs, we need
+--	to convert the rate. that is why we use the filters
 f_16	: fir_filters. lowPass_filter (5, 16000, 48000);
 f_24	: fir_filters. lowPass_filter (5, 24000, 48000);
 f_32	: fir_filters. lowPass_filter (5, 32000, 96000);
+
 --	In the callback we have to transform the
 --	System. Address values to pointers to the right type
 --	So, we dig deep and end up with address_to_access_conversions

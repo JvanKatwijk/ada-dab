@@ -138,7 +138,7 @@ sbrFlag		: uint8_t;
 aacChannelMode	: uint8_t;
 psFlag		: uint8_t;
 mpegSurround	: uint16_t;
-outVector	: byteArray	renames Object. outVector. all;
+outVector	: byteArray renames Object. outVector. all;
 bitRate		: short_Integer renames Object. bitRate;
 RSDims		: Integer renames Object. RSDims;
 tmp		: Integer;
@@ -147,7 +147,7 @@ begin
 	result		:= False;	-- always a good start
 --	apply reed-solomon error repair
 --	OK, what we now have is a vector with RSDims * 120 uint8_t's
---	the superframe, containing parity bytes for error repair
+--	in the superframe, containing parity bytes for error repair
 --	take into account the interleaving that is applied.
 
 	for j in 0 .. RSDims - 1 loop
@@ -253,7 +253,7 @@ begin
 	      end if;
 
 	      aac_frame_length	:= au_start (i + 1) - au_start (i) - 2;
-	      if aac_frame_length >= 2 * 960
+	      if aac_frame_length > 2 * 960
 	      then
 	         put_line ("cannot happen");
 	         result		:= false;

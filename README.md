@@ -2,7 +2,9 @@
 an ada implementation of a dab decoder
 
 Just to freshen up my knowledge of the Ada programming langage (after a period of over 20 years) a - simplified - version of the dab software
-was encoded in Ada. The software is - as always - a version 0.0x, however, on my PC it does work with the dabstick, the SDRplay and the Airspy.
+was encoded in Ada.  The Ada version differs in some architectural points
+from the sdr-j-dab C++ version. 
+The Ada software is - as always - a version 0.0x, however, on my PC it does work with the dabstick, the SDRplay and the Airspy.
 
 For compiling the program you will need
 a. Ada (preferably Gnat)

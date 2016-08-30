@@ -99,6 +99,13 @@ pragma Import (C, airspy_is_streaming, "airspy_is_streaming");
 function airspy_set_sample_type (device : system. Address;
 	                         the_type : sample_type) return airspyError;
 pragma Import (C, airspy_set_sample_type, "airspy_set_sample_type");
+--
+--	just for this one
+subtype rateBuffer is intArray (0 .. 20);
+procedure airspy_get_samplerates (device	: system. Address;
+	                          outBuffer	: out rateBuffer;
+	                          count		: Integer);
+pragma Import (C, airspy_get_samplerates, "airspy_get_samplerates");
 
 function airspy_set_samplerate	(device : system. Address;
 	                         rate : Integer) return airspyError;

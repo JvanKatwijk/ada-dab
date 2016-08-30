@@ -3,14 +3,34 @@ with "gtkada";
 project dab_receiver is
 	for languages use ("C", "Ada");
 	for Main use ("main.adb");
-	for Object_Dir use "obj";
 	for Exec_dir use "bin";
+	type Build_Mode_Type is
+	   ("Normal", "Fast");
+	Build_Mode	: Build_Mode_Type	:= external ("Build_Mode", "Fast");
 	for Source_Dirs use (".", "input/dabstick", "input/rawfiles", "input/airspy", "input/sdrplay", "src", "src/utilities", "src/ofdm", "src/backend", "src/msc", "src/output", "includes", "includes/utilities", "includes/ofdm", "includes/backend", "includes/msc", "includes/output", "src/deconvolution", "gui",  "c_files");
+
+	case Build_Mode is
+	   when "Normal"	=>
+	      for Object_Dir use "obj_normal";
+	   when "Fast"		=>
+	      for Object_Dir use "obj_fast";
+	end case;
+
 package Compiler is
-	for Default_Switches ("Ada") use ("-g");
+	case Build_Mode is
+	   when "Normal"	=>
+	      for Default_Switches ("Ada") use ("-pg");
+	   when "Fast"		=>
+	      for Default_Switches ("Ada") use ("-gnatpn");
+	end case;
 end Compiler;
 package Linker is
-	for Default_Switches ("Ada") use ("-g","-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
+	case Build_Mode is
+	   when "Normal"	=>
+	      for Default_Switches ("Ada") use ("-pg","-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
+	   when "Fast"		=>
+	      for Default_Switches ("Ada") use ("-gnatpn","-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
+	end case;
 end Linker;
 end dab_receiver;
 

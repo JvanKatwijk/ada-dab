@@ -25,6 +25,7 @@ with msc_handler;
 with simple_messages; use simple_messages;
 with string_messages; use string_messages;
 package body gui is
+deleting	: Boolean	:= false;
 --	called upon pressing the X to delete the window
 	procedure main_quit (Self : access Gtk_Widget_Record'Class) is
 	begin
@@ -63,15 +64,18 @@ package body gui is
 	begin
 	   Freq	:= channel_handler. set_channelSelect (el);
 	   msc_handler. reset;
+	   my_P. reset;
+	   fic_handler. reset;	-- go for a new fib
 	   if myDevice. isValid
 	   then
 	      myDevice. setVFOFrequency (kHz (Freq));
 	      fic_handler. reset;	-- go for a new fib
-	      my_P. reset;
 	   end if;
 	   string_messages. string_messages. Cleanup;
 	   delay 2.0;	-- we have to clean up the fields in programselector
+	   deleting	:= true;
 	   programSelector. Remove_All;
+	   deleting	:= false;
 	   label_ensemble. Set_Label ("ensemble name");
 	end channelSelector_clicked;
 --
@@ -91,6 +95,10 @@ package body gui is
 	data	: audioData;
 	el : String	:= Self. Get_Active_Text;
 	begin
+	   if deleting
+	   then
+	      return;
+	   end if;
 	   put ("program "); put (el); put_line ("selected");
 	   fic_handler. dataforAudioService (el, data);
 	   if data. dataisThere
