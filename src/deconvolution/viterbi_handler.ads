@@ -1,62 +1,65 @@
 --
 --	straightforward wrapper around the generic viterbi decoder from
 --	by the spiral project
-with header; use header;
-with Ada. Finalization; use Ada. Finalization;
+with header;	use header;
+with System;	use System;
+with Ada. Finalization;
 with Ada. Unchecked_Deallocation;
-with System; use System;
-package viterbi_handler is
-   type viterbiProcessor (wordLength: Integer) is
+package Viterbi_Handler is
+	type Viterbi_Processor (WordLength: Integer) is
 	          new Ada. Finalization. Controlled with private;
-   type viterbiProcessor_P is access all viterbiProcessor;
+	type Viterbi_Processor_P is access all Viterbi_Processor;
 
-procedure	deconvolve (Object	: in out viterbiProcessor;
-	                    input	: shortArray;
-	                    output	: out byteArray);
+	procedure Deconvolve (Object:	in out Viterbi_Processor;
+	                      input:	shortArray;
+	                      output:	out byteArray);
 
 private
-   type uintArray is Array (Integer Range <>) of uint32_t;
-   type uintArray_P is access all uintArray;
-   procedure Free_uintArray is new Ada. Unchecked_Deallocation (
-	Object => uintArray, Name => uintArray_P);
-   type viterbiProcessor (wordLength: Integer) is
+	type uintArray is Array (Integer Range <>) of uint32_t;
+	type uintArray_P is access all uintArray;
+	procedure Free_uintArray is
+	               new Ada. Unchecked_Deallocation (
+	                                    Object => uintArray,
+	                                    Name => uintArray_P);
+	type Viterbi_Processor (WordLength: Integer) is
 	          new Ada. Finalization. Controlled with 
-	record
-	   handler	: System. Address;
-	   isOK		: Boolean;
-	   symbols	: access uintArray;
-	end record;
+	   record
+	      Handler:   System. Address;
+	      isOK:      Boolean;
+	      Symbols:   access uintArray;
+	   end record;
 
-K	: constant Integer	:= 7;
-rate	: constant Integer	:= 4;
-POLYS	: constant byteArray (0 .. 3) :=
-	      (8#0155#,  8#0117#,  8#0123#, 8#0155#);
---#define	POLYS	{109, 79, 83, 109}
--- In the reversed form the polys look:
---#define POLYS { 0133, 0171, 0145, 0133 }
---#define POLYS { 91, 121, 101, 91 }
+	K:	constant Integer	:= 7;
+	Rate:	constant Integer	:= 4;
+	POLYS:	constant byteArray (0 .. 3) :=
+	                      (8#0155#,  8#0117#,  8#0123#, 8#0155#);
+--	#define	POLYS	{109, 79, 83, 109}
+--	In the reversed form the polys look:
+--	#define POLYS { 0133, 0171, 0145, 0133 }
+--	#define POLYS { 91, 121, 101, 91 }
 
-function	create_viterbi (wordlength: Integer) return system. address;
-pragma Import (C, create_viterbi, "create_viterbi");
+	function Create_Viterbi (Wordlength: Integer) return system. address;
+	pragma Import (C, Create_Viterbi, "create_viterbi");
 
-procedure	init_viterbi (handle: system. address; startState: Integer);
-pragma Import (C, init_viterbi, "init_viterbi");
+	procedure Init_Viterbi (Handle: system. address;
+	                        startState: Integer);
+	pragma Import (C, Init_Viterbi, "init_viterbi");
 
-procedure	update_viterbi_blk (handle	: system. Address;
-	                            symbols	: system. Address;
-	                            nbits	: Integer);
-pragma Import (C, update_viterbi_blk, "update_viterbi_blk_GENERIC");
+	procedure Update_Viterbi_Blk (Handle:   system. Address;
+	                              Symbols:  system. Address;
+	                              nbits:   Integer);
+	pragma Import (C, Update_Viterbi_Blk, "update_viterbi_blk_GENERIC");
 
-procedure	chainback_viterbi (handle	: system. Address;
-	                           output	: system. Address;
-	                           wordlength	: Integer;
-                                   endState	: Integer);
-pragma	Import (C, chainback_viterbi, "chainback_viterbi");
+	procedure Chainback_Viterbi (Handle	: system. Address;
+	                             Output	: system. Address;
+	                             Wordlength	: Integer;
+                                     EndState	: Integer);
+	pragma	Import (C, Chainback_Viterbi, "chainback_viterbi");
 
-procedure	delete_viterbi	(handle:	system. Address);
-pragma Import	(C, delete_viterbi, "delete_viterbi");
+	procedure Delete_Viterbi   (Handle: system. Address);
+	pragma Import	(C, Delete_Viterbi, "delete_viterbi");
 
-procedure Initialize	(Object: in out viterbiProcessor);
-procedure Finalize	(Object: in out viterbiProcessor);
-end viterbi_handler;
+	procedure Initialize	(Object: in out Viterbi_Processor);
+	procedure Finalize	(Object: in out Viterbi_Processor);
+end Viterbi_Handler;
 

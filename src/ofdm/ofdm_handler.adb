@@ -18,19 +18,18 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with ofdm_handler;
-with Text_IO; use Text_IO;
-with Ada. Exceptions; use Ada. Exceptions;
+with Text_IO;		use Text_IO;
+with Ada. Exceptions;	use Ada. Exceptions;
 with Ada. Unchecked_Deallocation;
-with header; use header;
-with simple_messages; use simple_messages;
+with header;		use header;
+with simple_messages;	use simple_messages;
 with fic_handler;
 with msc_handler;
 with fft_handler;
 --
 --
-package body ofdm_handler is
-use header. complexTypes;
+package body Ofdm_Handler is
+	use header. complexTypes;
 	function "abs" (Right: header. ComplexTypes. complex)
 	                                        return Float renames
                                      header. complexTypes. "abs";
@@ -41,373 +40,366 @@ use header. complexTypes;
 	                                        return complexTypes. complex
 	                             renames complexTypes. Conjugate;
 --
-	procedure Initialize (Object : in out ofdmProcessor) is
+	procedure Initialize (Object : in out Ofdm_Processor) is
 	begin
-	   Object. Tu		:= header. T_u (Object. mode);
-	   Object. Tg		:= header. T_g (Object. mode);
-	   Object. Ts		:= header. T_s (Object. mode);
-	   Object. Tnull	:= header. T_null (Object. mode);
-	   Object. carriers	:= header. K  (Object. mode);
-	   Object. carrierdiff	:= header. carrierDiff (Object. mode);
-	   Object. L_mode	:= header. L (Object. mode);
-	   Object. sampleCounter	:= 0;
-	   Object.currentStrength	:= 0.0;
+	   Object. Tu           := header. T_u (Object. Mode);
+	   Object. Tg           := header. T_g (Object. Mode);
+	   Object. Ts           := header. T_s (Object. Mode);
+	   Object. Tnull        := header. T_null (Object. Mode);
+	   Object. Carriers     := header. K  (Object. Mode);
+	   Object. Carrier_Diff	:= header. Carrier_Diff (Object. Mode);
+	   Object. L_mode	:= header. L (Object. Mode);
+	   Object. Samplecounter	:= 0;
+	   Object. Current_Strength	:= 0.0;
 
-	   Object.running	:= false;
-	   Object.bufferContent	:= 0;	
-	   Object.currentPhase	:= 0;
-	   Object.sLevel	:= 0.0;
-	   Object.fineCorrector	:= 0;
-	   Object.coarseCorrector	:= 0;
-	   Object.f2Correction	:= true;
-	   Object.tokenLength	:= 0;
-	   Object.myMapper	:= new freq_interleaver.
-	                                      interleaver (Object. mode);
+	   Object. Running		:= false;
+	   Object. Buffer_Content	:= 0;	
+	   Object. Current_Phase	:= 0;
+	   Object. Signal_Level		:= 0.0;
+	   Object. Fine_Corrector	:= 0;
+	   Object. Coarse_Corrector	:= 0;
+	   Object. Correction_Flag	:= true;
+	   Object. Token_Length	:= 0;
+	   Object. My_Mapper	:= new freq_interleaver.
+	                                      interleaver (Object. Mode);
 --
 --	will be set/ controlled dynamically
-	   Object. theProcessor	:= null;
-	   Object. my_phaseSynchronizer	:=
-	                       new phase_handler. phaseSynchronizer (Object. mode);
-	   Object. ofdm_fft	:= new fft_handler. fft (FORWARD, Object. Tu);
-	   for i in 0 .. inputRate - 1 loop
-	      Object. oscillatorTable (i) :=
-	               (Math. cos (float (i) * 2.0 * M_PI / float (inputRate)),
-	                Math. sin (float (i) * 2.0 * M_PI / float (inputRate)));
+	   Object. The_Processor	:= null;
+	   Object. My_Phasesynchronizer :=
+	                   new phase_handler. Phase_Synchronizer (Object. mode);
+	   Object. Ofdm_fft	:= new fft_handler.
+	                                 FFT_Processor (FORWARD, Object. Tu);
+	   for i in 0 .. Input_Rate - 1 loop
+	      Object. OscillatorTable (i) :=
+	              (Math. cos (float (i) * 2.0 * M_PI / float (Input_Rate)),
+	               Math. sin (float (i) * 2.0 * M_PI / float (Input_Rate)));
 	   end loop;
-	put_line ("Initialization complete");
+--	   put_line ("Initialization complete");
 	end Initialize;
 
-	procedure Finalize (Object : in out ofdmProcessor) is
-	procedure Free_fft is new Ada. Unchecked_Deallocation (
-	   Object => fft_handler. fft, name => fft_handler. fft_P);
-	procedure Free_interleaver is new Ada. Unchecked_Deallocation (
-	   Object => freq_interleaver. interleaver,
-	   Name	  => freq_interleaver. interleaver_P);
-	procedure Free_phaseSynchronizer is new Ada. Unchecked_Deallocation (
-	   Object	=> phase_handler. phaseSynchronizer,
-	   Name		=> phase_handler. phaseSynchronizer_P);
+	procedure Finalize (Object : in out Ofdm_Processor) is
+	   procedure Free_fft is new Ada. Unchecked_Deallocation (
+	      Object => fft_handler. FFT_Processor,
+	      name => fft_handler. FFT_Processor_P);
+	   procedure Free_interleaver is new Ada. Unchecked_Deallocation (
+	      Object => freq_interleaver. interleaver,
+	      Name   => freq_interleaver. interleaver_P);
+	   procedure Free_phaseSynchronizer is new Ada. Unchecked_Deallocation (
+	      Object => phase_handler. Phase_Synchronizer,
+	      Name   => phase_handler. Phase_Synchronizer_P);
 	begin
-	   Free_fft (Object. ofdm_fft);
-	   Free_interleaver (Object. myMapper);
-	   Free_phaseSynchronizer (Object. my_phaseSynchronizer);
+	   Free_fft (Object. Ofdm_fft);
+	   Free_interleaver (Object. My_Mapper);
+	   Free_phaseSynchronizer (Object. My_Phasesynchronizer);
 	end Finalize;
 --
 --	Someone (external to this function) will eventually
 --	set running to false, indicating that the task, which
---	will call getSamples, need to terminate
-	procedure getSamples (Object	: in out ofdmProcessor;
-	                      outV	: out complexArray;
-	                      phase	: Integer) is
-	amount:	Integer	:= outV' length;
+--	will call Get_Samples, need to terminate
+	procedure Get_Samples (Object	: in out Ofdm_Processor;
+	                       Out_V	: out complexArray;
+	                       Phase	: Integer) is
+	   Amount:	Integer	:= Out_V' length;
 	begin
-	if not Object. running
-	then
-	   raise exit_ofdmProcessing;
-	end if;
-
-	if amount > Object. bufferContent
-	then
-	   Object. bufferContent := Object. Samples_amount. all;
-	   while Object. running and then
-	                       Object. bufferContent < amount loop
-	      delay 0.01;
-	      Object. bufferContent := Object. Samples_amount .all;
-	   end loop;
-
-	   if not Object. running
-	   then
-	      raise exit_ofdmProcessing;
+	   if not Object. Running then
+	      raise Exit_ofdmProcessing;
 	   end if;
-	end if;
+
+	   if Amount > Object. Buffer_Content then
+	      Object. Buffer_Content := Object. Available_Samples. all;
+	      while Object. Running and then
+	                       Object. Buffer_Content < Amount loop
+	         delay 0.01;
+	         Object. Buffer_Content := Object. Available_Samples. all;
+	      end loop;
+
+	      if not Object. Running then
+	         raise Exit_OfdmProcessing;
+	      end if;
+	   end if;
 --	we have samples, let's get them
-	Object. fetchSamples (outV, amount);
-	Object. bufferContent :=  Object. bufferContent - amount;
+	   Object. Fetch_Samples (Out_V, Amount);
+	   Object. Buffer_Content :=  Object. Buffer_Content - Amount;
 
 --	first: adjust frequency. We need Hz accuracy
-	for i in outV' Range loop
-	   Object. currentPhase		:=
-	                  (Object. currentPhase - phase) mod inputRate;
-	   outV (i)		:= outV (i) *
-	                           Object. oscillatorTable (Object.currentPhase);
-	   Object. sLevel	:= 0.00001 * abs outV (i) +
-	                           (1.0 - 0.00001) * Object. sLevel;
-	end loop;
+	   for I in Out_V' Range loop
+	      Object. Current_Phase	:=
+	                  (Object. Current_Phase - Phase) mod Input_Rate;
+	      Out_V (I)		:= Out_V (I) *
+	                           Object. OscillatorTable (Object. Current_Phase);
+	      Object. Signal_Level := 0.00001 * abs Out_V (I) +
+	                                (1.0 - 0.00001) * Object. Signal_Level;
+	   end loop;
 --
 --	currently, tokenlength is not used
---	Object. tokenLength	:= Object. tokenLength + amount;
-	Object. sampleCounter	:= Object. sampleCounter + amount;
-	if Object. sampleCounter >=  inputRate
-	then
-	   simple_messages. message_queue. Put ((FINE_CORRECTOR_SIGNAL,
-	                                         Object. fineCorrector));
-	   simple_messages. message_queue. Put ((COARSE_CORRECTOR_SIGNAL,
-	                                         Object. coarseCorrector));
-	   Object. sampleCounter:= 0;
-	end if; 
-	exception
-	   when Error: others		=> Put ("Exception in getsamples: ");
-	                                   Put_Line (Exception_Name (Error));
-	                                   raise;
-end getSamples;
+--	   Object. Token_Length         := Object. Token_Length + Amount;
+--
+--	Once a second (i.e. after INPUT_RATE samples), we
+--	show some data
+	   Object. Samplecounter        := Object. Samplecounter + Amount;
+	   if Object. Samplecounter >=  Input_Rate then
+	      simple_messages. message_queue. Put ((FINE_CORRECTOR_SIGNAL,
+	                                            Object. Fine_Corrector));
+	      simple_messages. message_queue. Put ((COARSE_CORRECTOR_SIGNAL,
+	                                            Object. Coarse_Corrector));
+	      Object. Samplecounter := 0;
+	   end if; 
+	   exception
+	      when Error: others   => Put ("Exception in getsamples: ");
+	                              Put_Line (Exception_Name (Error));
+	                              raise;
+	end Get_Samples;
 --
 --
 --	we might consider a hard reset
-procedure reset (Object : in out ofdmProcessor)	is
-begin
-	Object. fineCorrector	:= 0;
-	Object. coarseCorrector	:= 0;
-	Object. f2Correction	:= true;
-end reset;
+	procedure reset (Object : in out Ofdm_Processor)	is
+	begin
+	   Object. Fine_Corrector	:= 0;
+	   Object. Coarse_Corrector	:= 0;
+	   Object. Correction_Flag	:= true;
+	end reset;
 --
 --
-procedure stop (Object : in out ofdmProcessor) is
-procedure Free_worker is new Ada. Unchecked_Deallocation (
-	Object	=> ofdmWorker,
-	Name	=> ofdmWorker_P);
-begin
-	if Object. running
-	then
-	   Object. running := false;
-	   put_line ("we zijn aan het aborten");
-	   while not Object. theProcessor' Terminated loop
-	      delay 0.01;
-	   end loop;
-	   Free_worker (Object. theProcessor);
-	   Object. theProcessor	:= null;
-	end if;
-end stop;
+	procedure stop (Object: in out Ofdm_Processor) is
+	   procedure Free_Worker is
+	          new Ada. Unchecked_Deallocation (Object => Ofdm_Worker,
+	                                           Name => Ofdm_Worker_P);
+	begin
+	   if Object. Running then
+	      Object. Running := false;
+	      put_line ("we zijn aan het aborten");
+	      while not Object. The_Processor' Terminated loop
+	         delay 0.01;
+	      end loop;
+	      Free_Worker (Object. The_Processor);
+	      Object. The_Processor	:= null;
+	   end if;
+	end stop;
 
-function is_stopped (Object : ofdmProcessor) return Boolean is
-begin
-	if not  Object. running
-	then
-	   return true;
-	end if;
-	return false;
-end is_stopped;
+	function Is_Stopped (Object: Ofdm_Processor) return Boolean is
+	begin
+	   if not  Object. Running then
+	      return true;
+	   end if;
+	   return false;
+	end is_stopped;
 	
-procedure start (Object : in out ofdmProcessor; env : ofdmProcessor_P) is
-begin
-	if Object. running
-	then
-	   return;
-	end if;
-	Object. theProcessor	:= new ofdmWorker (env);
-	Object. running		:= true;
-end start;
+	procedure Start (Object: in out Ofdm_Processor;
+	                 Env:	Ofdm_Processor_P) is
+	begin
+	   if Object. Running
+	   then
+	      return;
+	   end if;
+	   Object. The_Processor	:= new Ofdm_Worker (Env);
+	   Object. Running		:= true;
+	end start;
 
 --	the task is the main driver, it reads samples and does the
 --	ofdm handling. It calls upon the fic handler and the msc handler
 --
-task body ofdmWorker is
-Tu	: Integer renames	Object. Tu;
-Tg	: Integer renames	Object. Tg;
-Ts	: Integer renames	Object. Ts;
-Tnull	: Integer renames	Object. Tnull;
-carriers	: Integer	renames Object. carriers;
-carrierDiff	: Integer	renames Object. carrierDiff;
-startIndex	: Integer;
-FreqCorr	: header. ComplexTypes. complex;
-counter		: Integer;
-syncBufferIndex	: Integer	:= 0;
-envBuffer	: floatArray	(0 .. 32767);
-previous_1	: Integer	:= 1000;
-previous_2	: Integer	:=  999;
---
---	some shorthands
-subtype Tu_sizedBuffer	is complexArray (0 .. Tu - 1);
-subtype Ts_sizedBuffer	is complexArray (0 .. Ts - 1);
-subtype Tnull_sizedBuffer is complexArray (0 .. Tnull - 1);
-subtype	ibitVector 	is shortArray (0 .. 2 * carriers - 1);
---
---	some vectors
-referenceVector	: Tu_sizedBuffer;
-ofdmBuffer	: Ts_sizedBuffer;
-null_Buffer	: Tnull_sizedBuffer;
-ibits		: ibitVector;
---
---	procedures local to the task body are
---	function Estimate
---	procedure processToken
---
---	compute the estimated coarse frequency offset
-function computeOffset (block_0_Buffer: Tu_sizedBuffer) return Integer is
-searchRange	: constant Integer	:= 36;
-resVector	: Tu_sizedBuffer renames block_0_Buffer;
-Mmin		: Float := 1000.0;
-OMmin		: Float := 1000.0;
-index		: Integer	:= Object. Tu;
-begin
-
+	task body Ofdm_Worker is
+	   Tu	: Integer renames	Object. Tu;
+	   Tg	: Integer renames	Object. Tg;
+	   Ts	: Integer renames	Object. Ts;
+	   Tnull	: Integer renames	Object. Tnull;
+	   Carriers	: Integer	renames Object. Carriers;
+	   Carrier_Diff	: Integer	renames Object. Carrier_Diff;
+	   Start_Index	: Integer;
+	   Freq_Corr	: header. ComplexTypes. complex;
+	   Counter		: Integer;
+	   Syncbuffer_Index	: Integer	:= 0;
+	   Env_Buffer	: floatArray	(0 .. 32767);
+	   Previous_1	: Integer	:= 1000;
+	   Previous_2	: Integer	:=  999;
+	   --
+	   --	some shorthands
+	   subtype Tu_Sized_Buffer	is complexArray (0 .. Tu - 1);
+	   subtype Ts_Sized_Buffer	is complexArray (0 .. Ts - 1);
+	   subtype Tnull_Sized_Buffer is complexArray (0 .. Tnull - 1);
+	   subtype	Ibit_Vector 	is shortArray (0 .. 2 * Carriers - 1);
+	   --
+	   --	some vectors
+	   Reference_Vector	: Tu_Sized_Buffer;
+	   Ofdm_Buffer	: Ts_Sized_Buffer;
+	   Null_Buffer	: Tnull_Sized_Buffer;
+	   Ibits		: Ibit_Vector;
+	   --
+	   --	procedures local to the task body are
+	   --	function Estimate
+	   --	procedure processToken
+	   --
+	   --	compute the estimated coarse frequency offset
+	   function Compute_Offset (Block_0_Buffer: Tu_Sized_Buffer)
+	                                                  return Integer is
+	      Search_Range	: constant Integer	:= 36;
+	      Res_Vector	: Tu_Sized_Buffer renames Block_0_Buffer;
+	      M_min	: Float			:= 1000.0;
+	      Index	: Integer		:= Object. Tu;
+	   begin
 --	we look at a special pattern consisting
 --	of zeros in the row of args between successive carriers.
-	for i in Tu - searchRange / 2 .. Tu + searchRange / 2 loop
-	   declare
-              a1: Float := 
-	              abs (abs  (arg (resVector ((i + 1) mod Tu) *
-                            conj (resVector ((i + 2) Mod Tu))) / M_PI) - 1.0);
-	      a2: Float :=
-	              abs arg (resVector ((i + 1) mod Tu) *
-	      	            conj (resVector ((i + 3) Mod Tu)));
-	      a3: Float :=
-	              abs arg (resVector ((i + 3) mod Tu) *
-	      	            conj (resVector ((i + 4) mod Tu)));
-	      a4: Float :=
-	              abs arg (resVector ((i + 4) mod Tu) *
-	      	            conj (resVector ((i + 5) mod Tu)));
-	      a5: Float :=
-	              abs arg (resVector ((i + 5) mod Tu) *
-	      	                    conj (resVector ((i + 6) mod Tu)));
-	      b1: Float :=
-	              abs (abs (arg (resVector ((i + 16 + 1) mod Tu) *
-	      	                    conj (resVector ((i + 16 + 3) mod Tu))) / M_PI) - 1.0);
-	      b2: Float :=
-	              abs (arg (resVector ((i + 16 + 3) mod Tu) *
-	      	                    conj (resVector ((i + 16 + 4) mod Tu))));
-	      b3: Float :=
-	              abs (arg (resVector ((i + 16 + 4) mod Tu) *
-	      	                    conj (resVector ((i + 16 + 5) mod Tu))));
-	      b4: Float :=
-	              abs (arg (resVector ((i + 16 + 5) mod Tu) *
-	      	                    conj (resVector ((i + 16 + 6) mod Tu))));
-	      sum: Float := a1 + a2 + a3 + a4 + a5 + b1 + b2 + b3 + b4;
-	   begin
-	      if sum < Mmin 
-	      then
-	         OMmin	:= Mmin;
-	         Mmin	:= sum;
-	         index	:= i;
-	      end if;
-	   end;
-	end loop;
-	return index - Object. Tu;
-end computeOffset;
+	      for I in Tu - Search_Range / 2 .. Tu + Search_Range / 2 loop
+	         declare
+                    A1: Float := 
+	                    abs (abs  (arg (Res_Vector ((I + 1) mod Tu) *
+                            conj (Res_Vector ((I + 2) Mod Tu))) / M_PI) - 1.0);
+	            A2: Float :=
+	                    abs arg (Res_Vector ((I + 1) mod Tu) *
+	            	            conj (Res_Vector ((I + 3) Mod Tu)));
+	            A3: Float :=
+	                    abs arg (Res_Vector ((I + 3) mod Tu) *
+	            	            conj (Res_Vector ((I + 4) mod Tu)));
+	            A4: Float :=
+	                    abs arg (Res_Vector ((I + 4) mod Tu) *
+	            	            conj (Res_Vector ((I + 5) mod Tu)));
+	            A5: Float :=
+	                    abs arg (Res_Vector ((I + 5) mod Tu) *
+	            	            conj (Res_Vector ((I + 6) mod Tu)));
+	            B1: Float :=
+	                    abs (abs (arg (Res_Vector ((I + 16 + 1) mod Tu) *
+	            	            conj (Res_Vector ((I + 16 + 3) mod Tu))) / M_PI) - 1.0);
+	            B2: Float :=
+	                    abs (arg (Res_Vector ((I + 16 + 3) mod Tu) *
+	            	             conj (Res_Vector ((I + 16 + 4) mod Tu))));
+	            B3: Float :=
+	                    abs (arg (Res_Vector ((I + 16 + 4) mod Tu) *
+	            	             conj (Res_Vector ((I + 16 + 5) mod Tu))));
+	            B4: Float :=
+	                    abs (arg (Res_Vector ((I + 16 + 5) mod Tu) *
+	            	             conj (Res_Vector ((I + 16 + 6) mod Tu))));
+	            Sum: Float := A1 + A2 + A3 + A4 + A5 + B1 + B2 + B3 + B4;
+	         begin
+	            if Sum < M_min then
+	               M_min	:= Sum;
+	               Index	:= I;
+	            end if;
+	         end;
+	      end loop;
+	      return Index - Object. Tu;
+	   end Compute_Offset;
 --
 --	All ofdm tokens, apart from "block 0" will be processed
 --	by this procedure
+--
 --	Note that we specify "Buffer" as "in out" since we
 --	pass it on to the fft processor
-procedure processToken	 (Buffer	: in out Tu_sizedBuffer; 
-	                  ibits		: out ibitVector;
-	                  blkno		: Integer) is
-workVector : Tu_sizedBuffer	renames Buffer;
-begin
-
-	Object. ofdm_fft. do_FFT (workVector' Address);
+	   procedure Process_Token	 (Buffer	: in out Tu_Sized_Buffer; 
+	                             Ibits		: out Ibit_Vector;
+	                             Blkno		: Integer) is
+	      Work_Vector : Tu_Sized_Buffer	renames Buffer;
+	   begin
+	      Object. Ofdm_fft. do_FFT (Work_Vector);
 --
 --	Note that "mapIn" maps to -carriers / 2 .. carriers / 2
 --	we did not set the fft output to low .. high
-	for i in 0 .. carriers - 1 loop
-	   declare
-	      index 	: Integer := Object. myMapper. mapIn (i);
-	      r1	: complexTypes. complex;
-	   begin
-	      if index < 0
-	      then
-	          index :=  index + Tu;
-	      end if;
+	      for I in 0 .. Carriers - 1 loop
+	         declare
+	            Index 	: Integer := Object. My_Mapper. Map_In (i);
+	            R1	: complexTypes. complex;
+	         begin
+	            if Index < 0 then
+	               Index := Index + Tu;
+	            end if;
 --
 --	this is the data value, we keep the "old" value as reference
 --	value for the next block
-	      r1 := workVector (index) *
-	                conj (referenceVector (index));
-	      referenceVector (index) := workVector  (index);
+	            R1 := Work_Vector (Index) *
+	                         conj (Reference_Vector (Index));
+	            Reference_Vector (Index) := Work_Vector (Index);
 --	Recall:  with this viterbi decoder
 --	we have 127 = max pos, -127 = max neg, so we scale
-	      ibits (i)	   :=
-	             short_Integer (r1. Re / abs r1 * 127.0);
-
-	      ibits (carriers + i) :=
-	             short_Integer (r1. Im / abs r1 * 127.0);
-	   end;
-	end loop;
-end processToken;
-begin
+	            Ibits (I)	   :=
+	                short_Integer (R1. Re / abs R1 * 127.0);
+	            Ibits (Carriers + i) :=
+	                short_Integer (R1. Im / abs R1 * 127.0);
+	         end;
+	      end loop;
+	   end Process_Token;
+	begin
 --
 --	here we start the task body
-	Object. running		:= true;
-	Object. fineCorrector	:= 0;
-	Object. sLevel		:= 0.0;
-	Object. f2Correction	:= true;
+	   Object. Running		:= true;
+	   Object. Fine_Corrector	:= 0;
+	   Object. Signal_Level	:= 0.0;
+	   Object. Correction_Flag	:= true;
 
 --	Initing, to get a decent value for sLevel
-	for i in 0 .. 20 loop
-	   declare
-	      dummy_buf : Ts_sizedBuffer;
-	   begin
-	      Object. getSamples (dummy_buf, 0);
-	   end;
-	end loop;
+	   for I in 0 .. 20 loop
+	      declare
+	         Dummy_Buf : Ts_Sized_Buffer;
+	      begin
+	         Object. Get_Samples (Dummy_Buf, 0);
+	      end;
+	   end loop;
 --
 --	This is then the main loop, implemented using goto's
 --	when we are really out of sync, we will be here
 <<notSynced>>
-	syncBufferIndex		:= 0;
-	Object. currentStrength		:= 0.0;
-	for i in 0 .. 50 loop
-	   declare
-	      sample : complexArray (0 .. 0);
-	   begin
-	      Object. getSamples (sample, 0);
-	      envBuffer (syncBufferIndex)	:= abs sample (0);
-	      Object. currentStrength		:=
-	                        Object. currentStrength + abs sample (0);
-	      syncBufferIndex		:= syncBufferIndex + 1;
-	   end;
-	end loop;
+	   Syncbuffer_Index	:= 0;
+	   Object. Current_Strength	:= 0.0;
+	   for I in 0 .. 50 loop
+	      declare
+	         Sample : complexArray (0 .. 0);
+	      begin
+	         Object. Get_Samples (Sample, 0);
+	         Env_Buffer (Syncbuffer_Index)	:= abs Sample (0);
+	         Object. Current_Strength		:=
+	                           Object. Current_Strength + abs Sample (0);
+	         Syncbuffer_Index		:= Syncbuffer_Index + 1;
+	      end;
+	   end loop;
 
 --	We now have initial values for currentStrength (i.e. the sum
 --	over the last 50 samples) and sLevel, the long term average.
 
 <<SyncOnNull>>
 --	here we start looking for the null level, i.e. a dip
-	counter		:= 0;
+	   Counter		:= 0;
 
-	while Object. currentStrength / 50.0 > 0.40 *  Object. sLevel loop
-	   declare
-	      sample : complexArray (0 .. 0);
-	   begin
-	      Object. getSamples (sample,
-	                          Object. coarseCorrector +
-	                                   Object. fineCorrector);
-	      envBuffer (syncBufferIndex) := abs sample (0);
-	      Object. currentStrength	:=  Object. currentStrength +
-	                                    abs sample (0) -
-	                                    envBuffer (syncBufferIndex - 50);
-	      syncBufferIndex	:= syncBufferIndex + 1;
-	      counter		:= counter + 1;
-	      if counter > 3 * Ts	-- hopeless
-	      then
-	         goto notSynced;
-	      end if;
-	   end;
-	end loop;
+	   while Object. Current_Strength / 50.0 > 0.40 * Object. Signal_Level loop
+	      declare
+	         Sample: complexArray (0 .. 0);
+	      begin
+	         Object. Get_Samples (sample,
+	                              Object. Coarse_Corrector +
+	                                      Object. Fine_Corrector);
+	         Env_Buffer (Syncbuffer_Index) := abs Sample (0);
+	         Object. Current_Strength	:=  Object. Current_Strength +
+	                                       abs Sample (0) -
+	                                       Env_Buffer (Syncbuffer_Index - 50);
+	         Syncbuffer_Index	:= Syncbuffer_Index + 1;
+	         Counter		:= Counter + 1;
+	         if Counter > 3 * Ts then	-- hopeless
+	            goto notSynced;
+	         end if;
+	      end;
+	   end loop;
 --
 --	It seems we just passed the start of a null period,
 --	now start looking for the end of the null period.
 <<SyncOnEndNull>>
 
-	counter	:= 0;
-	while Object. currentStrength / 50.0 < 0.75 * Object. sLevel loop
-	   declare
-	      sample	: complexArray (0 .. 0);
-	   begin
-	      Object. getSamples (sample,
-	                          Object. coarseCorrector +
-	                                       Object. fineCorrector);
-	      envBuffer (syncBufferIndex) := abs sample (0);
+	   counter	:= 0;
+	   while Object. Current_Strength / 50.0 < 0.75 * Object. Signal_Level loop
+	      declare
+	         Sample	: complexArray (0 .. 0);
+	      begin
+	         Object. Get_Samples (Sample,
+	                              Object. Coarse_Corrector +
+	                                          Object. Fine_Corrector);
+	         Env_Buffer (Syncbuffer_Index) := abs Sample (0);
 --	update 
-	      Object. currentStrength :=  Object. currentStrength +
-	                                  envBuffer (syncBufferIndex) -
-	                                  envBuffer (syncBufferIndex - 50);
-	      syncBufferIndex := syncBufferIndex + 1;
-	      counter	 := counter + 1;
-	      if counter >  Tnull -- hopeless
-	      then
-	         goto notSynced;
-	      end if;
-	   end;
-	end loop;
+	         Object. Current_Strength :=  Object. Current_Strength +
+	                                      Env_Buffer (Syncbuffer_Index) -
+	                                      Env_Buffer (Syncbuffer_Index - 50);
+	         Syncbuffer_Index := Syncbuffer_Index + 1;
+	         Counter	 := Counter + 1;
+	         if Counter >  Tnull then	-- hopeless 
+	            goto notSynced;
+	         end if;
+	      end;
+	   end loop;
 
 --	The end of the null is period identified, it ends probably about 40 
 --	or 50 samples earlier
@@ -419,129 +411,121 @@ begin
 --	When in "sync", i.e. pretty sure that we know were we are,
 --	we skip the "dip" identification and come here right away.
 --
---	read in Tu samples and look for the startIndex
-	Object. getSamples (referenceVector,
-	                       Object. coarseCorrector + Object. fineCorrector);
-	startIndex :=  Object. my_phaseSynchronizer.
-	                              findIndex (referenceVector, 3);
-	if startIndex < 0		-- no sync, try again
-	then
-	   goto notSynced;
-	end if;
+--	Read in Tu samples and look for the startIndex
+	   Object. Get_Samples (Reference_Vector,
+	                        Object. Coarse_Corrector + Object. Fine_Corrector);
+	   Start_Index :=  Object. My_Phasesynchronizer.
+	                                 Find_Index (Reference_Vector, 3);
+	   if Start_Index < 0 then		-- no sync, try again
+	      goto notSynced;
+	   end if;
 
 --	we have the start,  move the segment to the
 --	beginning of the referenceVector and
 --	read in the samples from "block 0"
-	referenceVector (0 .. Tu - startIndex - 1) :=
-	                referenceVector (startIndex .. Tu - 1);
-	if startIndex > 0
-	then
-	   Object. getSamples (referenceVector (Tu - startIndex .. Tu - 1),
-	                       Object. coarseCorrector +
-	                                     Object. fineCorrector);
-	end if;
+	   Reference_Vector (0 .. Tu - Start_Index - 1) :=
+	                   Reference_Vector (Start_Index .. Tu - 1);
+	   if Start_Index > 0 then
+	      Object. Get_Samples (Reference_Vector (Tu - Start_Index .. Tu - 1),
+	                           Object. Coarse_Corrector +
+	                                        Object. Fine_Corrector);
+	   end if;
 
 --	we  now have the contents of block 0 and
 --	set the reference vector
-	Object. ofdm_fft. do_FFT (referenceVector' Address);
+	   Object. Ofdm_fft. do_FFT (Reference_Vector);
 
 --	here we look only at computing a coarse offset when needed
 --	first check 
-	if not Object. f2Correction
-	then
-	   Object. f2Correction	:= not fic_handler. syncReached;
-	end if;
-	if Object. f2Correction
-	then
-	   declare
-	      correction : Integer := computeOffset (referenceVector);
-	   begin
+	   if not Object. Correction_Flag then
+	      Object. Correction_Flag	:= not fic_handler. Sync_Reached;
+	   end if;
+	   if Object. Correction_Flag then
+	      declare
+	         Correction_Value : Integer := Compute_Offset (Reference_Vector);
+	      begin
 --
-	      if correction = 0
-	               and then previous_1 = 0
-	               and then previous_1 = previous_2
-	      then
-	         Object.f2Correction	:= false;
-	      elsif correction /= 100
-	      then
-	         Object. coarseCorrector :=  Object. coarseCorrector +
-	                                     correction *
-	                                       Object. carrierDiff;
-	         if abs Object. coarseCorrector > kHz (35)
-	         then
-	            Object. coarseCorrector	:= 0;
+	         if Correction_Value = 0
+	                  and then Previous_1 = 0
+	                  and then Previous_1 = Previous_2 then
+	            Object. Correction_Flag	:= false;
+	         elsif Correction_Value /= 100 then
+	            Object. Coarse_Corrector := Object. Coarse_Corrector +
+	                                        Correction_Value *
+	                                        Object. Carrier_Diff;
+	            if abs Object. Coarse_Corrector > kHz (35) then
+	               Object. Coarse_Corrector	:= 0;
+	            end if;
+	            Previous_2		:= Previous_1;
+	            Previous_1		:= Correction_Value;
 	         end if;
-	         previous_2		:= previous_1;
-	         previous_1		:= correction;
-	      end if;
-	   end;
-	end if;
+	      end;
+	   end if;
 --
 --	Here we really start processing the data
-	FreqCorr	:= (0.0, 0.0);
+	   Freq_Corr	:= (0.0, 0.0);
 --
 --	blocks 2, 3 and 4 contain the FIC data
-	for symbolCount in 2 .. 4 loop
-	   Object. getSamples (ofdmBuffer,
-	                    Object. coarseCorrector + Object. fineCorrector);
-	   for i in 0 .. Tg - 1 loop
-	      FreqCorr := FreqCorr +
-	                       conj (ofdmBuffer (i)) * ofdmBuffer (Tu + i);
+	   for Symbolcount in 2 .. 4 loop
+	      Object. Get_Samples (Ofdm_Buffer,
+	                       Object. Coarse_Corrector + Object. Fine_Corrector);
+	      for I in 0 .. Tg - 1 loop
+	         Freq_Corr := Freq_Corr +
+	                          conj (Ofdm_Buffer (I)) * Ofdm_Buffer (Tu + I);
+	      end loop;
+	      
+	      Process_Token (Ofdm_Buffer (Tg .. Ts - 1), Ibits, Symbolcount);
+	      fic_handler.  process_ficBlock (Ibits, Symbolcount);
 	   end loop;
-	   
-	   processToken (ofdmBuffer (Tg .. Ts - 1), ibits, symbolCount);
-	   fic_handler.  process_ficBlock (ibits, symbolCount);
-	end loop;
 --
 --	the others the MSC data
-	for symbolCount in 5 .. Object. L_mode loop
-	   Object. getSamples (ofdmBuffer,
-	                     Object. coarseCorrector + Object. fineCorrector);
-	   for i in 0 .. Tg - 1 loop
-	      FreqCorr := FreqCorr +
-	                     conj (ofdmBuffer (i)) * ofdmBuffer (Tu + i);
+	   for Symbolcount in 5 .. Object. L_mode loop
+	      Object. Get_Samples (Ofdm_Buffer,
+	                           Object. Coarse_Corrector +
+	                                        Object. fine_Corrector);
+	      for I in 0 .. Tg - 1 loop
+	         Freq_Corr := Freq_Corr +
+	                        conj (Ofdm_Buffer (I)) * Ofdm_Buffer (Tu + I);
+	      end loop;
+	      Process_Token (Ofdm_Buffer (Tg .. Ts - 1), Ibits, Symbolcount);
+	      msc_handler.  process_mscBlock (Ibits, Symbolcount);
 	   end loop;
-	   processToken (ofdmBuffer (Tg .. Ts - 1), ibits, symbolCount);
-	   msc_handler.  process_mscBlock (ibits, symbolCount);
-	end loop;
 
 <<NewOffset>>
 --	we integrate the newly found frequency error with the
---	existing frequency error.
-	Object. fineCorrector :=  Object. fineCorrector +
-	                       Integer (0.1 * arg (FreqCorr) / M_PI *
-	                          float (Object. carrierDiff) / 2.0);
+--	existing frequency offset
+	   Object. Fine_Corrector :=  Object. Fine_Corrector +
+	                              integer (0.1 * arg (Freq_Corr) / M_PI *
+	                                     float (Object. Carrier_diff) / 2.0);
 
 --	OK,  here we are at the end of the frame
 --	we assume everything went well and skip T_null samples
 
-	Object. getSamples (null_Buffer, 
-	                     Object. coarseCorrector + Object. fineCorrector);
-	syncBufferIndex	:= 0;
+	   Object. Get_Samples (Null_Buffer, 
+	                        Object. Coarse_Corrector + Object. Fine_Corrector);
+	   Syncbuffer_Index	:= 0;
 
 --	Here we just check the validity of the fineCorrector
 
-	if Object. fineCorrector >  Object. carrierDiff / 2
-        then
-	   Object. coarseCorrector := 
-	                    Object. coarseCorrector +  Object. carrierDiff;
-	   Object. fineCorrector   :=
-	                    Object. fineCorrector - Object. carrierDiff;
-	elsif Object. fineCorrector < - Object. carrierDiff / 2
-        then
-	   Object. coarseCorrector :=
-	                    Object. coarseCorrector - Object. carrierDiff;
-	   Object. fineCorrector   :=
-	                    Object. fineCorrector + Object. carrierDiff;
-	end if;
+	   if Object. Fine_Corrector >  Object. Carrier_diff / 2 then
+	      Object. Coarse_Corrector := 
+	                       Object. Coarse_Corrector +  Object. Carrier_Diff;
+	      Object. Fine_Corrector   :=
+	                       Object. Fine_Corrector - Object. Carrier_Diff;
+	   elsif Object. Fine_Corrector < - Object. Carrier_Diff / 2 then
+	      Object. Coarse_Corrector :=
+	                       Object. Coarse_Corrector - Object. Carrier_Diff;
+	      Object. Fine_Corrector   :=
+	                       Object. Fine_Corrector + Object. Carrier_Diff;
+	   end if;
 <<ReadyForNewFrame>>
-	goto SyncOnPhase;
+	   goto SyncOnPhase;
 
 	exception
 	   when exit_ofdmProcessing	=> put ("normal termination"); New_Line (1);
 	   when Error: others		=> Put ("Exception in ofdmProcessor: ");
-	                                    Put_Line (Exception_Name (Error));
-end ofdmWorker;
+	                                   Put_Line (Exception_Name (Error));
+	end Ofdm_Worker;
 
-end ofdm_handler;
+end Ofdm_Handler;
 

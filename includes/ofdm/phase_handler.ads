@@ -19,27 +19,29 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 
-with header; use header;
+with header;	use header;
 with Ada. Finalization;
 with fft_handler;
 with phasetable; use phasetable;
-package phase_handler is
-	type phaseSynchronizer (mode: dabMode) is new
+
+package Phase_Handler is
+	type Phase_Synchronizer (Mode: Dabmode) is new
 	               Ada. Finalization. Controlled with private;
-	type phaseSynchronizer_P is access all phaseSynchronizer;
-	function findIndex (Object: in out phaseSynchronizer;
-	                    v: complexArray; threshold: integer) return integer;
+	type Phase_Synchronizer_P is access all Phase_Synchronizer;
+	function Find_Index (Object:	in out Phase_Synchronizer;
+	                     v:		complexArray;
+	                     Threshold:	integer) return integer;
 private
-	type phaseSynchronizer (mode: dabMode) is new
+	type Phase_Synchronizer (Mode: Dabmode) is new
 	               Ada. Finalization. Controlled with 
 	record
-	   Tu		: Integer;
-	   K		: Integer;
-	   refTable	: complexArray_P;
-	   forward_fft	: fft_handler. fft_P;
-	   backward_fft	: fft_handler. fft_P;
+	   Tu		: integer;
+	   K		: integer;
+	   Ref_Table	: complexArray_P;
+	   Forward_fft	: fft_handler. FFT_Processor_P;
+	   Backward_fft	: fft_handler. FFT_Processor_P;
 	end record;
-	procedure	Initialize	(Object: in out phaseSynchronizer);
-	procedure	Finalize	(Object: in out phaseSynchronizer);
-end phase_handler;
+	procedure	Initialize	(Object: in out Phase_Synchronizer);
+	procedure	Finalize	(Object: in out Phase_Synchronizer);
+end Phase_Handler;
 

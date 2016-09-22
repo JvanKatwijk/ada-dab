@@ -30,79 +30,79 @@ with Gtk.Label;		use Gtk.Label;
 with Gtk.Combo_Box;	use Gtk. Combo_Box;
 with Gtk.Combo_Box_Text;	use Gtk. Combo_Box_Text;
 with header; use header;
-package  channel_handler is
 
-procedure	setupChannels (channelSelector: Gtk_Combo_Box_Text;
-	                       band: dabBand);
-function	set_channelSelect (s : String) return Integer;
+package  Channel_Handler is
+
+	procedure Setup_Channels (Channel_Selector: Gtk_Combo_Box_Text;
+	                          Selected_Band: Dabband);
+	function  Set_Channelselect (S: String) return Integer;
 
 private
-   theBand	: dabBand;
-   type dabFrequency is
-   record 
-	key	: String (1 .. 3);
-	Freq	: Integer;
-   end record;
+	Our_Band:	Dabband;
+	type Dab_Frequency is record 
+	   Key:		String (1 .. 3);
+	   Frequency:	Integer;
+	end record;
 
-type channelTable is array (Integer range <>) of dabFrequency;
-BandIII_channels: constant channelTable := (
-	(" 5A",	174928),
-	(" 5B",	176640),
-	(" 5C",	178352),
-	(" 5D",	180064),
-	(" 6A",	181936),
-	(" 6B",	183648),
-	(" 6C",	185360),
-	(" 6D",	187072),
-	(" 7A",	188928),
-	(" 7B",	190640),
-	(" 7C",	192352),
-	(" 7D",	194064),
-	(" 8A",	195936),
-	(" 8B",	197648),
-	(" 8C",	199360),
-	(" 8D",	201072),
-	(" 9A",	202928),
-	(" 9B",	204640),
-	(" 9C",	206352),
-	(" 9D",	208064),
-	("10A",	209936),
-	("10B", 211648),
-	("10C", 213360),
-	("10D", 215072),
-	("11A", 216928),
-	("11B",	218640),
-	("11C",	220352),
-	("11D",	222064),
-	("12A",	223936),
-	("12B",	225648),
-	("12C",	227360),
-	("12D",	229072),
-	("13A",	230748),
-	("13B",	232496),
-	("13C",	234208),
-	("13D",	235776),
-	("13E",	237488),
-	("13F",	239200)
+	type Channeltable is array (Integer range <>) of Dab_Frequency;
+	BandIII_Channels: constant Channeltable := (
+	   (" 5A", 174928),
+	   (" 5B", 176640),
+	   (" 5C", 178352),
+	   (" 5D", 180064),
+	   (" 6A", 181936),
+	   (" 6B", 183648),
+	   (" 6C", 185360),
+	   (" 6D", 187072),
+	   (" 7A", 188928),
+	   (" 7B", 190640),
+	   (" 7C", 192352),
+	   (" 7D", 194064),
+	   (" 8A", 195936),
+	   (" 8B", 197648),
+	   (" 8C", 199360),
+	   (" 8D", 201072),
+	   (" 9A", 202928),
+	   (" 9B", 204640),
+	   (" 9C", 206352),
+	   (" 9D", 208064),
+	   ("10A", 209936),
+	   ("10B", 211648),
+	   ("10C", 213360),
+	   ("10D", 215072),
+	   ("11A", 216928),
+	   ("11B", 218640),
+	   ("11C", 220352),
+	   ("11D", 222064),
+	   ("12A", 223936),
+	   ("12B", 225648),
+	   ("12C", 227360),
+	   ("12D", 229072),
+	   ("13A", 230748),
+	   ("13B", 232496),
+	   ("13C", 234208),
+	   ("13D", 235776),
+	   ("13E", 237488),
+	   ("13F", 239200)
 );
 
-L_Band_channels : channelTable := (
-	(" LA", 1452960),
-	(" LB", 1454672),
-	(" LC", 1456384),
-	(" LD", 1458096),
-	(" LE", 1459808),
-	(" LF", 1461520),
-	(" LG", 1463232),
-	(" LH", 1464944),
-	(" LI", 1466656),
-	(" LJ", 1468368),
-	(" LK", 1470080),
-	(" LL", 1471792),
-	(" LM", 1473504),
-	(" LN", 1475216),
-	(" LO", 1476928),
-	(" LP", 1478640)
+	L_Band_Channels : Channeltable := (
+	   (" LA", 1452960),
+	   (" LB", 1454672),
+	   (" LC", 1456384),
+	   (" LD", 1458096),
+	   (" LE", 1459808),
+	   (" LF", 1461520),
+	   (" LG", 1463232),
+	   (" LH", 1464944),
+	   (" LI", 1466656),
+	   (" LJ", 1468368),
+	   (" LK", 1470080),
+	   (" LL", 1471792),
+	   (" LM", 1473504),
+	   (" LN", 1475216),
+	   (" LO", 1476928),
+	   (" LP", 1478640)
 );
-end channel_handler;
+end Channel_Handler;
 

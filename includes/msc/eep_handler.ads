@@ -20,30 +20,30 @@
 --
 -- 	The deconvolution for eep
 --
-with header; use header;
+with header;		 use header;
 with protection_handler; use protection_handler;
-with Interfaces; use Interfaces;
-with viterbi_handler; use viterbi_handler;
-package eep_handler is
+with Interfaces;	 use Interfaces;
+with viterbi_handler;    use viterbi_handler;
 
-   type eepProcessor  is new protectionProcessor with private; 
-   type eepProcessor_P is access all eepProcessor;
-   Overriding
-   procedure deconvolve (Object		: in out eepProcessor;
-	                 inBuffer	: shortArray;
-	                 outBuffer	: out byteArray);
+package eep_handler is
+	type eepProcessor is new protectionProcessor with private; 
+	type eepProcessor_P is access all eepProcessor;
+	Overriding
+	   procedure deconvolve (Object:    in out eepProcessor;
+	                         inBuffer:  shortArray;
+	                         outBuffer: out byteArray);
 private
-   procedure Initialize	(Object: in out eepProcessor);
-   procedure Finalize	(Object: in out eepProcessor);
-   type eepProcessor  is new protectionProcessor with 
-	record 
-	   outSize		: short_Integer;
-	   viterbi		: viterbiProcessor_P;
-	   viterbiBlock		: shortArray_P;
-	   L1			: short_Integer;
-	   L2			: short_Integer;
-	   PI1_Index		: short_Integer;
-	   PI2_Index		: short_Integer;
-	end record;
+	procedure Initialize   (Object: in out eepProcessor);
+	procedure Finalize     (Object: in out eepProcessor);
+	type eepProcessor is new protectionProcessor with 
+	   record 
+	      outSize:      short_Integer;
+	      viterbi:      Viterbi_Processor_P;
+	      viterbiBlock: shortArray_P;
+	      L1:           short_Integer;
+	      L2:           short_Integer;
+	      PI1_Index:    short_Integer;
+	      PI2_Index:    short_Integer;
+	   end record;
 end eep_handler;
 

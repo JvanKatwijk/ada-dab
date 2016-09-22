@@ -43,7 +43,7 @@ private
 	type uepProcessor is                        new protectionProcessor with 
 	record 
 	   outSize		: short_Integer;
-	   viterbi		: viterbiProcessor_P;
+	   viterbi		: Viterbi_Processor_P;
 	   viterbiBlock		: shortArray_P;
 	   L1			: short_Integer;
 	   L2			: short_Integer;

@@ -20,12 +20,12 @@
 --
 with header; use header;
 package fic_handler is
-	procedure	process_ficBlock (data	: shortArray;
-	                                  blkno	: Integer);
-	procedure	set_bitsperBlock (mode: dabMode);
-	procedure	stop;
-	procedure	reset;
-	procedure	dataforAudioService (s: String; d: out audioData);
-	function syncReached return Boolean;
+	procedure	Process_Ficblock (Data	: shortArray;
+	                                  Blkno	: Integer);
+	procedure	Set_BitsperBlock (mode: dabMode);
+	procedure	Stop;
+	procedure	Reset;
+	procedure	Data_for_Audioservice (S: String; D: out audioData);
+	function	Sync_Reached return Boolean;
 end fic_handler;
 

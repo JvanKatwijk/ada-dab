@@ -18,54 +18,40 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with channel_handler;
 package body channel_handler is
-procedure setupChannels (channelSelector: Gtk_Combo_Box_Text;
-	                 band: dabBand)  is
+	procedure Setup_Channels (Channel_Selector: Gtk_Combo_Box_Text;
+	                          Selected_Band:    dabBand)  is
+	begin
+	   if Selected_Band = BAND_III then
+	      for I in BandIII_Channels' range loop
+	         Channel_Selector. Prepend_Text (bandIII_Channels (I). Key);
+	      end loop;
+	      Our_Band	:= BAND_III;
+	   else
+	      for I in L_Band_Channels' range loop
+	         Channel_Selector. Prepend_Text (L_Band_Channels (I). Key);
+	      end loop;
+	      Our_Band	:= L_Band;
+	   end if;
+	end Setup_Channels;
 
-begin
-	if band = BAND_III
-	then
-	   for i in BandIII_channels' range loop
-	      declare
-	         freq: Integer := BandIII_channels (i). Freq;
-	      begin
-	         channelSelector. Prepend_Text (bandIII_channels (i). key);
-	      end ;
-	   end loop;
-	   theBand	:= BAND_III;
-	else
-	   for i in L_Band_channels' range loop
-	      declare
-	         freq: Integer := L_Band_channels (i). Freq;
-	      begin
-	         channelSelector. Append_Text (L_Band_channels (i). key);
-	      end ;
-	   end loop;
-	   theBand	:= L_Band;
-	end if;
-end setupChannels;
-
-function	set_channelSelect (s : String) return Integer is
-begin
-	if theBand = BAND_III
-	then
-	   for i in BandIII_channels' range loop
-	      if BandIII_channels (i). key = s
-	      then
-	         return BandIII_channels (i). Freq;
-	      end if;
-	   end loop;
-	   return 0;
-	else
-	   for i in L_Band_channels' range loop
-	      if L_Band_channels (i). key = s
-	      then
-	         return L_Band_channels (i). Freq;
-	      end if;
-	   end loop;
-	   return 0;
-	end if;
-end set_channelSelect;
-end channel_handler;
+	function Set_Channelselect (S : String) return Integer is
+	begin
+	   if Our_Band = BAND_III then
+	      for I in BandIII_Channels' range loop
+	         if BandIII_Channels (I). key = S then
+	            return BandIII_Channels (I). Frequency;
+	         end if;
+	      end loop;
+	      return 0;
+	   else
+	      for i in L_Band_Channels' range loop
+	         if L_Band_Channels (I). key = S then
+	            return L_Band_Channels (I). Frequency;
+	         end if;
+	      end loop;
+	      return 0;
+	   end if;
+	end Set_Channelselect;
+end Channel_Handler;
 

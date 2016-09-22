@@ -40,7 +40,6 @@ package ringbuffer is
 	                             amount: out Integer);
 --
 private
-	function g (s : Integer) return Integer;
 	type ringbuffer_data (bufferSize: Integer) is new
 	                          Ada. Finalization. Controlled with 
 	record

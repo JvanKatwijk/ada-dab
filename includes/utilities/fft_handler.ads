@@ -19,23 +19,25 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 --
-with header; use header;
-with Interfaces; use Interfaces;
+with header;		use header;
+with Interfaces;	use Interfaces;
+with Interfaces. C;	use Interfaces. C;
 with Ada. Finalization;
-with Interfaces. C; use Interfaces. C;
 with system;
-package fft_handler is
-	type fft (mode: fftMode; size : Integer) is new
-	                      Ada. Finalization. Controlled with private;
-	type fft_P	is access all fft;
-	procedure do_FFT (Object: in out fft; vector: System. Address);
+
+package FFT_Handler is
+	type FFT_Processor (Mode: fftMode; Size : Integer) is new
+	                         Ada. Finalization. Controlled with private;
+	type FFT_Processor_P	is access all FFT_Processor;
+	procedure do_FFT (Object: in out FFT_Processor;
+	                             Vector: in out complexArray);
 private
-	type fft (mode: fftMode; size : Integer) is new
+	type FFT_Processor (Mode: fftMode; size : Integer) is new
 	                      Ada. Finalization. Controlled with 
 	record
-	   field	: System. Address;
+	   Field	: System. Address;
 	end record;
-	procedure initialize (Object : in out fft);
-	procedure finalize   (Object : in out fft);
-end fft_handler;
+	procedure Initialize (Object : in out FFT_Processor);
+	procedure Finalize   (Object : in out FFT_Processor);
+end FFT_Handler;
 

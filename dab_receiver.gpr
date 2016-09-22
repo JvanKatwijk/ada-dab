@@ -21,7 +21,7 @@ package Compiler is
 	   when "Normal"	=>
 	      for Default_Switches ("Ada") use ("-pg");
 	   when "Fast"		=>
-	      for Default_Switches ("Ada") use ("-gnatpn");
+	      for Default_Switches ("Ada") use ("-gnatpn", "-gnatyl");
 	end case;
 end Compiler;
 package Linker is

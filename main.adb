@@ -21,20 +21,20 @@
 --
 with System;
 with Gtk.Main;
-with gui; use gui;
-with header; use header;
-with channel_handler; use channel_handler;
+with Gui_Handler;	use Gui_Handler;
+with header;		use header;
+with channel_handler;	use channel_handler;
 with ofdm_handler;
-with fib_handler; use fib_handler;
+with fib_handler;	use fib_handler;
 with fic_handler;
 with msc_handler;
-with Text_IO; use Text_IO;
+with Text_IO;		use Text_IO;
 with GNAT. Command_Line; use GNAT. Command_Line;
 procedure main is
-	theMode		: dabMode	:= Mode_1;	-- default
-	theBand		: dabBand	:= BAND_III;	-- default;
-	res		: Boolean;
-	package myDevice renames gui. myDevice;
+	The_Mode	: Dabmode	:= Mode_1;	-- default
+	The_Band	: Dabband	:= BAND_III;	-- default;
+	Result		: Boolean;
+	package My_Device renames Gui_Handler. My_Device;
 begin
 --
 --	we allow 2 command line parameters to be set, mode and band
@@ -54,27 +54,27 @@ begin
 	   setup_GUI;
 --
 --	the channel_handler, for the selected band
-	   channel_handler. setupChannels (channelSelector, theBand);
+	   Channel_Handler. Setup_Channels (Channel_Selector, The_Band);
 --	Now setting up the engine
 	   fib_handler. reset;
-	   fic_handler. set_bitsperBlock	(theMode);	-- basically: init
-	   msc_handler. set_Mode		(theMode);
+	   fic_handler. set_bitsperBlock (The_Mode);	-- basically: init
+	   msc_handler. set_Mode	 (The_Mode);
 --
 --	start the device, ....
 --	and the "processor".
-	   myDevice. restartReader (res);
-	   if not res
-	   then
+	   My_Device. Restart_Reader (Result);
+	   if not Result then
 	      put_line ("Could not open input device");
 	      return;
 	   end if;
-	   myDevice. setupGainTable (gainSelector);
+	   My_Device. Setup_Gaintable (Gain_Selector);
 --
 --	and off we go
-	   my_P		:= new ofdm_handler. ofdmProcessor (theMode,
-	                                                    myDevice. getSamples' Access,
-	                                                    myDevice. Samples' Access);
-	   my_P. start (my_P);
+	   my_P		:= new Ofdm_Handler.
+	                          Ofdm_Processor (The_Mode,
+	                                          My_Device. Get_Samples' Access,
+	                                          My_Device. Available_Samples' Access);
+	   my_P. Start (my_P);
 	   running	:= true;
 --	Control ends here and waits for an event to occur
 --	(like a key press or a mouse event),

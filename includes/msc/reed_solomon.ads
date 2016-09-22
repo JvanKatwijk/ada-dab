@@ -20,34 +20,34 @@
 with header; use header;
 with galois;
 generic
-	symsize	: in short_Integer;
-	gfPoly	: in short_Integer;
-	fcr	: in short_Integer;
-	prim	: in short_Integer;
-	nroots	: in short_Integer;
+	symsize:  short_Integer;
+	gfPoly:   short_Integer;
+	fcr:      short_Integer;
+	prim:     short_Integer;
+	nroots:   short_Integer;
 package reed_solomon is
 
-procedure	encode_rs (data		: byteArray;
-	                   cutLen	: short_Integer;
-	                   result	: out byteArray);
-procedure	decode_rs (data		: byteArray;
-	                   cutLen	: short_Integer;
-	                   result	: out byteArray;
-	                   corrs	: out short_Integer);
+	procedure encode_rs (data:    byteArray;
+	                     cutLen:  short_Integer;
+	                     result:  out byteArray);
+	procedure decode_rs (data:    byteArray;
+	                     cutLen:  short_Integer;
+	                     result:  out byteArray;
+	                     corrs:   out short_Integer);
 private
-type rsArray	is Array (short_Integer Range <>) of short_Integer;
-subtype nrootsArray is rsArray (0 .. nroots);
-procedure	enc	(data		: rsArray;
-	                 parityBytes	: out rsArray);
-procedure	dec	(data		: in out rsArray;
-	                 corrs		: out  short_Integer);
+	type rsArray is Array (short_Integer Range <>) of short_Integer;
+	subtype nrootsArray is rsArray (0 .. nroots);
+	procedure enc   (data:        rsArray;
+	                 parityBytes: out rsArray);
+	procedure dec	(data:        in out rsArray;
+	                 corrs:       out short_Integer);
 
-package myGalois is new galois (symsize, gfPoly);
-use myGalois;
-Generator	: nrootsArray	:= (Others	=> 0);
-codeLength	: short;
-iprim		: short;
-index		: short;
-root		: short;
+	package myGalois is new galois (symsize, gfPoly);
+	use myGalois;
+	Generator:       nrootsArray := (Others	=> 0);
+	codeLength:      short_Integer;
+	iprim:           short_Integer;
+	index:           short_Integer;
+	root:            short_Integer;
 end reed_solomon;
 

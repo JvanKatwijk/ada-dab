@@ -20,18 +20,18 @@
 --
 -- 	The deconvolution for both uep and eep
 --
-with protection_handler;
-with header; use header;
+with header;	use header;
 with prottables; use prottables;
-with Text_IO; use Text_IO;
+with Text_IO;	use Text_IO;
+
 package body protection_handler is
 
-procedure deconvolve	(Object		: in out protectionProcessor;
-	                 inBuffer	: shortArray;
-	                 outBuffer	: out byteArray) is
-begin
-	null;
-end deconvolve;
+	procedure deconvolve (Object:     in out protectionProcessor;
+	                      inBuffer:   shortArray;
+	                      outBuffer:  out byteArray) is
+	begin
+	   null;
+	end deconvolve;
 
 end protection_handler;
 

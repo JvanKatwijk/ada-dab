@@ -18,57 +18,59 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with header; use header;
+with header;	use header;
 with Ada. Finalization;
 with Ada. Unchecked_Deallocation;
 with phase_handler;
 with fft_handler;
 with freq_interleaver;
-package ofdm_handler is
-	type ofdmProcessor (mode		: dabMode;
-	                    fetchSamples	: getSamples_access;
-	                    Samples_amount	: Samples_access) is new
-	                    Ada. Finalization. Controlled with private;
-	type ofdmProcessor_P is access all ofdmProcessor;
-	procedure start (Object: in out ofdmProcessor; env : ofdmProcessor_P);
-	procedure reset (Object: in out ofdmProcessor);
-	procedure stop  (Object: in out ofdmProcessor);
-	function is_stopped (Object: ofdmProcessor) return Boolean;
+
+package Ofdm_Handler is
+	type Ofdm_Processor (mode:		 Dabmode;
+	                     Fetch_Samples:	 Get_Samples_Access;
+	                     Available_Samples:	 Available_Samples_Access) is
+	                       new Ada. Finalization. Controlled with private;
+	type Ofdm_Processor_P is access all Ofdm_Processor;
+	procedure start (Object: in out ofdm_Processor; env : ofdm_Processor_P);
+	procedure Reset (Object: in out ofdm_Processor);
+	procedure Stop  (Object: in out ofdm_Processor);
+	function Is_Stopped (Object: Ofdm_Processor) return Boolean;
 private
-	task type ofdmWorker (Object: ofdmProcessor_P);
-	type ofdmWorker_P is access all ofdmWorker;
-	exit_ofdmProcessing	: exception;
-	procedure getSamples (Object	: in out ofdmProcessor;
-	                      outV	: out complexArray;
-	                      phase	: Integer);
-	type ofdmProcessor (mode		: dabMode;
-	                    fetchSamples	: getSamples_access;
-	                    Samples_amount	: Samples_access) is new
-	                    Ada. Finalization. Controlled with record
-	   Tu			: Integer;
-	   Tg			: Integer;
-	   Ts			: Integer;
-	   Tnull		: Integer;
-	   carriers		: Integer;
-	   carrierdiff		: Integer;
-	   L_mode		: Integer;
-	   sampleCounter	: Integer;
-           currentStrength	: Float;
-	   running		: Boolean;
-	   bufferContent	: Integer;
-	   currentPhase		: Integer;
-	   sLevel		: Float;
-	   fineCorrector	: Integer;
-	   coarseCorrector	: Integer;
-	   f2Correction		: Boolean;
-	   tokenLength		: Integer;
-	   theProcessor		: ofdmWorker_P;
-	   my_phaseSynchronizer	: phase_handler. phaseSynchronizer_P;
-	   ofdm_fft		: fft_handler. fft_P;
-	   myMapper		: freq_interleaver. interleaver_P;
-	   oscillatorTable	: complexArray (0 .. inputRate - 1);
-	end record;
-	procedure Initialize	(Object : in out ofdmProcessor);
-	procedure Finalize	(Object : in out ofdmProcessor);
+	task type Ofdm_Worker (Object: Ofdm_Processor_P);
+	type Ofdm_Worker_P is access all Ofdm_Worker;
+	Exit_Ofdmprocessing:	exception;
+	procedure Get_Samples (Object:	in out Ofdm_Processor;
+	                       Out_V:	out complexArray;
+	                       Phase:	Integer);
+	type Ofdm_Processor (Mode:	dabMode;
+	                     Fetch_Samples:	Get_Samples_Access;
+	                     Available_Samples:	Available_Samples_Access) is
+	            new Ada. Finalization. Controlled with
+	   record
+	      Tu:			Integer;
+	      Tg:			Integer;
+	      Ts:			Integer;
+	      Tnull:		Integer;
+	      Carriers:		Integer;
+	      Carrier_Diff:	Integer;
+	      L_Mode:		Integer;
+	      Samplecounter:	Integer;
+	      Current_Strength:	Float;
+	      Running:		Boolean;
+	      Buffer_Content:	Integer;
+	      Current_Phase:	Integer;
+	      Signal_Level:	Float;
+	      Fine_Corrector:	Integer;
+	      Coarse_Corrector:	Integer;
+	      Correction_Flag:	Boolean;
+	      Token_Length:	Integer;
+	      The_Processor:	Ofdm_Worker_P;
+	      My_Phasesynchronizer: phase_handler. Phase_Synchronizer_P;
+	      Ofdm_fft:		fft_handler. FFT_Processor_P;
+	      My_Mapper:		freq_interleaver. interleaver_P;
+	      OscillatorTable:	complexArray (0 .. inputRate - 1);
+	   end record;
+	procedure Initialize	(Object : in out Ofdm_Processor);
+	procedure Finalize	(Object : in out Ofdm_Processor);
 end ofdm_handler;
 

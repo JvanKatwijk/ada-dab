@@ -20,15 +20,15 @@
 --
 with header; use header;
 with Ada. Finalization; use Ada. Finalization;
-package freq_interleaver is
-	type interleaver (mode: dabMode) is new Controlled with private;
-	function mapIn   (Object: interleaver; n : integer) return integer;
-	type interleaver_P is access all interleaver;
+package Freq_Interleaver is
+	type Interleaver (mode: Dabmode) is new Controlled with private;
+	function Map_In   (Object: Interleaver; n: integer) return integer;
+	type Interleaver_P is access all Interleaver;
 private
-	type interleaver (mode: dabMode) is new Ada. Finalization. Controlled with 
+	type Interleaver (mode: Dabmode) is new Controlled with 
 	record
-	   mapperTable:  access intArray;
+	   Mapper_Table:  access intArray;
 	end record;
-	procedure Initialize	(object: in out interleaver);
-	procedure Finalize	(object: in out interleaver);
-end freq_interleaver;
+	procedure Initialize	(Object: in out Interleaver);
+	procedure Finalize	(Object: in out Interleaver);
+end Freq_Interleaver;

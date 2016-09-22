@@ -1,27 +1,39 @@
 with header; use header;
 with Interfaces; use Interfaces;
 generic
-symsize	: in short;
-gfpoly	: in short;
+	Symsize: short_Integer;
+	gfpoly:  short_Integer;
 package Galois is
 
-   function	addPoly		(a:	short; b: short) return short;
-   function	addPower	(a:	short; b: short) return short;
-   function	multiplyPower	(a:	short; b: short) return short;
-   function	multiplyPoly	(a:	short; b: short) return short;
-   function	dividePower	(a:	short; b: short) return short;
-   function	dividePoly	(a:	short; b: short) return short;
-   function	powPoly		(a:	short; n: short) return short;
-   function	powPower	(a:	short; n: short) return short;
-   function	inversePoly	(a:	short) return short;
-   function	inversePower	(a:	short) return short;
-   function	poly2Power	(a:	short) return short;
-   function	power2Poly	(a:	short) return short;
+	function  addPoly  (A: short_Integer; B: short_Integer)
+	                                           return short_Integer;
+	function  addPower (A: short_Integer; B: short_Integer)
+	                                           return short_Integer;
+	function  multiplyPower	(A: short_Integer; b: short_Integer)
+	                                           return short_Integer;
+	function  multiplyPoly	(A: short_Integer; b: short_Integer)
+	                                           return short_Integer;
+	function  dividePower (A: short_Integer; B: short_Integer)
+	                                           return short_Integer;
+	function  dividePoly (A: short_Integer; B: short_Integer)
+	                                           return short_Integer;
+	function  powPoly (A: short_Integer; N: short_Integer)
+	                                           return short_Integer;
+	function  powPower (A: short_Integer; N: short_Integer)
+	                                           return short_Integer;
+	function  inversePoly (A: short_Integer) return short_Integer;
+	function  inversePower (A: short_Integer) return short_Integer;
+	function  poly2Power (A: short_Integer) return short_Integer;
+	function  power2Poly (A: short_Integer) return short_Integer;
 private
-   type galoisArray is array (short_Integer range <>) of short_Integer;
-   codeLength	: short		:= short (Shift_Left (uint16_t (1), Integer (symsize))) - 1;
-   d_q		: short		:= short (Shift_Left (uint16_t (1), Integer (symsize)));
-   alpha_to	: galoisArray (0 .. codeLength);
-   index_of	: galoisArray (0 .. codeLength);
+	type galoisArray is array (short_Integer range <>) of short_Integer;
+	CodeLength:   short_Integer :=
+	                       short_Integer (Shift_Left (uint16_t (1),
+	                                      Integer (symsize))) - 1;
+	d_q:          short_Integer :=
+	                       short_Integer (Shift_Left (uint16_t (1),
+	                                      Integer (symsize)));
+	Alpha_to:     galoisArray (0 .. codeLength);
+	Index_of:     galoisArray (0 .. codeLength);
 end Galois;
 

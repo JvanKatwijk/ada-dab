@@ -22,85 +22,87 @@ with phase_handler;
 with Ada. Unchecked_Deallocation;
 with text_IO; use Text_IO;
 package body phase_handler is
-use complexTypes;
+	use complexTypes;
 
-	procedure Initialize (Object: in out phaseSynchronizer) is
+	procedure Initialize (Object: in out Phase_Synchronizer) is
 	begin
-	   Object.Tu	:= header. T_u (Object. mode);
-	   Object.K	:= header. K   (Object. mode);
-	   Object. refTable := new complexArray (0 .. Object. Tu - 1);
-	   Object. refTable. all := (Others => (0.0, 0.0));
-	   Object. forward_fft	:= new fft_handler. fft (FORWARD, Object. Tu);
-	   Object. backward_fft	:= new fft_handler. fft (BACKWARD, Object. Tu);
+	   Object. Tu	:= header. T_u (Object. Mode);
+	   Object. K	:= header. K   (Object. Mode);
+	   Object. Ref_Table := new complexArray (0 .. Object. Tu - 1);
+	   Object. Ref_Table. all := (Others => (0.0, 0.0));
+	   Object. Forward_fft	:= new fft_handler.
+	                               FFT_Processor (FORWARD, Object. Tu);
+	   Object. Backward_fft	:= new fft_handler.
+	                               FFT_Processor (BACKWARD, Object. Tu);
 	   for i in 1 ..  Object. K / 2 loop
 	      declare
 	         Phi_k : float;
 	      begin
-	         Phi_k		:= phasetable. get_Phi (i, Object. mode);
-	         Object. refTable (i) 	:=
+	         Phi_k		:= Phasetable. get_Phi (i, Object. Mode);
+	         Object. Ref_Table (i) 	:=
 	                        (Math. Cos (Phi_k), Math. Sin (Phi_k));
-                 Phi_k 		:= phasetable. get_Phi (-i, Object. mode);
-                 Object. refTable (Object. Tu - i) :=
+                 Phi_k 		:= Phasetable. get_Phi (-i, Object. mode);
+                 Object. Ref_Table (Object. Tu - i) :=
 	                         (Math. Cos (Phi_k), Math. sin (Phi_k));
 	      end;
 	   end loop;
 	end Initialize;
 
-	procedure Finalize (Object : in out phaseSynchronizer) is
-	   procedure Free_fft is new Ada. Unchecked_Deallocation (
-	                Object	=> fft_handler. fft,
-	                Name	=> fft_handler. fft_P);
+	procedure Finalize (Object : in out Phase_Synchronizer) is
+	   procedure Free_fft is
+	              new Ada. Unchecked_Deallocation (
+	                          Object   => fft_handler. FFT_Processor,
+	                          Name     => fft_handler. FFT_Processor_P);
 	begin
-	   Free_complexArray (Object. refTable);
-	   Free_fft (Object. forward_fft);
-	   Free_fft (Object. backward_fft);
+	   Free_complexArray (Object. Ref_Table);
+	   Free_fft (Object. Forward_fft);
+	   Free_fft (Object. Backward_fft);
 	end Finalize;
 
 --	we will ensure that v'length = Tu
-	function	findIndex (Object : in out phaseSynchronizer;
-	                   v : complexArray; threshold : integer)
-	                                           return integer is
-	resVector	: complexArray (0 .. v' Length - 1) := v;
-	maxIndex	: integer	:= -1;
-	sum		: float		:= 0.0;
-	Max		: float		:= 0.0;
-	Avg		: float		:= 0.0;
-	length		: Integer	:= v' length;
+	function	Find_Index (Object: in out Phase_Synchronizer;
+	                            V: complexArray;
+	                            threshold: integer) return integer is
+	   Res_Vector:	complexArray (0 .. V' Length - 1) := V;
+	   Max_Index:	integer		:= -1;
+	   Sum:		float		:= 0.0;
+	   Max:		float		:= 0.0;
+	   Avg:		float		:= 0.0;
+	   Length:	Integer		:= V' length;
 	begin
-	   Object. forward_fft. do_FFT (resVector' Address);
+	   Object. Forward_fft. do_FFT (Res_Vector);
 --	back into the frequency domain, now correlate
-	   for i in  resVector' range loop
-	      resVector (i) := resVector (i) *
-	                   complexTypes. Conjugate (Object. refTable (i));
+	   for I in Res_Vector' range loop
+	      Res_Vector (I) := Res_Vector (I) *
+	                   complexTypes. Conjugate (Object. Ref_Table (I));
 	   end loop;
 
 --	and, again, back into the time domain
-	   Object. backward_fft. do_FFT (resVector' Address);
+	   Object. Backward_fft. do_FFT (Res_Vector);
 --	normalize and
 --	compute the average signal value ...
-	   for i in resvector' range loop
-	      resvector (i) := (resvector (i). Re  / float (length),
-	                        resvector (i). Im  / float (length));
-	      sum		:= sum + abs resVector (i);
+	   for I in Res_Vector' range loop
+	      Res_Vector (I) := (Res_Vector (I). Re  / float (Length),
+	                         Res_Vector (I). Im  / float (Length));
+	      Sum		:= Sum + abs Res_Vector (i);
 	   end loop;
 --
 	   Max	:= -10000.0;
-	   for i in resVector' range loop
-	      if abs (resVector (i)) > Max
-	      then
-	         maxIndex 	:= i;
-	         Max 	:=  abs resVector (i);
+	   for I in Res_Vector' range loop
+	      if abs (Res_Vector (I)) > Max then
+	         Max_Index 	:= I;
+	         Max 		:= abs Res_Vector (I);
 	      end if;
 	   end loop;
 
-	   Avg	:= sum / float (resVector' length);
+	   Avg	:= Sum / float (Res_Vector' length);
 --  that gives us a basis for defining the threshold
-	   if Max < Avg * float (threshold)
-	   then
---	   put (Max' Image); put_line (Avg' Image);
-	      return  - 1;
+	   if Max < Avg * float (Threshold) then
+--	      put (Max' Image); put_line (Avg' Image);
+	      return -1;
 	   else
-	      return maxIndex;	
+	      return Max_Index;	
 	   end if;
-	end findIndex;
-end phase_handler;
+	end Find_Index;
+end Phase_Handler;
+

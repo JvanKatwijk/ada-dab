@@ -20,19 +20,20 @@
 --
 
 with header; use header;
-package phaseTable is
-	function get_Phi (k : Integer; mode: DabMode) return Float;
+package Phasetable is
+	function Get_Phi (k : Integer; mode: Dabmode) return Float;
 private
-type phasetableElement is record
-	kmin	: Integer;
-	kmax	: Integer;
-	i	: Integer;
-	n	: Integer;
-end record;
+	type Phasetable_Element is
+	   record
+	      Kmin:    Integer;
+	      Kmax:    Integer;
+	      I:       Integer;
+	      N:       Integer;
+	   end record;
 
-type modeTable	is array (Integer range <>) of phasetableElement;
+	type Modetable	is array (Integer range <>) of Phasetable_Element;
 
-modeI_table: constant modeTable := (
+	ModeI_table: constant Modetable := (
         (-768, -737, 0, 1),
         (-736, -705, 1, 2),
         (-704, -673, 2, 0),
@@ -85,7 +86,7 @@ modeI_table: constant modeTable := (
         ( -1000, -1000, 0, 0)
 );
 
-modeII_table: constant modeTable := (
+	ModeII_table: constant Modetable := (
 	(-192,	-161,	0,	2),
 	(-160,	-129,	1,	3),
 	(-128,	-97,	2,	2),
@@ -101,7 +102,7 @@ modeII_table: constant modeTable := (
 	(-1000,	-1000,	0,	0)
 );
 
-modeIV_table: constant modeTable := (
+	ModeIV_table: constant Modetable := (
 	(-384, -353, 0, 0),
 	(-352, -321, 1, 1),
 	(-320, -289, 2, 1),
@@ -129,19 +130,19 @@ modeIV_table: constant modeTable := (
 	(-1000, -1000, 0, 0)
 );
 
-h0:	constant intArray :=
+	H0:	constant intArray :=
                        (0, 2, 0, 0, 0, 0, 1, 1, 2, 0, 0, 0, 2, 2, 1, 1,
                         0, 2, 0, 0, 0, 0, 1, 1, 2, 0, 0, 0, 2, 2, 1, 1);
 
-h1:	constant intArray :=
+	H1:	constant intArray :=
 	               (0, 3, 2, 3, 0, 1, 3, 0, 2, 1, 2, 3, 2, 3, 3, 0,
                         0, 3, 2, 3, 0, 1, 3, 0, 2, 1, 2, 3, 2, 3, 3, 0);
 
-h2:	constant intArray :=
+	H2:	constant intArray :=
 	               (0, 0, 0, 2, 0, 2, 1, 3, 2, 2, 0, 2, 2, 0, 1, 3,
                         0, 0, 0, 2, 0, 2, 1, 3, 2, 2, 0, 2, 2, 0, 1, 3);
 
-h3:	constant intArray :=
+	H3:	constant intArray :=
 	               (0, 1, 2, 1, 0, 3, 3, 2, 2, 3, 2, 1, 2, 1, 3, 2,
                         0, 1, 2, 1, 0, 3, 3, 2, 2, 3, 2, 1, 2, 1, 3, 2);
 

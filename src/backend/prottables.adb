@@ -20,10 +20,10 @@
 --
 with prottables;
 package body prottables is
-function get_PCode (x : short; y : short) return uint8_t is
-begin
+   function get_PCode (x : short; y : short) return uint8_t is
+   begin
 	return P_codes (x, y);
-end get_PCode;
+   end get_PCode;
 end prottables;
 
 

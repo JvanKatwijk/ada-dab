@@ -35,26 +35,28 @@ with ofdm_handler;
 with header; use header;
 --with rtlsdr_wrapper; use rtlsdr_wrapper;
 --with rawfiles; use rawfiles;
---with airspy_wrapper; use airspy_wrapper;
-with sdrplay_wrapper; use sdrplay_wrapper;
+with airspy_wrapper; use airspy_wrapper;
+--with sdrplay_wrapper; use sdrplay_wrapper;
 with Text_IO; use Text_IO;
 with Ada. Unchecked_Deallocation;
 with Gdk.Event;
 
-package gui is
-	function dispatch return boolean;
-	procedure setup_GUI;
-	gainSelector	: Gtk_Combo_Box_Text;
-	channelSelector	: Gtk_Combo_Box_Text;
+package Gui_Handler is
+	function Dispatch return boolean;
+	procedure Setup_GUI;
+--
+--	apart from start/stop, we have two selectors
+	Gain_Selector	: Gtk_Combo_Box_Text;
+	Channel_Selector	: Gtk_Combo_Box_Text;
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 -- to select an input device, uncomment the line for
 --	and the appropriate line "with xxxx"
 --	package myDevice renames rawfiles;
 --	package myDevice renames rtlsdr_wrapper;
---	package myDevice renames airspy_wrapper;
-	package myDevice renames sdrplay_wrapper;
-	my_P		: ofdm_handler. ofdmProcessor_P;
+	package My_Device renames airspy_wrapper;
+--	package myDevice renames sdrplay_wrapper;
+	my_P		: Ofdm_Handler. Ofdm_Processor_P;
 	running		: Boolean	:= false;
 private	
 	dummy		: G_Source_Id;
@@ -80,4 +82,4 @@ private
 	procedure gainSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
 	procedure programSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
 --
-end gui;
+end GUI_Handler;

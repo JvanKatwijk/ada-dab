@@ -18,142 +18,125 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with ringbuffer;
-with Text_IO; use Text_IO;
 package body ringbuffer is
+	procedure Initialize (Object: in out ringbuffer_data) is
+	begin
+	   Object. writeIndex  := 0;
+	   Object. readIndex   := 0;
+	   Object. buffer      := new buffer_data (0 .. Object. bufferSize - 1);
+	end Initialize;
 
-procedure Initialize (Object: in out ringbuffer_data) is
-begin
-	Object. writeIndex	:= 0;
-	Object. readIndex	:= 0;
-	Object. buffer		:= new buffer_data (0 .. Object. bufferSize - 1);
-end Initialize;
+	procedure Finalize (Object: in out ringbuffer_data) is
+	begin
+	   null;
+	end Finalize;
 
-procedure Finalize	(Object: in out ringbuffer_data) is
-begin
-	null;
-end Finalize;
 --	ensure that previous writes are seen before we update the write index 
 --	(write after write)
-procedure AdvanceRingBufferWriteIndex (buffer : in out ringbuffer_data;
-	                               elementCount : Integer) is
-begin
-	WriteMemoryBarrier;
-	buffer. writeIndex := 
+	procedure AdvanceRingBufferWriteIndex (buffer: in out ringbuffer_data;
+	                                       elementCount : Integer) is
+	begin
+	   WriteMemoryBarrier;
+	   buffer. writeIndex := 
 	         (buffer. writeIndex + elementCount) mod buffer. bufferSize;
-end;
+	end AdvanceRingBufferWriteIndex;
 
 --	ensure that previous reads (copies out of the ring buffer) are
 --	always completed before updating (writing) the read index. 
 --	(write-after-read) => full barrier
 
-procedure AdvanceRingBufferReadIndex (buffer : in out ringbuffer_data;
-	                              elementCount : Integer) is
-begin
-	FullMemoryBarrier;
-	buffer. readIndex := 
-	         (buffer. readIndex + elementCount) mod buffer. bufferSize;
-end;
-
-function GetRingBufferReadAvailable (buffer: ringbuffer_data)
-	                                                return Integer is
-writeIndex	: Integer renames buffer. writeIndex;
-readIndex	: Integer renames buffer. readIndex;
-bufferSize	: Integer renames buffer. bufferSize;
-begin
-	FullMemoryBarrier;
-	if (readIndex <= writeIndex)
-	then
-	   return writeIndex - readIndex;
-	else
-	   return bufferSize - readIndex + writeIndex;
-	end if;
-end;
-
-function GetRingBufferWriteAvailable (buffer: ringbuffer_data)
-	                                                return Integer is
-begin
-	return buffer. bufferSize - GetRingBufferReadAvailable (buffer);
-end;
-
-procedure FlushRingBuffer (buffer: in out ringbuffer_data) is
-begin
-	FullMemoryBarrier;
-	buffer. readIndex := 0;
-	buffer. writeIndex := 0;
-end;
-
-procedure putDataIntoBuffer (buffer: in out ringbuffer_data;
-	                             data: buffer_data) is
-writeIndex	: Integer renames buffer. writeIndex;
-bufferSize	: Integer renames buffer. bufferSize;
-requested	: Integer := data' length;
-available	: Integer := GetRingBufferWriteAvailable (buffer);
-begin
-	if requested > available
-	then
-	   requested := available;
-	end if;
-	if bufferSize - writeIndex > requested
-	then
-	   buffer. buffer (writeIndex ..  writeIndex + requested - 1) :=
-	                   data (data' first .. data' first + requested - 1);
-	else	-- split it up
-	   declare
-	      size_1: Integer := bufferSize - writeIndex;
-	      size_2: Integer := requested - size_1;
-	   begin
-	      buffer. buffer (writeIndex .. writeIndex + size_1 - 1) :=
-	               data (data' first .. data' first + size_1 - 1);
-	      buffer. buffer (0 .. size_2 - 1) :=
-	               data (data' first + size_1 .. data' first + size_1 + size_2 - 1);
-	   end;
-	end if;
-
-	AdvanceRingBufferWriteIndex (buffer, requested);
-end putDataIntoBuffer;
-
-procedure getDataFromBuffer (buffer: in out ringbuffer_data;
-	                     data : out  buffer_data; amount: out Integer) is
-readIndex	: Integer renames buffer. readIndex;
-bufferSize	: Integer renames buffer. bufferSize;
-requested	: Integer := data' Length;
-available	: Integer := GetRingBufferReadAvailable (buffer);
-begin
-	if requested > available
-	then
-	   requested := available;
-	end if;
-
-	if bufferSize - readIndex > requested
-	then		-- easy
-	   data (data' first .. data' first + requested - 1) :=
-	            buffer. buffer (readIndex .. readIndex + requested - 1);
-	else
-	declare
-	   size_1 : Integer := bufferSize - readIndex;
-	   size_2 : Integer := requested - size_1;
+	procedure AdvanceRingBufferReadIndex (buffer: in out ringbuffer_data;
+	                                      elementCount : Integer) is
 	begin
-	   data (data' first .. data' first + size_1 - 1) :=
-	                  buffer. buffer (readIndex .. bufferSize - 1);
-	   data (data' first + size_1 .. data' first + size_1 + size_2 - 1) :=
-	                  buffer. buffer (0 .. size_2 - 1);
-	end;
-	end if;
-	AdvanceRingBufferReadIndex (buffer, requested);
-	amount := requested;
-end getDataFromBuffer;
+	   FullMemoryBarrier;
+	   buffer. readIndex := 
+	         (buffer. readIndex + elementCount) mod buffer. bufferSize;
+	end AdvanceRingBufferReadIndex;
 
-function g (s: Integer) return Integer is
-x	: Integer	:= 16;
-old_x	: Integer	:= x;
-begin
-	while x < s loop
-	   old_x	:= x;
-	   x		:= x + x;
-	end loop;
-	return old_x;
-end g;
-	   
+	function GetRingBufferReadAvailable (buffer: ringbuffer_data)
+	                                                return Integer is
+	   writeIndex:   Integer renames buffer. writeIndex;
+	   readIndex:    Integer renames buffer. readIndex;
+	   bufferSize:   Integer renames buffer. bufferSize;
+	begin
+	   FullMemoryBarrier;
+	   if readIndex <= writeIndex then
+	      return writeIndex - readIndex;
+	   else
+	      return bufferSize - readIndex + writeIndex;
+	   end if;
+	end GetRingBufferReadAvailable;
+
+	function GetRingBufferWriteAvailable (buffer: ringbuffer_data)
+	                                                return Integer is
+	begin
+	   return buffer. bufferSize - GetRingBufferReadAvailable (buffer);
+	end GetRingBufferWriteAvailable;
+
+	procedure FlushRingBuffer (buffer: in out ringbuffer_data) is
+	begin
+	   FullMemoryBarrier;
+	   buffer. readIndex   := 0;
+	   buffer. writeIndex  := 0;
+	end FlushRingBuffer;
+
+	procedure putDataIntoBuffer (buffer: in out ringbuffer_data;
+	                             data: buffer_data) is
+	   writeIndex:   Integer renames buffer. writeIndex;
+	   bufferSize:   Integer renames buffer. bufferSize;
+	   requested:    Integer := data' length;
+	   available:    Integer := GetRingBufferWriteAvailable (buffer);
+	begin
+	   if requested > available then
+	      requested := available;
+	   end if;
+	   if bufferSize - writeIndex > requested then
+	      buffer. buffer (writeIndex ..  writeIndex + requested - 1) :=
+	                   data (data' first .. data' first + requested - 1);
+	   else	-- split it up
+	      declare
+	         size_1: Integer := bufferSize - writeIndex;
+	         size_2: Integer := requested - size_1;
+	      begin
+	         buffer. buffer (writeIndex .. writeIndex + size_1 - 1) :=
+	                      data (data' first .. data' first + size_1 - 1);
+	         buffer. buffer (0 .. size_2 - 1) :=
+	               data (data' first + size_1 .. data' first + size_1 + size_2 - 1);
+	      end;
+	   end if;
+
+	   AdvanceRingBufferWriteIndex (buffer, requested);
+	end putDataIntoBuffer;
+
+	procedure getDataFromBuffer (buffer: in out ringbuffer_data;
+	                             data : out  buffer_data;
+	                             amount: out Integer) is
+	   readIndex:    Integer renames buffer. readIndex;
+	   bufferSize:   Integer renames buffer. bufferSize;
+	   requested:    Integer := data' Length;
+	   available:    Integer := GetRingBufferReadAvailable (buffer);
+	begin
+	   if requested > available then
+	      requested := available;
+	   end if;
+
+	   if bufferSize - readIndex > requested then		-- easy
+	      data (data' first .. data' first + requested - 1) :=
+	              buffer. buffer (readIndex .. readIndex + requested - 1);
+	   else
+	      declare
+	         size_1: Integer := bufferSize - readIndex;
+	         size_2: Integer := requested - size_1;
+	      begin
+	         data (data' first .. data' first + size_1 - 1) :=
+	                      buffer. buffer (readIndex .. bufferSize - 1);
+	         data (data' first + size_1 ..
+	                        data' first + size_1 + size_2 - 1) :=
+	                                   buffer. buffer (0 .. size_2 - 1);
+	      end;
+	   end if;
+	   AdvanceRingBufferReadIndex (buffer, requested);
+	   amount := requested;
+	end getDataFromBuffer;
 end ringbuffer;
 
