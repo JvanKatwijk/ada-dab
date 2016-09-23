@@ -25,14 +25,14 @@ with fft_handler;
 with phasetable; use phasetable;
 
 package Phase_Handler is
-	type Phase_Synchronizer (Mode: Dabmode) is new
+	type Phase_Synchronizer (Mode : Dabmode) is new
 	               Ada. Finalization. Controlled with private;
 	type Phase_Synchronizer_P is access all Phase_Synchronizer;
-	function Find_Index (Object:	in out Phase_Synchronizer;
-	                     v:		complexArray;
-	                     Threshold:	integer) return integer;
+	function Find_Index (Object      : in out Phase_Synchronizer;
+	                     inputBuffer : complexArray;
+	                     Threshold   : Integer) return Integer;
 private
-	type Phase_Synchronizer (Mode: Dabmode) is new
+	type Phase_Synchronizer (Mode : Dabmode) is new
 	               Ada. Finalization. Controlled with 
 	record
 	   Tu		: integer;
@@ -41,7 +41,7 @@ private
 	   Forward_fft	: fft_handler. FFT_Processor_P;
 	   Backward_fft	: fft_handler. FFT_Processor_P;
 	end record;
-	procedure	Initialize	(Object: in out Phase_Synchronizer);
-	procedure	Finalize	(Object: in out Phase_Synchronizer);
+	procedure	Initialize	(Object : in out Phase_Synchronizer);
+	procedure	Finalize	(Object : in out Phase_Synchronizer);
 end Phase_Handler;
 

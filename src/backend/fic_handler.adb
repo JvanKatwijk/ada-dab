@@ -48,11 +48,11 @@ package body Fic_Handler is
 	Ofdm_Inputdata	: ficBlock;
 
 	task Fic_Processor is
-	   entry Handle_Input (buffer: Ficblock; ficno : Integer);
+	   entry Handle_Input (buffer : Ficblock; ficno : Integer);
 	   entry Stop;
 	   entry Reset;
-	   entry DataforAudioService (S: String;
-	                              D: out audioData);
+	   entry Data_for_AudioService (Name_of_Program : String;
+	                                Data            : out audioData);
 	end Fic_Processor;
 
 	procedure Set_BitsperBlock (Mode: Dabmode) is
@@ -72,9 +72,10 @@ package body Fic_Handler is
 	   Fic_Processor. Reset;
 	end reset;
 
-	procedure Data_for_Audioservice (S: String; D: out audioData) is
+	procedure Data_for_Audioservice (Name_of_Program : String;
+	                                 Data            : out audioData) is
 	begin
-	   Fic_Processor. DataforAudioService (s, d);
+	   Fic_Processor. Data_for_AudioService (Name_of_Program, Data);
 	end Data_for_AudioService;
 
 	function Check_ficCRC	(vector : fib_buffer) return Boolean;
@@ -216,10 +217,11 @@ package body Fic_Handler is
 	            end;
 	         end loop;
 	      or
-	         accept DataforAudioservice (S: String;
-	                                     D: out audioData) do
-	            fib_handler. dataforAudioService (S, D);
-	         end DataforAudioService;
+	         accept Data_for_Audioservice (Name_of_Program : String;
+	                                     Data            : out audioData) do
+	            fib_handler. Data_for_AudioService (Name_of_Program, 
+	                                                              Data);
+	         end Data_for_AudioService;
 	      or
 	         accept Stop;
 	         raise Terminate_FIC;

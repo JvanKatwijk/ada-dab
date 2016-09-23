@@ -18,9 +18,9 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with Text_IO; use Text_IO;
-with string_messages; use string_messages;
-with Interfaces; use Interfaces;
+with Text_IO;		use Text_IO;
+with string_messages;	use string_messages;
+with Interfaces;	use Interfaces;
 
 package body fib_handler is
 --
@@ -29,61 +29,62 @@ package body fib_handler is
 --	
 	type Dab_Label is
 	   record
-	      Label:      String (1 .. 16);
-	      Mask:       uint8_t;
-	      Has_Name:   Boolean;
+	      Label        : String (1 .. 16);
+	      Mask         : uint8_t;
+	      Has_Name     : Boolean;
 	end record;
 
 	type Service_Identifier is
 	   record
-	      serviceId:      uint32_t;
-	      serviceLabel:   Dab_Label;
-	      In_Use:         Boolean    := false;
-	      Has_Language:   Boolean;
-	      The_Language:   short_Integer;
-	      Program_Type:   short_Integer;
-	      HasPNum:        Boolean;
-	      pNum:           Integer;
+	      In_Use       : Boolean      := false;
+	      Service_Id   : uint32_t;
+	      serviceLabel : Dab_Label;
+	      Has_Language : Boolean;
+	      The_Language : short_Integer;
+	      Program_Type : short_Integer;
+	      HasPNum      : Boolean;
+	      pNum         : Integer;
 	   end record;
 
 	type ServiceComponent is
 	   record
-	      In_Use:         Boolean    := false;
-	      TMid:           short_Integer;
-	      service:        short_Integer;	-- index in other vector
-	      componentNr:    short_Integer;
-	      ASCTy:          short_Integer;	-- used for audio
-	      PS_flag:        short_Integer;	-- used for audio
-	      subchannelId:   short_Integer;
+	      In_Use       : Boolean      := false;
+	      TMid         : short_Integer;
+	      Service      : short_Integer;	-- index in other vector
+	      Component_Nr : short_Integer;
+	      ASCTy        : short_Integer;	-- used for audio
+	      PS_flag      : short_Integer;	-- used for audio
+	      Subchannel_Id: short_Integer;
 	   end record;
 
 	type Subchannel_Map is
 	   record
-	      SubChId:        Integer;
-	      startAddr:      short_Integer;
-	      Length:         short_Integer;
-	      uepFlag:        short_Integer;	-- could be Boolean
-	      protLevel:      short_Integer;
-	      bitRate:        short_Integer;
-	      language:       short_Integer;	-- double ???
+	      Sub_ChId     : Integer;
+	      startAddr    : short_Integer;
+	      Length       : short_Integer;
+	      UepFlag      : short_Integer;	-- could be Boolean
+	      Prot_Level   : short_Integer;
+	      bitRate      : short_Integer;
+	      language     : short_Integer;	-- double ???
 	   end record;
 
 	subtype shortRange is short_Integer range 0 .. 63;
-	type subchannelMaps is array (shortRange) of Subchannel_Map;
-	type serviceComponents is array (shortRange) of serviceComponent;
-	type serviceIds	is array (shortRange) of Service_Identifier; 
 
-	ficList:              subchannelMaps;
-	listofServices:       serviceIds;
-	components:           serviceComponents;
-	Has_Name:             Boolean            := False;
-	ensembleName:         String (1 .. 16);
+	type subchannelMaps    is array (shortRange) of Subchannel_Map;
+	type serviceComponents is array (shortRange) of serviceComponent;
+	type serviceIds        is array (shortRange) of Service_Identifier; 
+
+	ficList         : subchannelMaps;
+	listofServices  : serviceIds;
+	components      : serviceComponents;
+	Has_Name        : Boolean            := False;
+	ensembleName    : String (1 .. 16);
 
 -- Tabelle ETSI EN 300 401 Page 50
 -- Table is copied from the work of Michael Hoehn
 	type Protections is array (shortRange,
 	                   short_Integer range 0 .. 2) of short_Integer;
-	protLevels	: constant Protections := (
+	Prot_Levels	: constant Protections := (
 	(16,	5,	32),		-- Index 0
 	(21,	4,	32),	
 	(24,	3,	32),	
@@ -152,8 +153,8 @@ package body fib_handler is
 
 --
 --	offset is now in bits
-	procedure process_FIG0	(p:       fib_buffer;
-	                         offset:  short_Integer) is
+	procedure process_FIG0	(p      : fib_buffer;
+	                         offset : short_Integer) is
 	   extension : short_Integer :=
 	            short_Integer (get_Bits (p, offset + 8 + 3, 5));
 	begin
@@ -186,10 +187,13 @@ package body fib_handler is
 	   end case;
 	end process_FIG0;
 
-	procedure FIG0Extension1 (d: fib_buffer; offset: short_Integer) is
-	   bitOffset: short_Integer := offset + 2 * 8;	-- offset in bytes
-	   Length:    short_Integer := short_Integer (get_Bits (d, offset + 3, 5));
-	   PD_Bit:    short_Integer := short_Integer (get_Bits (d, offset + 8 + 2, 1));
+	procedure FIG0Extension1 (d      : fib_buffer;
+	                          offset : short_Integer) is
+	   bitOffset : short_Integer := offset + 2 * 8;	-- offset in bytes
+	   Length    : short_Integer :=
+	                        short_Integer (get_Bits (d, offset + 3, 5));
+	   PD_Bit    : short_Integer :=
+	                        short_Integer (get_Bits (d, offset + 8 + 2, 1));
 	begin
 	   while bitOffset / 8 < Length - 1 loop
 	      bitOffset := bitOffset / 8;
@@ -198,36 +202,42 @@ package body fib_handler is
 	end FIG0Extension1;
 --
 --	Note that below the offset is in bytes
-	function HandleFIG0Extension1 (d:      fib_buffer;
-	                               offset: short_Integer;
-	                               PD_Bit: short_Integer)
+	function HandleFIG0Extension1 (d      : fib_buffer;
+	                               offset : short_Integer;
+	                               PD_Bit : short_Integer)
 	                                          return short_Integer is
-	   bitOffset:      short_Integer   := offset;
-	   subChId:        short_Integer   := short_Integer (get_Bits (d, bitOffset, 6));
-	   startAddr:      short_Integer   := short_Integer (get_Bits (d, bitOffset + 6, 10));
-	   tableIndex:     short_Integer;
-	   option:         short_Integer;
-	   protLevel:      short_Integer;
+	   bitOffset     : short_Integer   := offset;
+	   subChId       : short_Integer   :=
+	                        short_Integer (get_Bits (d, bitOffset, 6));
+	   startAddr     : short_Integer   :=
+	                        short_Integer (get_Bits (d, bitOffset + 6, 10));
+	   tableIndex    : short_Integer;
+	   option        : short_Integer;
+	   Prot_Level    : short_Integer;
 	   subChannelSize: short_Integer;
 	begin
 	   ficList (subChId). startAddr := startAddr;
 	   if Integer (get_Bits (d, bitOffset + 16, 1)) = 0 then -- short form
-	      tableIndex := short_Integer (get_Bits (d, bitOffset + 18, 6));
-	      ficList (subChId). Length	:= protLevels (tableIndex, 0);
-	      ficList (subChId). uepFlag := 0;
-	      ficList (subChId). protLevel := protLevels (tableIndex, 1);
-	      ficList (subChId). bitRate := protLevels (tableIndex, 2);
-	      bitOffset	:= bitOffset + 24;
+	      tableIndex                  :=
+	                  short_Integer (get_Bits (d, bitOffset + 18, 6));
+	      ficList (subChId). Length	  := Prot_Levels (tableIndex, 0);
+	      ficList (subChId). uepFlag  := 0;
+	      ficList (subChId). Prot_Level := Prot_Levels (tableIndex, 1);
+	      ficList (subChId). bitRate  := Prot_Levels (tableIndex, 2);
+	      bitOffset	                  := bitOffset + 24;
 	   else		-- eep long form
-	      ficList (subChId). uepFlag	:= 1;
-	      option	:= short_Integer (get_Bits (d, bitOffset + 17, 3));
+	      ficList (subChId). uepFlag  := 1;
+	      option       := short_Integer (get_Bits (d, bitOffset + 17, 3));
 	      if option = 0 then		 -- A Level protection
-	         protLevel     := short_Integer (get_Bits (d, bitOffset + 20, 2)) + 1;
+	         Prot_Level   := short_Integer
+	                            (get_Bits (d, bitOffset + 20, 2)) + 1;
  --	we encode the A level protection by adding 0100 to the level
-                 ficList (subChId). protLevel 	:= protLevel + 8#100#;
-                 subChannelSize	:= short_Integer (get_Bits (d, bitOffset + 22, 10));
+                 ficList (subChId). Prot_Level 	:= Prot_Level + 8#100#;
+                 subChannelSize	:= short_Integer 
+	                             (get_Bits (d, bitOffset + 22, 10));
                  ficList (subChId). Length   := subChannelSize;
-	         case protLevel is
+
+	         case Prot_Level is
 	            when 1	=>
                        ficList (subChId). bitRate := subChannelSize / 12 * 8;
                     when 2	=>
@@ -239,12 +249,12 @@ package body fib_handler is
 	            when others	=> null;
 	         end case;
 	      else		-- option should be 01
-	         protLevel  := short_Integer (get_Bits (d, bitOffset + 20, 2)) + 1;
+	         Prot_Level  := short_Integer (get_Bits (d, bitOffset + 20, 2)) + 1;
 --	we encode the B protection levels by adding a 0200 to the level
-                 ficList (subChId). protLevel := protLevel + 8#200#;
+                 ficList (subChId). Prot_Level := Prot_Level + 8#200#;
                  subChannelSize  := short_Integer (get_Bits (d, bitOffset + 22, 10));
                  ficList (subChId). Length  := subChannelSize;
-	         case protLevel is
+	         case Prot_Level is
 	            when 1   =>
                        ficList (subChId). bitRate := subChannelSize / 27 * 32;
 	            when 2   =>
@@ -405,11 +415,11 @@ package body fib_handler is
 --
 --	locate - and create if needed - a reference to
 --	the entry in the list of services
-	function findServiceId (serviceId: uint32_t) return short_Integer is
+	function findServiceId (Service_Id: uint32_t) return short_Integer is
 	begin
 	   for I in listofServices' Range loop
 	      if listofServices (I). In_Use and then
-	                 listofServices (I). serviceId = serviceId then
+	                 listofServices (I). Service_Id = Service_Id then
 	          return I;
 	      end if;
 	   end loop;
@@ -419,7 +429,7 @@ package body fib_handler is
 	      if not listofServices (I) . In_Use then
 	         listofServices (I). In_Use     := true;
 	         listofServices (I). serviceLabel. Has_Name := false;
-	         listofServices (I). serviceId	:= serviceId;
+	         listofServices (I). Service_Id	:= Service_Id;
 	         return  short_Integer (I);
 	      end if;
 	   end loop;
@@ -443,16 +453,16 @@ package body fib_handler is
 	            firstFree := i;
 	         end if;
 	      elsif components (i). service = s and then
-	            components (i). componentNr = compnr and then
+	            components (i). Component_Nr = compnr and then
 	                 components (i). TMid = TMid then
 	         return;
 	      end if;
 	   end loop;
 	   components (firstFree). In_Use        := true;
 	   components (firstFree). TMid          := TMid;
-	   components (firstFree). Componentnr   := compnr;
+	   components (firstFree). Component_nr  := compnr;
 	   components (firstFree). service       := s;
-           components (firstFree). Subchannelid  := subChId;
+           components (firstFree). Subchannel_Id := subChId;
            components (firstFree). PS_flag       := ps_flag;
            components (firstFree). ASCTy         := ASCTy;
 	end bind_audioService;
@@ -493,41 +503,46 @@ package body fib_handler is
 	end syncReached;
 --
 --
-	procedure dataforAudioService (s: String; d: out audioData) is
-	   selectedService:   uint32_t;
+	procedure Data_for_AudioService (Name_of_Program : String;
+	                                 Data            : out audioData) is
+	   Selected_Service:   uint32_t;
 	begin
---	first we locate the serviceId
+--	first we locate the Service_Id
 
 	   for i in listofServices' Range loop
 	      if listofServices (i). In_Use and then
 	         listofServices (i). serviceLabel. Has_Name and then
-	            listofServices (i). serviceLabel. label = s then
-	         selectedService := listofServices (i). serviceId;
+	            listofServices (i). serviceLabel. label = 
+	                                               Name_of_Program then
+	         Selected_Service := listofServices (i). Service_Id;
 	         for J in components' Range loop
 	            if components (J). In_Use and then
 	               components (J). service = i and then
 	                  components (J). TMid = 0 then	
 	               declare
-	                 subchId: short_Integer :=
-	                                    components (J). subchannelId;
+	                 Subch_Id: short_Integer :=
+	                                    components (J). Subchannel_Id;
 	               begin
-	                  d. dataIsThere   := true;
-	                  d. subchId       := subchId;
-	                  d. startAddr     := ficList (subchId). startAddr;
-	                  d. uepFlag       := ficList (subchId). uepFlag;
-	                  d. protLevel     := ficList (subchId). protLevel;
-	                  d. length        := ficList (subchId). Length;
-	                  d. bitRate	   := ficList (subchId). BitRate;
-	      	          d. ASCTy         := components (j). ASCTy;
-	      	          d. language      := listofServices (i). The_Language;
-	      	          d. programtype   := listofServices (i). Program_Type;
+	                  Data. dataIsThere   := true;
+	                  Data. SubchId       := Subch_Id;
+	                  Data. startAddr     := ficList (Subch_Id). startAddr;
+	                  Data. uepFlag       := ficList (Subch_Id). uepFlag;
+	                  Data. protLevel     := ficList (Subch_Id). Prot_Level;
+	                  Data. length        := ficList (Subch_Id). Length;
+	                  Data. bitRate	      := ficList (Subch_Id). BitRate;
+	      	          Data. ASCTy         := components (j). ASCTy;
+	      	          Data. language      := listofServices (i). The_Language;
+	      	          Data. programtype   := listofServices (i). Program_Type;
 	                  return;
 	               end;
 	            end if;
 	         end loop;
 	      end if;
 	   end loop;
-	   d. dataIsThere   := false;
-	end dataforAudioService;
+--
+--	if/when we are here (should not happen though), we apparently 
+--	could not locate the data
+	   Data. dataIsThere   := false;
+	end Data_for_AudioService;
 end fib_handler;
 

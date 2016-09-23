@@ -5,6 +5,7 @@ with header;	use header;
 with System;	use System;
 with Ada. Finalization;
 with Ada. Unchecked_Deallocation;
+with Interfaces. C;	use Interfaces. C;
 package Viterbi_Handler is
 	type Viterbi_Processor (WordLength: Integer) is
 	          new Ada. Finalization. Controlled with private;
@@ -38,22 +39,23 @@ private
 --	#define POLYS { 0133, 0171, 0145, 0133 }
 --	#define POLYS { 91, 121, 101, 91 }
 
-	function Create_Viterbi (Wordlength: Integer) return system. address;
+	function Create_Viterbi (Wordlength: Interfaces. C. int)
+	                                          return system. address;
 	pragma Import (C, Create_Viterbi, "create_viterbi");
 
-	procedure Init_Viterbi (Handle: system. address;
-	                        startState: Integer);
+	procedure Init_Viterbi (Handle:     system. address;
+	                        startState: Interfaces. C. int);
 	pragma Import (C, Init_Viterbi, "init_viterbi");
 
 	procedure Update_Viterbi_Blk (Handle:   system. Address;
 	                              Symbols:  system. Address;
-	                              nbits:   Integer);
+	                              nbits:    Interfaces. C. int);
 	pragma Import (C, Update_Viterbi_Blk, "update_viterbi_blk_GENERIC");
 
-	procedure Chainback_Viterbi (Handle	: system. Address;
-	                             Output	: system. Address;
-	                             Wordlength	: Integer;
-                                     EndState	: Integer);
+	procedure Chainback_Viterbi (Handle:      system. Address;
+	                             Output:      system. Address;
+	                             Wordlength:  Interfaces. C. int;
+                                     EndState:    Interfaces. C. int);
 	pragma	Import (C, Chainback_Viterbi, "chainback_viterbi");
 
 	procedure Delete_Viterbi   (Handle: system. Address);

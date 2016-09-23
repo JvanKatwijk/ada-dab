@@ -34,84 +34,84 @@ package body Airspy_Wrapper is
 	package Airspy_Buffer is new ringBuffer (complex);
 	use Airspy_Buffer;
 
-	Input_Rate:	Integer	:= 2500000;	-- default
-	The_Buffer:	Airspy_Buffer. ringBuffer_data (16 * 32768);
+	The_Buffer        : Airspy_Buffer. ringBuffer_data (16 * 32768);
+	Input_Rate        : Integer	:= 2500000;	-- default
 -- buffer for transfer to data into the ringbuffer
-	Local_Buffer:	airspy_buffer. buffer_data (0 .. 2048000 / 500 - 1);
+	Local_Buffer      : airspy_buffer. buffer_data (0 .. 2048000 / 500 - 1);
 --	we read 500 buffers per second, and we have to convert them
 --	to the DAB input rate of 2048000 samples per second
-	Conversion_Buffer:	complexArray_P;
-	Conversion_Index:	Integer		:= 0;
-	Maptable_Int:		FloatArray	(0 .. 2048000 / 500 - 1);
-	Maptable_Float:		FloatArray	(0 .. 2048000 / 500 - 1);
+	Conversion_Buffer : complexArray_P;
+	Conversion_Index  : Integer	:= 0;
+	Maptable_Int      : FloatArray	(0 .. 2048000 / 500 - 1);
+	Maptable_Float    : FloatArray	(0 .. 2048000 / 500 - 1);
 --
-	Result:			Airspy_Error;
+	Result            : Airspy_Error;
 --
 --	abstract away from the hardware
-	Device_P:		access System. Address	:= new System. Address;
+	Device_P          : access System. Address := new System. Address;
 --
-	Running:		Boolean;
-	Device_Is_Valid:	Boolean;
-	Vga_Gain:		Integer;
-	Mixer_Gain:		Integer;
-	Lna_Gain:		Integer;
-	Last_Frequency:		Integer	:= 225000000;	-- dummy
+	Running           : Boolean;
+	Device_Is_Valid   : Boolean;
+	Vga_Gain          : Integer;
+	Mixer_Gain        : Integer;
+	Lna_Gain          : Integer;
+	Last_Frequency    : Integer	:= 225000000;	-- dummy
 
-	procedure Set_VFOFrequency	(Frequency:	Integer) is
+	procedure Set_VFOFrequency	(New_Frequency: Integer) is
 	   Result	: Airspy_Error;
 	begin
-	   Result	:= Airspy_Set_Frequency (Device_P. all, Frequency);
+	   Result	:= Airspy_Set_Frequency (Device_P. all, New_Frequency);
 	   if Result /= AIRSPY_SUCCESS then
 	      put_line ("Airspy_set_freq failed");
 	   else
-	      Last_Frequency	:= Frequency;
+	      Last_Frequency	:= New_Frequency;
 	   end if;
 	end Set_VFOFrequency;
 
-	procedure Restart_Reader (Valid:	out Boolean) is
-	   Return_Value	: Airspy_Error;
+	procedure Restart_Reader (Success : out Boolean) is
+	   Handler_Returns : Airspy_Error;
 	begin
-	   Valid		:= false;	-- default, unless ....
+	   Success      := false;	-- default, unless ....
 	   if not Device_Is_Valid then
 	      return;
 	   end if;
 	   if Running then
-	      Valid		:= true;
+	      Success     := true;
 	      return;
 	   end if;
 	   The_Buffer. FlushRingBuffer;
-	   Return_Value		:= Airspy_Set_Sample_Type (device_P. all,
+	   Handler_Returns   := Airspy_Set_Sample_Type (device_P. all,
 	                                              AIRSPY_SAMPLE_FLOAT32_IQ);
-	   if Return_Value /= AIRSPY_SUCCESS then
+	   if Handler_Returns /= AIRSPY_SUCCESS then
 	      put_line ("airspy_set_sample_type failed");
 	      return;
 	   end if;
 --
-	   Return_Value	:= airspy_set_samplerate (device_P. all, Input_Rate);
-	   if Return_Value /= AIRSPY_SUCCESS then
+	   Handler_Returns := airspy_set_samplerate (device_P. all, Input_Rate);
+	   if Handler_Returns /= AIRSPY_SUCCESS then
 	      put_line ("airspy_set_samplerate failed");
 	      return;
 	   end if;
 --
 --	we assume the next three settings work fine
-	   Airspy_Set_Vga_Gain		(device_P. all,
-	                                      Interfaces. C. int (Vga_Gain));
-	   Airspy_Set_Mixer_Gain	(device_P. all,
-	                                      Interfaces. C. int (Mixer_Gain));
-	   Airspy_Set_Lna_Gain		(device_P. all,
-	                                      Interfaces. C. int (Lna_Gain));
+	   Airspy_Set_Vga_Gain 	   (device_P. all,
+	                            Interfaces. C. int (Vga_Gain));
+	   Airspy_Set_Mixer_Gain   (device_P. all,
+	                            Interfaces. C. int (Mixer_Gain));
+	   Airspy_Set_Lna_Gain     (device_P. all,
+	                            Interfaces. C. int (Lna_Gain));
 --
 --	since the context is "global" data in the package, we do not need
 --	a context for the callback function
-	   Return_Value        := Airspy_Start_Rx (device_P. all,
+	   Handler_Returns     := Airspy_Start_Rx (device_P. all,
                                                    Airspy_Callback' Access, 
 	                                           Null_Address);
-	   if Return_Value /= AIRSPY_SUCCESS then
+	   if Handler_Returns /= AIRSPY_SUCCESS then
 	      put_Line ("airspy_start_rx failed");
 	      return;
 	   end if;
-	   Running	:= true;
-	   Valid	:= true;
+	   Running      := true;
+	   Success      := true;
 	end Restart_Reader;
 
 	procedure Stop_Reader is
@@ -140,7 +140,7 @@ package body Airspy_Wrapper is
 	                          Integer (Transfer. Sample_Count) * 2 - 1);
 	      package arrayConverter is
 	         new System. Address_To_Access_Conversions (C_buffer);
-	      Databuffer_P     : arrayConverter. Object_Pointer :=
+	      Databuffer_P    : arrayConverter. Object_Pointer :=
                                 arrayConverter. To_Pointer (transfer. samples);
 --	my_buffer is now the Ada name for the incoming data
 	   begin
@@ -152,9 +152,9 @@ package body Airspy_Wrapper is
 	         if Conversion_Index > Input_Rate / 500 then
 	            for J in Local_Buffer' Range loop	-- i.e. 2048000 / 500
 	               declare
-	                  Inp_Base:	Float	:= Maptable_int (j);
-	                  Inp_Ratio:	Float	:= Maptable_float (j);
-	                  Index:	Integer	:= Integer (Inp_Base);
+	                  Inp_Base    : Float	:= Maptable_int (j);
+	                  Inp_Ratio   : Float	:= Maptable_float (j);
+	                  Index       : Integer	:= Integer (Inp_Base);
 	               begin
 	                  Local_Buffer (j). Re	:=
 	                      Conversion_Buffer (Index + 1). Re * Inp_Ratio +
@@ -171,7 +171,7 @@ package body Airspy_Wrapper is
 --	shift the sample at the end to the beginning, it is needed
 --	as the starting sample for the next time
                     Conversion_Buffer (0) := Conversion_Buffer (inputRate / 500);
-                    Conversion_Index 	:= 1;
+                    Conversion_Index  := 1;
 	         end if;
 	      end loop;
 	   end;
@@ -192,16 +192,16 @@ package body Airspy_Wrapper is
 	   Mixer_Gain	:= New_Gain;
 	   Vga_Gain	:= (if New_Gain >= 5 then Mixer_Gain - 5 else Mixer_Gain);
 	   Lna_Gain	:= Vga_Gain;
-	   Airspy_Set_Vga_Gain		(device_P. all,
-	                                      Interfaces. C. int (Vga_Gain));
-	   Airspy_Set_Mixer_Gain	(device_P. all,
-	                                      Interfaces. C. int (Mixer_Gain));
-	   Airspy_Set_Lna_Gain		(device_P. all,
-	                                      Interfaces. C. int (Lna_Gain));
+	   Airspy_Set_Vga_Gain	 (device_P. all,
+	                          Interfaces. C. int (Vga_Gain));
+	   Airspy_Set_Mixer_Gain (device_P. all,
+	                          Interfaces. C. int (Mixer_Gain));
+	   Airspy_Set_Lna_Gain   (device_P. all,
+	                          Interfaces. C. int (Lna_Gain));
 	end Set_Gain;
 
-	procedure Get_Samples	(Out_V : out complexArray;
-	                         Amount : out Integer) is
+	procedure Get_Samples	(Out_V   : out complexArray;
+	                         Amount  : out Integer) is
 	begin
 	   The_Buffer. getDataFromBuffer (buffer_data (Out_V), amount);
 	end Get_Samples;
@@ -219,25 +219,23 @@ package body Airspy_Wrapper is
 	end Valid_Device;
 --
 begin
-	Vga_Gain	:= 11;
-	Mixer_Gain	:= 15;
-	Lna_Gain	:= 11;
-	Running		:= False;
-	Device_Is_Valid	:= False;
-	Result		:= Airspy_Init;		-- this is s call
-	if result /= AIRSPY_SUCCESS
-	then
+	Vga_Gain        := 11;
+	Mixer_Gain      := 15;
+	Lna_Gain        := 11;
+	Running         := False;
+	Device_Is_Valid := False;
+	Result          := Airspy_Init;		-- this is s call
+	if result /= AIRSPY_SUCCESS then
 	   put_line ("airspy_init failed");
 	   goto L_end;
 	end if;
 	Result	:= Airspy_Open (device_P);
-	if Result /= AIRSPY_SUCCESS
-	then
+	if Result /= AIRSPY_SUCCESS then
 	   put_line ("airspy_open failed");
 	   goto l_end;
 	end if;
 
-	Input_Rate	:= 10000000;
+	Input_Rate     := 10000000;
 	declare
 	   Rates:	        Interfaces.C.int;
 	   The_Ratebuffer:	Rate_Buffer;

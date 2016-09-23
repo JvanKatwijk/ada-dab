@@ -25,7 +25,8 @@ package fic_handler is
 	procedure	Set_BitsperBlock (mode: dabMode);
 	procedure	Stop;
 	procedure	Reset;
-	procedure	Data_for_Audioservice (S: String; D: out audioData);
+	procedure	Data_for_Audioservice (Name_of_Program: String;
+	                                       Data           : out audioData);
 	function	Sync_Reached return Boolean;
 end fic_handler;
 

@@ -18,21 +18,20 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with phase_handler; 
 with Ada. Unchecked_Deallocation;
 with text_IO; use Text_IO;
 package body phase_handler is
 	use complexTypes;
 
-	procedure Initialize (Object: in out Phase_Synchronizer) is
+	procedure Initialize (Object : in out Phase_Synchronizer) is
 	begin
-	   Object. Tu	:= header. T_u (Object. Mode);
-	   Object. K	:= header. K   (Object. Mode);
-	   Object. Ref_Table := new complexArray (0 .. Object. Tu - 1);
+	   Object. Tu             := header. T_u (Object. Mode);
+	   Object. K              := header. K   (Object. Mode);
+	   Object. Ref_Table      := new complexArray (0 .. Object. Tu - 1);
 	   Object. Ref_Table. all := (Others => (0.0, 0.0));
-	   Object. Forward_fft	:= new fft_handler.
+	   Object. Forward_fft    := new fft_handler.
 	                               FFT_Processor (FORWARD, Object. Tu);
-	   Object. Backward_fft	:= new fft_handler.
+	   Object. Backward_fft   := new fft_handler.
 	                               FFT_Processor (BACKWARD, Object. Tu);
 	   for i in 1 ..  Object. K / 2 loop
 	      declare
@@ -59,22 +58,23 @@ package body phase_handler is
 	   Free_fft (Object. Backward_fft);
 	end Finalize;
 
---	we will ensure that v'length = Tu
-	function	Find_Index (Object: in out Phase_Synchronizer;
-	                            V: complexArray;
-	                            threshold: integer) return integer is
-	   Res_Vector:	complexArray (0 .. V' Length - 1) := V;
-	   Max_Index:	integer		:= -1;
-	   Sum:		float		:= 0.0;
-	   Max:		float		:= 0.0;
-	   Avg:		float		:= 0.0;
-	   Length:	Integer		:= V' length;
+--	we will ensure that inputBuffer' length = Tu
+	function	Find_Index (Object      : in out Phase_Synchronizer;
+	                            inputBuffer : complexArray;
+	                            threshold   : integer) return integer is
+	   Res_Vector  : complexArray (0 .. inputBuffer' Length - 1) := 
+	                                                          inputBuffer;
+	   Max_Index   : Integer        := -1;
+	   Sum         : Float          := 0.0;
+	   Max         : Float          := 0.0;
+	   Avg         : Float          := 0.0;
 	begin
 	   Object. Forward_fft. do_FFT (Res_Vector);
+
 --	back into the frequency domain, now correlate
 	   for I in Res_Vector' range loop
 	      Res_Vector (I) := Res_Vector (I) *
-	                   complexTypes. Conjugate (Object. Ref_Table (I));
+	                        complexTypes. Conjugate (Object. Ref_Table (I));
 	   end loop;
 
 --	and, again, back into the time domain
@@ -82,8 +82,8 @@ package body phase_handler is
 --	normalize and
 --	compute the average signal value ...
 	   for I in Res_Vector' range loop
-	      Res_Vector (I) := (Res_Vector (I). Re  / float (Length),
-	                         Res_Vector (I). Im  / float (Length));
+	      Res_Vector (I) := (Res_Vector (I). Re / float (Res_Vector'Length),
+	                         Res_Vector (I). Im / float (Res_Vector'Length));
 	      Sum		:= Sum + abs Res_Vector (i);
 	   end loop;
 --

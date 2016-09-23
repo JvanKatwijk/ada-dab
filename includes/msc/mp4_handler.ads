@@ -32,39 +32,38 @@ with header;		use header;
 with Interfaces;	use Interfaces;
 with Interfaces. C;	use Interfaces. C;
 with audio_handler;
-with audio_handler;
 
 package mp4_handler is
-	type mp4Processor  is new audio_handler. audioProcessor with private;
+	type mp4Processor  is new audio_handler. Audio_Processor with private;
 	type mp4Processor_P is access all mp4Processor;
 
-	procedure addtoFrame (Object:     in out mp4Processor;
-	                      V:          byteArray;
-	                      nbits:      short_Integer);
+	procedure addtoFrame (Object  :   in out mp4Processor;
+	                      V       :   byteArray;
+	                      nbits   :   short_Integer);
 private
-	procedure processSuperframe (Object:      in out mp4Processor;
+	procedure processSuperframe (Object    :  in out mp4Processor;
 	                             frameBytes:  byteArray;
-	                             base:        short_Integer;
-	                             result:      out Boolean);
+	                             base      :  short_Integer;
+	                             result    :  out Boolean);
 	procedure Initialize	(Object	: in out mp4Processor);
 	procedure Finalize	(Object	: in out mp4Processor);
-	function dabPlus_crc	(msg:      byteArray;
-	                         start:    uint16_t;
-	                         length:   uint16_t) return Boolean;
+	function dabPlus_crc	(Data_Vector    : byteArray;
+	                         Start_Byte     : uint16_t;
+	                         Length         : uint16_t) return Boolean;
 
-   	type mp4Processor is new audio_handler. audioProcessor with
+   	type mp4Processor is new audio_handler. Audio_Processor with
 	   record
-	      superFramesize:     Integer;
-	      RSDims:             Integer;
-	      frameBytes:         ByteArray_P;
-	      outVector:          ByteArray_P;
-	      blockFillIndex:     Integer;
-	      blocksInBuffer:     Integer;
-	      frameCount:         Integer;
-	      frameErrors:        Integer;
-	      nErrors:            Integer;
-	      au_count:           Integer;
-	      au_errors:          Integer;
+	      Superframe_size  :  Integer;
+	      RSDims           :  Integer;
+	      RSin_Data        :  ByteArray_P;
+	      RSout_Data       :  ByteArray_P;
+	      Block_FillIndex  :  Integer;
+	      Blocks_InBuffer  :  Integer;
+	      Framecount       :  Integer;
+	      Frameerrors      :  Integer;
+	      nErrors          :  short_Integer;
+	      au_count         :  Integer;
+	      au_errors        :  Integer;
 	   end record;
 end mp4_handler;
 

@@ -101,7 +101,6 @@ package body sdrplay_wrapper is
 	                          mir_sdr_BW_1_536,
 	                          mir_sdr_IF_Zero,
 	                          sps);
-
 	   if err /= 0 then
 	      put ("probleem init"); put_line (Integer' Image (Integer (err)));
 	      raise HardwareError;
@@ -134,6 +133,7 @@ package body sdrplay_wrapper is
 	      rfc        : Interfaces. C. int;
 	      fsc        : Interfaces. C. int;
 	      workBuffer : inputBuffer. buffer_data (0 .. Integer (sps) - 1);
+	      counter	: Integer	:= 0;
 	   begin
 	      while Running loop           -- running is global here
 	         err :=  mir_sdr_ReadPacket (xi,
@@ -142,7 +142,6 @@ package body sdrplay_wrapper is
 	                                     grc,
 	                                     rfc,
 	                                     fsc);
-
 	         if err /= 0 then
 	            put ("error with reading");
 	            put_line (Integer' Image (Integer (err)));
@@ -174,6 +173,11 @@ package body sdrplay_wrapper is
 	               end case;
 	            end loop;
 	         end;
+	         Counter	:= Counter + 1;
+	         if Counter *  Integer (sps) > 2048000 then
+--	            put_line ("weer een tel");
+	            Counter := 0;
+	         end if;
 	      end loop;
 	      mir_sdr_UnInit;
 	   end;
@@ -208,7 +212,6 @@ package body sdrplay_wrapper is
 	procedure Set_VFOFrequency (New_Frequency : Integer) is
 	   res:   Boolean;
 	begin
-
 	   if bankFor_sdr (New_Frequency) = -1 then   -- illegal
 	      return;
 	   end if;
@@ -244,7 +247,6 @@ package body sdrplay_wrapper is
 
 	procedure Restart_Reader (Success: out Boolean) is
 	begin
-
 	   if Our_Worker /= NULL then
 	      Success      := true;
 	      return;
@@ -259,7 +261,6 @@ package body sdrplay_wrapper is
 
 	procedure Stop_Reader is
 	begin
-
 	   if Our_Worker = null then
 	      return;	     -- do not bother
 	   end if;

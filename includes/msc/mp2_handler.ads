@@ -24,7 +24,7 @@ with audio_handler;
 with System; use System;
 with Interfaces. C;
 package mp2_handler is
-	type mp2Processor  is new audio_handler. audioProcessor with private;
+	type mp2Processor  is new audio_handler. Audio_Processor with private;
 	type mp2Processor_P is access all mp2Processor;
 
 	procedure addtoFrame (Object:  in out mp2Processor;
@@ -40,7 +40,7 @@ private
 	   end record;
 	pragma Convention (C, kjmp2_context_t);
 
-	type mp2Processor  is new audio_handler. audioProcessor with 
+	type mp2Processor  is new audio_handler. Audio_Processor with 
 	   record
 	      context:          kjmp2_context_t;
 	      MP2framesize:     Integer;

@@ -43,46 +43,49 @@ package audiopackage is
 	                latency : outputLatency)
 	                     is new Ada. Finalization. Controlled with private;
 	type audioSink_P is access all audioSink;
-	procedure portAudio_start	(s: in out audioSink;
-	                                 result: out boolean);
-	procedure portAudio_stop	(s: in out audioSink);
-	procedure putSamples		(s	: in out audioSink;
-	                                 data	: header. complexArray;
-	                                 sampleRate : header. uint64_t);	
-	procedure putSamples_16		(s	: in out audioSink;
-	                                 data	: header. complexArray);
-	procedure putSamples_24		(s	: in out audioSink;
-	                                 data	: header. complexArray);
-	procedure putSamples_32		(s	: in out audioSink;
-	                                 data	: header. complexArray);
-	procedure putSamples_48		(s	: in out audioSink;
-	                                 data	: header. complexArray);
-	procedure selectDefaultDevice	(s: in out audioSink; res: out boolean);
-	procedure selectDevice	(s: in out audioSink;
-	                         res: out boolean; Device_Index: PaDeviceIndex);
+	procedure portAudio_start	(Object:  in out audioSink;
+	                                 result:  out boolean);
+	procedure portAudio_stop	(Object:  in out audioSink);
+	procedure putSamples		(Object:  in out audioSink;
+	                                 data:    header. complexArray;
+	                                 sampleRate: header. uint64_t);	
+	procedure putSamples_16		(Object:  in out audioSink;
+	                                 data:    header. complexArray);
+	procedure putSamples_24		(Object:  in out audioSink;
+	                                 data:    header. complexArray);
+	procedure putSamples_32		(Object:  in out audioSink;
+	                                 data:    header. complexArray);
+	procedure putSamples_48		(Object:  in out audioSink;
+	                                 data:    header. complexArray);
+	procedure selectDefaultDevice	(Object:  in out audioSink;
+	                                 res:     out boolean);
+	procedure selectDevice          (Object:  in out audioSink;
+	                                 res:     out boolean;
+	                                 Device_Index: PaDeviceIndex);
 private
-	function paCallback (input	:	System. Address;
-	                     output	:	System. Address;
-	                     frameCount  :	IC.unsigned_long;
-	                     timeInfo	:	access PaStreamCallbackTimeInfo;
-	                     statusFlags :	PaStreamCallbackFlags;
-	                     userData	:	System. Address)
-	                            return PaStreamCallbackResult;
+	function paCallback		(input:      System. Address;
+	                                 output:     System. Address;
+	                                 Frame_Count: IC.unsigned_long;
+	                                 TimeInfo:   access PaStreamCallbackTimeInfo;
+	                                 statusFlags: PaStreamCallbackFlags;
+	                                 userData:   System. Address)
+	                                      return PaStreamCallbackResult;
 	pragma Convention (C, paCallback);
 	type audioSink (cardRate: Integer;
 	                bufSize : Integer;
-	                latency	: outputLatency) is new Ada. Finalization. Controlled with
-	record
-	   is_initialized:        Boolean       := False;
-	   Has_Error:             Boolean       := False;
-	   Is_Running:            Boolean       := False;
-	   Numof_Devices:         Integer;
-	   Buffer:                pa_ringBuffer. ringbuffer_data (4 * 32768);
-	   Callback_Returnvalue:  PaStreamCallbackResult := paContinue;
-	   ostream:               access PaStream        := new PaStream;
-	   Output_Parameters:     aliased PaStreamParameters;
-	end record;
-	procedure Initialize	(s: in out audioSink);
-	procedure Finalize	(s: in out audioSink);
+	                latency	: outputLatency) is
+	   new Ada. Finalization. Controlled with
+	   record
+	      Is_Initialized:        Boolean       := False;
+	      Has_Error:             Boolean       := False;
+	      Is_Running:            Boolean       := False;
+	      Numof_Devices:         Integer;
+	      Buffer:                pa_ringBuffer. ringbuffer_data (4 * 32768);
+	      Callback_Returnvalue:  PaStreamCallbackResult := paContinue;
+	      Ostream:               access PaStream        := new PaStream;
+	      Output_Parameters:     aliased PaStreamParameters;
+	   end record;
+	procedure Initialize	(Object: in out audioSink);
+	procedure Finalize	(Object: in out audioSink);
 end audiopackage;
 

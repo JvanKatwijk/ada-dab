@@ -1,11 +1,31 @@
+--
+--    Copyright (C) 2016
+--    Jan van Katwijk (J.vanKatwijk@gmail.com)
+--    Lazy Chair Programming
+--
+--    This file is part of the SDR-J (JSDR).
+--    SDR-J is free software; you can redistribute it and/or modify
+--    it under the terms of the GNU General Public License as published by
+--    the Free Software Foundation; either version 2 of the License, or
+--    (at your option) any later version.
+--
+--    SDR-J is distributed in the hope that it will be useful,
+--    but WITHOUT ANY WARRANTY; without even the implied warranty of
+--    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--    GNU General Public License for more details.
+--
+--    You should have received a copy of the GNU General Public License
+--    along with SDR-J; if not, write to the Free Software
+--    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+--
 with Text_IO;		use Text_IO;
 with Interfaces;	use Interfaces;
-with Ada. Exceptions;	use Ada. Exceptions;
 
 package body Viterbi_Handler is
 	procedure Initialize (Object: in out Viterbi_Processor) is
 	begin
-	   Object. handler	:= create_viterbi (Object. wordlength);
+	   Object. handler	:=
+	            create_viterbi (Interfaces. C. int (Object. wordlength));
 	   if Object. handler = Null_Address then
 	      put_line ("disaster");
 	      Object. isOK	:= false;
@@ -52,10 +72,10 @@ package body Viterbi_Handler is
 	   end loop;
 	   Update_Viterbi_Blk (Object. Handler,
 	                       Object. Symbols. all' Address, 
-	                       Object. Wordlength + (K - 1));
+	                       Interfaces. C. int (Object. Wordlength + (K - 1)));
 	   Chainback_Viterbi (Object. Handler,
 	                      Data' Address,
-	                      Object. Wordlength, 0);
+	                      Interfaces. C. int (Object. Wordlength), 0);
 	   for I in 0 .. uint16_t (Object. Wordlength) - 1 loop
 	      output (Integer (I)) :=
 	                Getbit (data (Integer (Shift_Right (i, 3))),

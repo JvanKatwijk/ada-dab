@@ -22,9 +22,8 @@
 -- 	generic audio handler for the ada-da decoder
 
 
-with audio_handler;
 package body audio_handler is
-   procedure addtoFrame (Object	: in out audioProcessor;
+   procedure addtoFrame (Object	: in out Audio_Processor;
 	                 V	: byteArray;
 	                 nbits	: short_Integer) is
    begin

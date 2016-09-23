@@ -35,14 +35,14 @@ package body mp4_handler is
 	   bitRate	: short_Integer renames Object. bitRate;
 	   RSDims	: Integer renames Object. RSDims;
 	begin
-	   Object. superFramesize    := Integer (110 * (bitRate / 8));
+	   Object. Superframe_size   := Integer (110 * (bitRate / 8));
 	   Object. RSDims            := Integer (bitRate / 8);
-	   Object. frameBytes        := new byteArray (0 .. RSDims * 120 - 1);
-	   Object. outVector         := new byteArray (0 .. RSDims * 110 - 1);
-	   Object. blockFillIndex    := 0;
-	   Object. blocksInBuffer    := 0;
-	   Object. frameCount        := 0;
-	   Object. frameErrors       := 0;
+	   Object. RSin_Data         := new byteArray (0 .. RSDims * 120 - 1);
+	   Object. RSout_Data        := new byteArray (0 .. RSDims * 110 - 1);
+	   Object. Block_FillIndex   := 0;
+	   Object. Blocks_InBuffer   := 0;
+	   Object. Framecount        := 0;
+	   Object. Frameerrors       := 0;
 --
 	   Object. au_count          := 0;
 	   Object. au_errors         := 0;
@@ -51,8 +51,8 @@ package body mp4_handler is
 
 	procedure Finalize (Object: in out mp4Processor) is
 	begin
-	   Free_byteArray (Object. frameBytes);
-	   Free_byteArray (Object. outVector);
+	   Free_byteArray (Object. RSin_Data);
+	   Free_byteArray (Object. RSout_Data);
 	end Finalize;
 --
 --	The outsize world calls the "addtoFrame" function,
@@ -60,113 +60,116 @@ package body mp4_handler is
 	procedure addtoFrame (Object:   in out mp4Processor;
 	                      V:        byteArray;
 	                      nbits:    short_Integer) is
-	   temp:      Byte       := 0;
-           nbytes:    Integer    := Integer (nbits / 8);
+	   temp    :  Byte       := 0;
+           nbytes  :  Integer    := Integer (nbits / 8);
 	   fcVector:  firecode_Checker. checkVector;
-	   result:    Boolean;
-	   blockFillIndex:   Integer renames Object. blockFillIndex;
+	   result  :  Boolean;
+	   Block_FillIndex:   Integer renames Object. Block_FillIndex;
 	begin
 --
 --	pack the bits, resulting from the deconvolution
 --	into bytes
 	   for i in 0 .. nbytes - 1 loop
-	      temp	:= 0;
+	      temp    := 0;
 	      for j in 0 .. 8 - 1 loop
 	         temp := Shift_Left (temp, 1) or (V (8 * i + j) and 8#01#);
 	      end loop;
-	      Object. frameBytes (blockFillIndex * nbytes + i) := temp;
+	      Object. RSin_Data (Block_FillIndex * nbytes + i) := temp;
 	   end loop;
 --
-	   Object. blocksInBuffer := Object. blocksInBuffer + 1;
-	   Object. blockFillIndex := (Object. blockFillIndex + 1) mod 5;
+	   Object. Blocks_InBuffer := Object. Blocks_InBuffer + 1;
+	   Object. Block_FillIndex := (Object. Block_FillIndex + 1) mod 5;
 --
 --	we take the last five blocks to look at
-	   if Object. blocksInBuffer < 5 then
+	   if Object. Blocks_InBuffer < 5 then
 	      return;
 	   end if;
 
 --	we could show the successrate here
-	   Object. frameCount := Object. frameCount + 1;
-	   if  Object. frameCount >= 25 then
-	      Object. frameCount	:= 0;
+	   Object. Framecount := Object. Framecount + 1;
+	   if  Object. Framecount >= 25 then
+	      Object. Framecount	:= 0;
 	      simple_messages. message_queue.
-	                       Put ((MSC_RESULTS, 4 * (25 - Object. frameErrors)));
+	                       Put ((MSC_RESULTS, 4 * (25 - Object. Frameerrors)));
 --	   show 4 * (25 - frameErrors)
-	      Object. frameErrors	:= 0;
+	      Object. Frameerrors	:= 0;
 	   end if;
 
 --	Now for real: first check the firecode
+--	copy the first bytes into a vector fcVector
 	   
-	   fcVector := Object. frameBytes (blockFillIndex * nbytes ..
-	                 blockFillIndex * nbytes + fcVector' Length - 1);
+	   fcVector := Object. RSin_Data (Block_FillIndex * nbytes ..
+	                 Block_FillIndex * nbytes + fcVector' Length - 1);
 	   if not firecode_Checker. check (fcVector) then
 --	we were wrong, a virtual shift to left in block sizes
-	      Object. blocksInBuffer   := 4;
-	      Object. frameErrors      := Object. frameErrors + 1;
+	      Object. Blocks_InBuffer  := 4;
+	      Object. FrameErrors      := Object. FrameErrors + 1;
 	      return;
 	   end if;	
+
 --	firecode seems OK, so we can (try to) process
 --	the superframe
 	   processSuperFrame (Object,
-	                      Object. frameBytes. all,
-	                      short_Integer (blockFillIndex * nbytes),
+	                      Object. RSin_Data. all,
+	                      short_Integer (Block_FillIndex * nbytes),
 	                      result);
+
 	   if not result then	-- we will try it again, next time
-	      Object. blocksInBuffer   := 4;
-	      Object. frameErrors      := Object. frameErrors + 1;
+	      Object. Blocks_InBuffer   := 4;
+	      Object. Frameerrors       := Object. Frameerrors + 1;
 	      return;
 	   end if;
+
 --	we are done, set up for the next superframe
-	   Object. blocksInBuffer	:= 0;
+	   Object. Blocks_InBuffer	:= 0;
 	end addtoFrame;
 --
 --	pretty tough function, we have a superframe and need to
 --	extract the audio frames
-	procedure processSuperframe (Object:     in out mp4Processor;
-	                             frameBytes: byteArray;
-	                             base:       short_Integer;
-	                             result:     out Boolean) is
-	   rsIn:      byteArray (0 .. 120 - 1);
-	   rsOut:     byteArray (0 .. 110 - 1);
-	   ler:       short_Integer;
-	   au_start:  uintArray;
-	   num_aus:   uint16_t;
-	   dacRate:   uint8_t;
-	   sbrFlag:   uint8_t;
-	   aacChannelMode: uint8_t;
-	   psFlag:    uint8_t;
-	   mpegSurround: uint16_t;
-	   outVector: byteArray renames Object. outVector. all;
-	   bitRate:   short_Integer renames Object. bitRate;
-	   RSDims:    Integer renames Object. RSDims;
-	   tmp:       Integer;
+	procedure processSuperframe (Object     : in out mp4Processor;
+	                             frameBytes : byteArray;
+	                             base       : short_Integer;
+	                             result     : out Boolean) is
+	   rsIn           : byteArray (0 .. 120 - 1);
+	   rsOut          : byteArray (0 .. 110 - 1);
+	   au_start       : uintArray;
+	   num_aus        : uint16_t;
+	   dacRate        : uint8_t;
+	   sbrFlag        : uint8_t;
+	   aacChannelMode : uint8_t;
+	   psFlag         : uint8_t;
+	   mpegSurround   : uint16_t;
+	   RSout_Data     : byteArray renames Object. RSout_Data. all;
+	   bitRate        : short_Integer renames Object. bitRate;
+	   RSDims         : Integer renames Object. RSDims;
+	   Samples_Out    : Integer;
+	   Errors_in_RS   : short_Integer;
 	begin
---
 	   result	:= False;	-- always a good start
 --	apply reed-solomon error repair
 --	OK, what we now have is a vector with RSDims * 120 uint8_t's
 --	in the superframe, containing parity bytes for error repair
 --	take into account the interleaving that is applied.
 
-	   for j in 0 .. RSDims - 1 loop
-	      for k in rsIn' Range loop
-	         rsIn (k) := frameBytes ((Integer (base) + j +
-	                                 k * RSDims) mod (RSDims * 120));
+	   for J in 0 .. RSDims - 1 loop
+	      for K in rsIn' Range loop
+	         rsIn (K) := frameBytes ((Integer (base) + J +
+	                                 K * RSDims) mod (RSDims * 120));
 	      end loop;
 
-	      the_rsDecoder. decode_rs (rsIn, 135, rsOut, ler);
---	ler >= 0 means no errors or repaired errors
---	ler < 0 means errors beyond repair
+	      the_rsDecoder. decode_rs (rsIn, 135, rsOut, Errors_in_RS);
+--	Errors_in_RS >= 0 means no errors or repaired errors
+--	Errors_in_RS < 0 means errors beyond repair
 
-	      if ler > 0 then
-	         Object. nErrors	:= Object. nErrors +  Integer (ler);
-	      elsif ler < 0 then
+	      if Errors_in_RS > 0 then
+	         Object. nErrors	:= Object. nErrors + Errors_in_RS;
+	      elsif Errors_in_RS < 0 then
 	         result	:= false;
 	         return;
 	      end if;
 
-	      for k in 0 .. 110 - 1 loop
-	         Object. outVector (j + k * RSDims) := rsOut (k);
+	      for K in 0 .. 110 - 1 loop
+	         Object. RSout_Data (J + K * RSDims) := rsOut (K);
 	      end loop;
 	   end loop;
 --
@@ -174,53 +177,53 @@ package body mp4_handler is
 --      bits 0 .. 15 is firecode
 --      bit 16 is unused
 
-	   dacRate      := Shift_Right (outVector (2), 6) and 8#01#; -- bit 17
-	   sbrFlag      := Shift_Right (outVector (2), 5) and 8#01#; -- bit 18
-	   aacChannelMode := Shift_Right (outVector (2), 4) and 8#01#; -- bit 19
-           psFlag       := Shift_Right (outVector (2), 3) and 8#01#;  -- bit 20
-           mpegSurround	:= uint16_t (outVector (2) and 8#07#); -- bits 21 .. 23
+	   dacRate    := Shift_Right (RSout_Data (2), 6) and 8#01#; -- bit 17
+	   sbrFlag    := Shift_Right (RSout_Data (2), 5) and 8#01#; -- bit 18
+	   aacChannelMode := Shift_Right (RSout_Data (2), 4) and 8#01#; -- bit 19
+           psFlag       := Shift_Right (RSout_Data (2), 3) and 8#01#;  -- bit 20
+           mpegSurround	:= uint16_t (RSout_Data (2) and 8#07#); -- bits 21 .. 23
 
 	   case 2 * dacRate + sbrFlag is
 	      when 0	=> 
                  num_aus	:= 4;
                  au_start (0)	:= 8;
-                 au_start (1) 	:= uint16_t (outVector (3)) * 16 + 
-	                           uint16_t (Shift_Right (outVector (4), 4));
-                 au_start (2)	:= uint16_t ((outVector (4)) and 16#0f#) * 256 +
-                                   uint16_t (outVector (5));
-                 au_start (3)	:= uint16_t (outVector (6)) * 16 +
-                                   uint16_t (Shift_Right (outVector (7),  4));
+                 au_start (1) 	:= uint16_t (RSout_Data (3)) * 16 + 
+	                           uint16_t (Shift_Right (RSout_Data (4), 4));
+                 au_start (2)	:= uint16_t ((RSout_Data (4)) and 16#0f#) * 256 +
+                                   uint16_t (RSout_Data (5));
+                 au_start (3)	:= uint16_t (RSout_Data (6)) * 16 +
+                                   uint16_t (Shift_Right (RSout_Data (7),  4));
                  au_start (4)	:= uint16_t (110 *  (bitRate / 8));
 
 	      when 1	=>
 	         num_aus	:= 2;
                  au_start (0)	:= 5;
-                 au_start (1)	:= uint16_t (outVector (3)) * 16 +
-                                   uint16_t (Shift_Right (outVector (4), 4));
+                 au_start (1)	:= uint16_t (RSout_Data (3)) * 16 +
+                                   uint16_t (Shift_Right (RSout_Data (4), 4));
                  au_start (2) 	:= uint16_t (110 * (bitRate / 8));
 
 	      when 2	=>
 	         num_aus	:= 6;
 	         au_start (0) 	:= 11;
-	         au_start (1)	:= uint16_t (outVector (3)) * 16 +
-                                   uint16_t (Shift_Right (outVector (4), 4));
-	         au_start (2) 	:= uint16_t ((outVector (4)) and 16#0f#) * 256 +
-	                           uint16_t (outVector (5));
-	         au_start (3) 	:= uint16_t (outVector (6)) * 16 +
-                                   uint16_t (Shift_Right (outVector (7), 4));
-	         au_start (4)	:= uint16_t ((outVector (7)) and 16#0f#) * 256 +
-	                           uint16_t (outVector (8));
-	         au_start (5)	:= uint16_t (outVector (9)) * 16 +
-                                   uint16_t (Shift_Right (outVector (10), 4));
+	         au_start (1)	:= uint16_t (RSout_Data (3)) * 16 +
+                                   uint16_t (Shift_Right (RSout_Data (4), 4));
+	         au_start (2) 	:= uint16_t ((RSout_Data (4)) and 16#0f#) * 256 +
+	                           uint16_t (RSout_Data (5));
+	         au_start (3) 	:= uint16_t (RSout_Data (6)) * 16 +
+                                   uint16_t (Shift_Right (RSout_Data (7), 4));
+	         au_start (4)	:= uint16_t ((RSout_Data (7)) and 16#0f#) * 256 +
+	                           uint16_t (RSout_Data (8));
+	         au_start (5)	:= uint16_t (RSout_Data (9)) * 16 +
+                                   uint16_t (Shift_Right (RSout_Data (10), 4));
 	         au_start (6) 	:= uint16_t (110 *  (bitRate / 8));
 --
 	      when 3	=>
 	         num_aus 	:= 3;
 	         au_start (0)	:= 6;
-	         au_start (1)	:= uint16_t (outVector (3)) * 16 +
-                                   uint16_t (Shift_Right (outVector (4), 4));
-	         au_start (2) 	:= (uint16_t (outVector (4)) and 16#0f#) * 256 +
-	                           uint16_t (outVector (5));
+	         au_start (1)	:= uint16_t (RSout_Data (3)) * 16 +
+                                   uint16_t (Shift_Right (RSout_Data (4), 4));
+	         au_start (2) 	:= (uint16_t (RSout_Data (4)) and 16#0f#) * 256 +
+	                           uint16_t (RSout_Data (5));
 	         au_start (3) 	:= uint16_t (110 * (bitRate / 8));
 	
 	      when others =>	-- cannot happen
@@ -254,15 +257,19 @@ package body mp4_handler is
 	            return;
 	         end if;
 --
---	Now first the crc check
-	         if dabPlus_crc (outVector, au_start (i),
+--	Now first the crc check. If the data passes the test,
+--	we copy the appropriate part of the data into the
+--	AU vector for further processing
+	         if dabPlus_crc (RSout_Data, au_start (i),
 	                                     aac_frame_length) then
 	            theAU (0 .. Integer (aac_frame_length - 1)) :=
-	                          outVector (Integer (au_start (i)) ..
+	                          RSout_Data (Integer (au_start (i)) ..
 	                          Integer (au_start (i)) +
 	                               Integer (aac_frame_length) - 1);
-	            for j in aac_frame_length .. aac_frame_length + 10 loop
-	               theAU (Integer (j)) := 0;
+--
+--	we add a few zero bytes to allow look ahead of the decoder
+	            for J in aac_frame_length .. aac_frame_length + 10 loop
+	               theAU (Integer (J)) := 0;
 	            end loop;
 
 	            faad_decoder. mp42pcm (short_Integer (dacRate),
@@ -271,13 +278,14 @@ package body mp4_handler is
 	                                   short_Integer (aacChannelMode),
 	                                   theAU,
 	                                   aac_frame_length,
-	                                   tmp,
+	                                   Samples_Out,
 	                                   Object. pcmHandler);
 	         else
 	            Object. au_errors	:= Object. au_errors + 1;
 	         end if;
 	      end;
 	   end loop;
+
 	   result  := true;
 	exception
 	   when Error: others	=> Put ("Exception in mp4 processor: ");
@@ -290,34 +298,38 @@ package body mp4_handler is
 	   faad_decoder. reset;
 	end reset;
 
-	function dabPlus_crc (msg:        byteArray;
-	                      start:      uint16_t;
-	                      length:     uint16_t) return Boolean is
-	   accumulator:  uint16_t	:= 16#FFFF#;
-	   genpoly:      uint16_t	:= 16#1021#;
+	function dabPlus_crc (Data_Vector : byteArray;
+	                      Start_Byte  : uint16_t;
+	                      Length      : uint16_t) return Boolean is
+	   Accumulator:  uint16_t	:= 16#FFFF#;
+	   Genpoly:      uint16_t	:= 16#1021#;
 	   crc:          uint16_t;
-	   data:         uint16_t;
-	   v1:           uint16_t;
-	   v2:           uint16_t;
+	   Data:         uint16_t;
+	   V1:           uint16_t;
+	   V2:           uint16_t;
 	begin
-           for i in 0 .. length - 1 loop
-	      data   := Shift_Left (uint16_t (msg (Integer (start + i))), 8);
-              for j in Reverse 1 .. 8 loop
-                 if ((data xor accumulator) and 16#8000#) /= 0 then
-                    accumulator	:= (Shift_Left (accumulator, 1) xor genpoly) and
+
+           for I in 0 .. Length - 1 loop
+	      Data   := Shift_Left (
+	                 uint16_t (Data_Vector (Integer (Start_Byte + i))), 8);
+              for J in Reverse 1 .. 8 loop
+	         if ((data xor accumulator) and 16#8000#) /= 0 then
+                    Accumulator	:=
+	                    (Shift_Left (Accumulator, 1) xor Genpoly) and
 	                                                   16#FFFF#;
                  else
-                    accumulator	:= Shift_Left (accumulator, 1) and 16#FFFF#;
+                    Accumulator	:= Shift_Left (Accumulator, 1) and 16#FFFF#;
 	         end if;
-                 data	:= Shift_Left (data, 1) and 16#FFFF#;
+
+                 Data	:= Shift_Left (Data, 1) and 16#FFFF#;
 	      end loop;
 	   end loop;
 --
 --	ok, now check with the crc that is contained
 --	in the au
-	   v1   := uint16_t (msg (Integer (start + length)));
-	   v2   := uint16_t (msg (Integer (start + length + 1)));
-	   crc  := not ((Shift_Left (v1, 8) or v2) and 16#FFFF#);
-           return (crc xor accumulator) = 0;
+	   V1   := uint16_t (Data_Vector (Integer (Start_Byte + Length)));
+	   V2   := uint16_t (Data_Vector (Integer (Start_Byte + Length + 1)));
+	   crc  := not ((Shift_Left (V1, 8) or V2) and 16#FFFF#);
+           return (crc xor Accumulator) = 0;
 	end dabPlus_crc;
 end  mp4_handler;

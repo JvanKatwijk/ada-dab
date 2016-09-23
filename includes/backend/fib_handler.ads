@@ -23,11 +23,12 @@ with Text_IO; use Text_IO;
 with header; use header;
 
 package fib_handler is
-   subtype fib_buffer is ByteArray (0 .. 255);
+   subtype   fib_buffer is ByteArray (0 .. 255);
    procedure process_FIB (p: fib_buffer); --
    procedure reset;
-   function syncReached return Boolean;
-   procedure dataforAudioService (s: String; d: out audioData);
+   function  syncReached return Boolean;
+   procedure Data_for_AudioService (Name_of_Program : String;
+	                            Data            : out audioData);
 private
 --	FIB;s are segments of 256 bits. When here
 --	we already passed the crc and start unpacking
@@ -51,12 +52,12 @@ private
 	                 offset	: short_Integer;
 	                 size	: short_Integer) return uint32_t;
 
-   function findServiceId	(serviceId	: uint32_t) return short_Integer;
-   procedure bind_audioService (TMid	: short_Integer;
-	                     SId	: uint32_t;
-	                     compnr	: short_Integer;
-	                     subChId	: short_Integer;
-	                     ps_flag	: short_Integer;
-	                     ASCTy	: short_Integer);
+   function findServiceId      (Service_Id : uint32_t) return short_Integer;
+   procedure bind_audioService (TMid       : short_Integer;
+	                        SId        : uint32_t;
+	                        compnr     : short_Integer;
+	                        subChId    : short_Integer;
+	                        ps_flag    : short_Integer;
+	                        ASCTy      : short_Integer);
 end fib_handler;
 
