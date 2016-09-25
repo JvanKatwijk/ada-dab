@@ -129,7 +129,7 @@ package body dab_handler is
 	                     end;
 	                  end loop;
 	               end;
-	               the_audioProcessor. addtoFrame (outV, 24 * bitRate);
+	               the_audioProcessor. Add_to_Frame (outV, 24 * bitRate);
 	            end if;
 	      end select;
 	   end loop;

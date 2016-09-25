@@ -25,6 +25,7 @@ with Text_IO;		use Text_IO;
 with Interfaces. C;	use Interfaces. C;
 with Ada. Exceptions;	use Ada. Exceptions;
 with simple_messages;	use simple_messages;
+with pad_handler;	use pad_handler;
 
 package body mp4_handler is
 	package the_rsDecoder is new reed_solomon (8, 8#0435#, 0, 1, 10);
@@ -55,11 +56,11 @@ package body mp4_handler is
 	   Free_byteArray (Object. RSout_Data);
 	end Finalize;
 --
---	The outsize world calls the "addtoFrame" function,
+--	The outsize world calls the "Add_to_Frame" function,
 --	that function does what the name suggests
-	procedure addtoFrame (Object:   in out mp4Processor;
-	                      V:        byteArray;
-	                      nbits:    short_Integer) is
+	procedure Add_to_Frame (Object   : in out mp4Processor;
+	                        Data     : byteArray;
+	                        Nbits    : short_Integer) is
 	   temp    :  Byte       := 0;
            nbytes  :  Integer    := Integer (nbits / 8);
 	   fcVector:  firecode_Checker. checkVector;
@@ -72,7 +73,7 @@ package body mp4_handler is
 	   for i in 0 .. nbytes - 1 loop
 	      temp    := 0;
 	      for j in 0 .. 8 - 1 loop
-	         temp := Shift_Left (temp, 1) or (V (8 * i + j) and 8#01#);
+	         temp := Shift_Left (temp, 1) or (Data (8 * i + j) and 8#01#);
 	      end loop;
 	      Object. RSin_Data (Block_FillIndex * nbytes + i) := temp;
 	   end loop;
@@ -122,7 +123,7 @@ package body mp4_handler is
 
 --	we are done, set up for the next superframe
 	   Object. Blocks_InBuffer	:= 0;
-	end addtoFrame;
+	end Add_to_Frame;
 --
 --	pretty tough function, we have a superframe and need to
 --	extract the audio frames
@@ -189,8 +190,9 @@ package body mp4_handler is
                  au_start (0)	:= 8;
                  au_start (1) 	:= uint16_t (RSout_Data (3)) * 16 + 
 	                           uint16_t (Shift_Right (RSout_Data (4), 4));
-                 au_start (2)	:= uint16_t ((RSout_Data (4)) and 16#0f#) * 256 +
-                                   uint16_t (RSout_Data (5));
+                 au_start (2)	:= uint16_t (
+	                             (RSout_Data (4)) and 16#0f#) * 256 +
+                                      uint16_t (RSout_Data (5));
                  au_start (3)	:= uint16_t (RSout_Data (6)) * 16 +
                                    uint16_t (Shift_Right (RSout_Data (7),  4));
                  au_start (4)	:= uint16_t (110 *  (bitRate / 8));
@@ -211,8 +213,9 @@ package body mp4_handler is
 	                           uint16_t (RSout_Data (5));
 	         au_start (3) 	:= uint16_t (RSout_Data (6)) * 16 +
                                    uint16_t (Shift_Right (RSout_Data (7), 4));
-	         au_start (4)	:= uint16_t ((RSout_Data (7)) and 16#0f#) * 256 +
-	                           uint16_t (RSout_Data (8));
+	         au_start (4)	:= uint16_t (
+	                               (RSout_Data (7)) and 16#0f#) * 256 +
+	                                uint16_t (RSout_Data (8));
 	         au_start (5)	:= uint16_t (RSout_Data (9)) * 16 +
                                    uint16_t (Shift_Right (RSout_Data (10), 4));
 	         au_start (6) 	:= uint16_t (110 *  (bitRate / 8));
@@ -235,8 +238,8 @@ package body mp4_handler is
 
 	   for i in 0 ..  num_aus - 1 loop
 	      declare
-	         aac_frame_length:   uint16_t;
-	         theAU:              ByteArray (0 .. 1920) := (others => 0);
+	         aac_frame_length  : uint16_t;
+	         theAU             : ByteArray (0 .. 1920) := (others => 0);
 	      begin
 	         Object. au_count   := Object. au_count + 1;
 --
@@ -266,7 +269,11 @@ package body mp4_handler is
 	                          RSout_Data (Integer (au_start (i)) ..
 	                          Integer (au_start (i)) +
 	                               Integer (aac_frame_length) - 1);
---
+
+	             if (Shift_Right (theAU (0), 5) and 07) = 4 then
+	                pad_handler. processPAD (theAU);
+	             end if;
+
 --	we add a few zero bytes to allow look ahead of the decoder
 	            for J in aac_frame_length .. aac_frame_length + 10 loop
 	               theAU (Integer (J)) := 0;

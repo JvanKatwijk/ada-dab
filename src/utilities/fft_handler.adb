@@ -29,14 +29,15 @@ package body fft_handler is
 	end do_FFT;
 
         procedure Initialize (Object : in out FFT_Processor) is
-	   function createDescriptor (mode: Integer; size : Integer)
+	   function createDescriptor (Kind : Integer;
+	                              size : Integer)
 	                                             return System. Address;
 	   pragma Import (C, createDescriptor, "createDescriptor");
         begin
 	   Object. field	:=
 	               createDescriptor (
-	                           (if Object. mode = FORWARD then 0 else 1),
-	                            Object. size);
+	                           (if Object. Kind = FORWARD then 0 else 1),
+	                            T_u (Object. Mode));
 	end Initialize;
 
 	procedure Finalize (Object : in out FFT_Processor) is

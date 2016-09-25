@@ -19,17 +19,18 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 
-with header; use header;
+with header;	use header;
+with System;	use System;
 with audio_handler;
-with System; use System;
 with Interfaces. C;
+
 package mp2_handler is
 	type mp2Processor  is new audio_handler. Audio_Processor with private;
 	type mp2Processor_P is access all mp2Processor;
 
-	procedure addtoFrame (Object:  in out mp2Processor;
-	                      V:       byteArray;
-	                      nbits:   short_Integer);
+	procedure Add_to_Frame (Object  : in out mp2Processor;
+	                        Data    : byteArray;
+	                        nbits   : short_Integer);
 private
 	type C_intArray is array (Integer range <>) of Interfaces. C. int;
 	type kjmp2_context_t is

@@ -35,8 +35,8 @@ package audio_handler is
 	   end record;
 	type Audio_Processor_P is access all Audio_Processor' Class;
 
-	procedure addtoFrame (Object:   in out Audio_Processor;
-	                      V:        byteArray;
-	                      nbits:    short_Integer);
+	procedure Add_to_Frame (Object  : in out Audio_Processor;
+	                        Data    : byteArray;
+	                        Nbits   : short_Integer);
 end audio_handler;
 

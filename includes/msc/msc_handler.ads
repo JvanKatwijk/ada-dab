@@ -30,12 +30,12 @@
 --	Note CIF counts from 0 .. 3
 with header; use header;
 package msc_handler is
-	procedure set_Mode		(mode	: dabMode);
+	procedure set_Mode		(Mode	: Dabmode);
 	procedure reset;
 	procedure stop;
-	procedure set_audioData		(d	: audioData);
-	procedure process_mscBlock	(fbits	: shortArray;
-	                                  blkno	: Integer);
+	procedure set_audioData		(Data	: audioData);
+	procedure process_mscBlock	(Fbits	: shortArray;
+	                                 Blkno	: Integer);
 end msc_handler;
 
 

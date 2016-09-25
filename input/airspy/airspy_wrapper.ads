@@ -111,14 +111,6 @@ private
 	                                          return Airspy_Error;
 	pragma Import (C, Airspy_Set_Sample_Type, "airspy_set_sample_type");
 --
---	just for this one
-	type Int_Array is Array (Integer Range <>) of Interfaces. C. int;
-	subtype Rate_Buffer is Int_Array (0 .. 20);
-	procedure Airspy_Get_Samplerates (Device     : system. Address;
-	                                  Out_Buffer : out Rate_Buffer;
-	                                  Count      : Interfaces. C. int);
-	pragma Import (C, Airspy_Get_Samplerates, "airspy_get_samplerates");
-
 	function Airspy_Set_Samplerate	(Device      : system. Address;
 	                                 Sample_Rate : Integer)
 	                                          return Airspy_Error;

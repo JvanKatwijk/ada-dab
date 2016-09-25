@@ -36,10 +36,14 @@ package body Airspy_Wrapper is
 
 	The_Buffer        : Airspy_Buffer. ringBuffer_data (16 * 32768);
 	Input_Rate        : Integer	:= 2500000;	-- default
--- buffer for transfer to data into the ringbuffer
+--	buffer for transfer to data into the ringbuffer
 	Local_Buffer      : airspy_buffer. buffer_data (0 .. 2048000 / 500 - 1);
+
 --	we read 500 buffers per second, and we have to convert them
 --	to the DAB input rate of 2048000 samples per second
+--	Conversion is by simple linear interpolation. Since we do no know
+--	the inputrate (yet), we cannot yet decide on the size of the
+--	conversionbuffer.
 	Conversion_Buffer : complexArray_P;
 	Conversion_Index  : Integer	:= 0;
 	Maptable_Int      : FloatArray	(0 .. 2048000 / 500 - 1);
@@ -166,6 +170,7 @@ package body Airspy_Wrapper is
 	                                    (1.0 -  Inp_Ratio);
 	               end;
 	            end loop;
+
 	            The_Buffer. putDataIntoBuffer (Local_Buffer);
 --
 --	shift the sample at the end to the beginning, it is needed
@@ -219,9 +224,10 @@ package body Airspy_Wrapper is
 	end Valid_Device;
 --
 begin
-	Vga_Gain        := 11;
+	Vga_Gain        := 11;		-- reasonable defaults
 	Mixer_Gain      := 15;
 	Lna_Gain        := 11;
+
 	Running         := False;
 	Device_Is_Valid := False;
 	Result          := Airspy_Init;		-- this is s call
@@ -234,35 +240,68 @@ begin
 	   put_line ("airspy_open failed");
 	   goto l_end;
 	end if;
-
+--
+--	we look for n inputrate that is as close as possible to
+--	the required 2048000 samples/second
+--	We know that all airspy's support
 	Input_Rate     := 10000000;
+--
+--	The C- function "airspy_get_samplerates" is overloaded.
+--	when the third parameter is zero, it returns the amount
+--	of different samplerates the device supports,
+--	when the third parameter is the amount, it returns a list
+--	of supported rates.
+--
+--	We create different procedures for the different behaviour
+--	Note that we need to know the amount to create a subtype of
+--	a C array to catch the different rates.
+--	
 	declare
-	   Rates:	        Interfaces.C.int;
-	   The_Ratebuffer:	Rate_Buffer;
+	   type C_Array is array (Interfaces. C. int range <>)
+	                                             of Interfaces. C. int;
+	   Different_Rates  :	Interfaces. C. int;
+	   procedure Airspy_Amount_of_Rates (Device      : system. Address;
+	                                     Amount_Rates: out Interfaces. C. int;
+	                                     Zero        : Interfaces.C.int);
+	   pragma Import (C, Airspy_Amount_of_Rates,
+	                                     "airspy_get_samplerates");
 	begin
-	   Airspy_Get_Samplerates (Device_P. all, The_Ratebuffer, 0);
-	   Rates	:= the_rateBuffer (0);
-	   Airspy_Get_Samplerates (device_P. all,
-	                           The_Ratebuffer, Rates);
 
-	   for I in 0 .. integer (Rates) - 1 loop
-	      if The_Ratebuffer (i) > 2048000 and then
-	         The_Ratebuffer (i) < Interfaces. C. int (Input_Rate) then
-	         Input_Rate :=  integer (The_Ratebuffer (i));
-	      end if;
-	   end loop;
+	   Airspy_Amount_of_Rates (Device_P. all, Different_Rates, 0);
+--	This call returns the number of supported samplerates
+	   declare
+	      subtype Ratebuffer is C_Array (0 .. Different_Rates - 1);
+	      procedure Airspy_Get_Samplerates (Device     : system. Address;
+	                                        Out_Buffer : out Ratebuffer;
+	                                        Count      : Interfaces. C. int);
+	      pragma Import (C, Airspy_Get_Samplerates,
+	                                    "airspy_get_samplerates");
+	      The_Ratebuffer : Ratebuffer;
+	   begin
+--	read the list of supported rates
+	      Airspy_Get_Samplerates (device_P. all,
+	                           The_Ratebuffer, Different_Rates);
+
+--	and look for the one closest to and larger than 2048000
+	      for I in 0 .. Different_Rates - 1 loop
+	         if The_Ratebuffer (i) > 2048000 and then
+	            The_Ratebuffer (i) < Interfaces. C. int (Input_Rate) then
+	            Input_Rate :=  integer (The_Ratebuffer (i));
+	         end if;
+	      end loop;
+	   end;
 	end;
 --
---	the maptable and convTable are used to convert the inputRate
+--	the Maptable and ConvTable are used to convert the inputRate
 --	into a 2048000 rate
---	It is known that we get input every 2 millisecond input
+--	The setup is such that we get input every 2 millisecond input
 
 	for I in Maptable_int' Range loop
 	   declare 
 	      Integral_Part	: Float := Float' Floor (
 	                Float (I) * Float (Input_Rate / 500) / 4096.0);
 	   begin
-	      Maptable_int (I)	:= Integral_Part;
+	      Maptable_int (I)          := Integral_Part;
 	      Maptable_float (I)	:= 
 	                Float (I) * Float (Input_Rate / 500) / 4096.0 -
 	                                            Maptable_int (I);

@@ -59,15 +59,9 @@ package body Ofdm_Handler is
 	   Object. Coarse_Corrector     := 0;
 	   Object. Correction_Flag      := true;
 	   Object. Token_Length         := 0;
-	   Object. My_Mapper            := new freq_interleaver.
-	                                         interleaver (Object. Mode);
 --
 --	will be set/ controlled dynamically
 	   Object. The_Processor        := null;
-	   Object. My_Phasesynchronizer :=
-	                   new phase_handler. Phase_Synchronizer (Object. mode);
-	   Object. Ofdm_fft             := new fft_handler.
-	                                    FFT_Processor (FORWARD, Object. Tu);
 --
 	   for i in 0 .. Input_Rate - 1 loop
 	      Object. OscillatorTable (i) :=
@@ -78,19 +72,8 @@ package body Ofdm_Handler is
 	end Initialize;
 
 	procedure Finalize (Object : in out Ofdm_Processor) is
-	   procedure Free_fft is new Ada. Unchecked_Deallocation (
-	            Object => fft_handler. FFT_Processor,
-	            name   => fft_handler. FFT_Processor_P);
-	   procedure Free_interleaver is new Ada. Unchecked_Deallocation (
-	            Object => freq_interleaver. interleaver,
-	            Name   => freq_interleaver. interleaver_P);
-	   procedure Free_phaseSynchronizer is new Ada. Unchecked_Deallocation (
-	            Object => phase_handler. Phase_Synchronizer,
-	            Name   => phase_handler. Phase_Synchronizer_P);
 	begin
-	   Free_fft               (Object. Ofdm_fft);
-	   Free_interleaver       (Object. My_Mapper);
-	   Free_phaseSynchronizer (Object. My_Phasesynchronizer);
+	   null;
 	end Finalize;
 --
 --	Someone (external to this function) will eventually

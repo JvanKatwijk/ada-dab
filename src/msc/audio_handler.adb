@@ -23,11 +23,11 @@
 
 
 package body audio_handler is
-   procedure addtoFrame (Object	: in out Audio_Processor;
-	                 V	: byteArray;
-	                 nbits	: short_Integer) is
-   begin
-	null;
-   end;
+	procedure Add_to_Frame (Object  : in out Audio_Processor;
+	                      Data    : byteArray;
+	                      Nbits   : short_Integer) is
+	begin
+	   null;
+	end Add_to_Frame;
 end audio_handler;
 

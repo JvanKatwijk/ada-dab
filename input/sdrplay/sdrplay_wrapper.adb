@@ -26,63 +26,63 @@ package body sdrplay_wrapper is
 	Current_Gain      : Integer                       := 40;
 	VFO_Frequency     : Integer                       := 227000000;
 
-	type KindofRequest is (FREQ_CHANGE, GAIN_CHANGE, STOP_CHANGE);
-	type request is
+	type Kind_of_Request is (FREQ_CHANGE, GAIN_CHANGE, STOP_CHANGE);
+	type Request is
 	   record
-	      command:   KindofRequest;
+	      command:   Kind_of_Request;
 	      value:     Interfaces. C. int;
 	   end record;
 --
 --	In order to - dynamically - change settings as gain or frequency
 --	we use a simple buffer to store the requests.
-	type Holder is array (Integer Range <>) of request;
-	protected type data (Size: Integer) is
-	   entry Put (Item  : request);
-	   entry Get (Item  : out request);
-	   function amount return Integer;
-	   procedure clean;
+	type Request_Queue is array (Integer Range <>) of Request;
+	protected type Request_Handler (Size: Integer) is
+	   entry Put (Item  : Request);
+	   entry Get (Item  : out Request);
+	   function Amount return Integer;
+	   procedure Clean;
 	private
-	   Values   : Holder (1 .. Size);
+	   Values   : Request_Queue (1 .. Size);
 	   Next_In  : Integer   := 1;
 	   Next_Out : Integer   := 1;
 	   Count    : Natural   := 0;
-	end data;
+	end Request_Handler;
 
-	protected body data is
-	   entry Put (Item : in request) when Count < Size is
+	protected body Request_Handler is
+	   entry Put (Item : in Request) when Count < Size is
 	   begin
 	      Values (Next_In) := Item;
 	      Next_In          := (Next_In mod Size) + 1;
 	      Count            := Count + 1;
 	   end Put;
 
-	   entry Get (Item: out request) when Count > 0 is
+	   entry Get (Item: out Request) when Count > 0 is
 	   begin
 	      Item             := Values (Next_Out);
 	      Next_Out         := (Next_Out mod Size) + 1;
 	      Count            := Count - 1;
 	   end Get;
 
-	   function amount return Integer is
+	   function Amount return Integer is
 	   begin
 	      return Count;
 	   end;
 
-	   procedure clean is
+	   procedure Clean is
 	   begin
 	      Next_In          := 1;
 	      Next_Out         := 1;
 	      Count            := 0;
 	   end clean;
-	end data;
+	end Request_Handler;
 
-	changeRequests	: data (10);
+	ChangeRequests	: Request_Handler (10);
 --
 --	the "worker" will capture the samples and make them
 --	into nice complex numbers.
 --	minor changes for the frequency and settings of the
 --	gain are done within the task. Changes in frequency
---	that require a bandswitch involve a larger operation:
+--	that require a Bandswitch involve a larger operation:
 --	i.e. killing the task, and restarting it with the new
 --	frequency in the new band.
 	task body sdrplayWorker is
@@ -133,7 +133,7 @@ package body sdrplay_wrapper is
 	      grc        : Interfaces. C. int;
 	      rfc        : Interfaces. C. int;
 	      fsc        : Interfaces. C. int;
-	      workBuffer : inputBuffer. buffer_data (0 .. Integer (sps) - 1);
+	      Work_Buffer : inputBuffer. buffer_data (0 .. Integer (sps) - 1);
 	   begin
 	      while Running loop           -- running is global here
 	         err :=  mir_sdr_ReadPacket (xi,
@@ -150,14 +150,14 @@ package body sdrplay_wrapper is
 --	currently, we are not interested in the results other than the
 --	actual data
 	            for I in 0 .. Integer (sps) - 1 loop
-	               workBuffer (i) :=
+	               Work_Buffer (i) :=
 	                         (Float (xi (I)) / 2048.0,
 	                          Float (xq (I)) / 2048.0);
 	            end loop;
-	            sdrplayBuffer. putDataIntoBuffer (workBuffer);
+	            sdrplayBuffer. putDataIntoBuffer (Work_Buffer);
 	         end if;
 	         declare
-	            The_Request: request;
+	            The_Request: Request;
 	         begin
 	            while changeRequests. amount > 0 loop
 	               changeRequests. Get (The_Request);
@@ -181,50 +181,55 @@ package body sdrplay_wrapper is
 	      when Others	=> put_line ("sdrplayWorker Terminated");
 	end sdrplayWorker;
 
---	For the sdrplay we use
-	function bankFor_sdr (freq: Integer) return Integer is
+--	The SDRplay requires that a changing a frequency to
+--	one in a different band requires Uninit - Init.
+--	The bands are defined here as a local function
+	function Frequency_Banks (Frequency: Integer) return Integer is
 	begin
-	   if freq < 12 * MHz (1) then
+	   if Frequency < 12 * MHz (1) then
 	      return 1;
-	   elsif freq < 30 * MHz (1) then
+	   elsif Frequency < 30 * MHz (1) then
 	      return 2;
-	   elsif freq < 60 * MHz (1) then
+	   elsif Frequency < 60 * MHz (1) then
 	      return 3;
-	   elsif freq < 120 * MHz (1) then
+	   elsif Frequency < 120 * MHz (1) then
 	      return 4;
-	   elsif freq < 250 * MHz (1) then
+	   elsif Frequency < 250 * MHz (1) then
 	      return 5;
-	   elsif freq < 420 * MHz (1) then
+	   elsif Frequency < 420 * MHz (1) then
 	      return 6;
-	   elsif freq < 1000 * MHz (1) then
+	   elsif Frequency < 1000 * MHz (1) then
 	      return 7;
-	   elsif freq < 2000 * MHz (1) then
+	   elsif Frequency < 2000 * MHz (1) then
 	      return 8;
 	   else
 	      return -1;
 	   end if;
-	end bankFor_sdr;
+	end Frequency_Banks;
 
 	procedure Set_VFOFrequency (New_Frequency : Integer) is
 	   res:   Boolean;
 	begin
 
-	   if bankFor_sdr (New_Frequency) = -1 then   -- illegal
+	   if Frequency_Banks (New_Frequency) = -1 then   -- illegal
 	      return;
 	   end if;
-
+--
+--	If "worker" is not active, the change in frequency will
+--	only be effective at the next instance of the "worker"
 	   if Our_Worker = NULL then         -- wait 
 	      VFO_Frequency := New_Frequency;
 	      return;
 	   end if;
 
-	   if bankFor_sdr (New_Frequency) /= bankFor_sdr (VFO_Frequency) then
+	   if Frequency_Banks (New_Frequency) /=
+	              Frequency_Banks (VFO_Frequency) then
 	      Stop_Reader;
 	      VFO_Frequency   := New_Frequency;
 	      Restart_Reader (res);
 	   else		-- just a local change
 	      changeRequests. Put ((FREQ_CHANGE,
-	                                 Interfaces. C. int (New_Frequency)));
+	                            Interfaces. C. int (New_Frequency)));
 	      VFO_Frequency	:= New_Frequency;
 	   end if;
 	end Set_VFOFrequency;

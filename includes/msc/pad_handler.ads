@@ -1,7 +1,7 @@
 --
 --    Copyright (C) 2016
 --    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--    Lazy Chair Computing
 --
 --    This file is part of the SDR-J (JSDR).
 --    SDR-J is free software; you can redistribute it and/or modify
@@ -19,25 +19,19 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 --
-with header;		use header;
-with Interfaces;	use Interfaces;
-with Interfaces. C;	use Interfaces. C;
-with Ada. Finalization;
-with system;
-
-package FFT_Handler is
-	type FFT_Processor (Kind: fftMode; Mode : Dabmode) is new
-	                         Ada. Finalization. Controlled with private;
-	type FFT_Processor_P	is access all FFT_Processor;
-	procedure do_FFT (Object: in out FFT_Processor;
-	                             Vector: in out complexArray);
+with header;	use header;
+package pad_handler is
+	procedure processPAD (theAU : byteArray);
 private
-	type FFT_Processor (Kind: fftMode; Mode : Dabmode) is new
-	                      Ada. Finalization. Controlled with 
-	record
-	   Field	: System. Address;
-	end record;
-	procedure Initialize (Object : in out FFT_Processor);
-	procedure Finalize   (Object : in out FFT_Processor);
-end FFT_Handler;
-
+	procedure Handle_Short_PAD (buffer  : byteArray);
+	procedure dynamic_Label (data    : byteArray;
+	                         Length  : short_Integer;
+	                         CI      : uint8_t);
+	procedure Handle_Variable_PAD (buffer                  : byteArray;
+	                               Contents_Indicator_flag : uint8_t);
+	function Map_PAD_Length (ind : uint8_t) return Integer;
+	procedure Add_Segment (Data : byteArray; 
+	                       Segment_Number : short_Integer;
+	                       Segment_Length : short_Integer;
+	                       isLast         : Boolean);
+end pad_handler;

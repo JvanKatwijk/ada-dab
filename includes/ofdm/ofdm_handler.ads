@@ -44,7 +44,7 @@ private
 	                       Out_V  : out complexArray;
 	                       Phase  : Integer);
 
-	type Ofdm_Processor   (Mode             : dabMode;
+	type Ofdm_Processor   (Mode             : Dabmode;
 	                       Fetch_Samples    : Get_Samples_Access;
 	                       Available_Samples: Available_Samples_Access) is
 	            new Ada. Finalization. Controlled with
@@ -67,9 +67,9 @@ private
 	      Correction_Flag      : Boolean;
 	      Token_Length         : Integer;
 	      The_Processor        : Ofdm_Worker_P;
-	      My_Phasesynchronizer : phase_handler. Phase_Synchronizer_P;
-	      Ofdm_fft             : fft_handler. FFT_Processor_P;
-	      My_Mapper            : freq_interleaver. interleaver_P;
+	      My_Phasesynchronizer : phase_handler. Phase_Synchronizer (Mode);
+	      Ofdm_fft             : fft_handler. FFT_Processor (FORWARD, Mode);
+	      My_Mapper            : freq_interleaver. interleaver (Mode);
 	      OscillatorTable      : complexArray (0 .. inputRate - 1);
 	   end record;
 	procedure Initialize	(Object : in out Ofdm_Processor);

@@ -18,11 +18,12 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with Interfaces; use Interfaces;
-with Text_IO; use Text_IO;
-with audiopackage; use audiopackage;
+with Interfaces;	use Interfaces;
+with Text_IO;		use Text_IO;
+with audiopackage;	use audiopackage;
 
 package body mp2_handler is
+
 	KJMP2_SAMPLES_PER_FRAME : constant Integer	:= 1152;
 	outBuffer:  shortArray (0 .. 2 * KJMP2_SAMPLES_PER_FRAME - 1);
 	sample_Buf: complexArray (0 .. KJMP2_SAMPLES_PER_FRAME - 1);
@@ -44,26 +45,26 @@ package body mp2_handler is
 	end Finalize;
 --
 --	just a local
-	procedure addbittoMP2   (v:      in out byteArray;
-	                         b:      uint8_t;
-	                         bitp:   Integer) is
-	   byte:      uint8_t   := v (bitp / 8);
+	procedure Add_Bit_to_MP2   (Data  : in out byteArray;
+	                            Bit   : uint8_t;
+	                            Bitp  : Integer) is
+	   byte:      uint8_t   := Data (bitp / 8);
 	   bitnr:     Integer   := 7 - Integer (uint32_t (bitp) and 8#07#);
 	   newbyte:   uint8_t   := Shift_Left (uint8_t (01), bitnr);
 	begin
-	   if b = 0 then
+	   if Bit = 0 then
 	      byte := byte and (not newbyte);
 	   else
 	      byte := byte or newbyte;
 	   end if;
-	   v (bitp / 8)	:= byte;
-	end addbittoMP2;
+	   Data (bitp / 8)	:= byte;
+	end Add_Bit_to_MP2;
 --
---	Note: V, input, is in bits, while the result is
+--	Note: Data, input, is in bits, while the result is
 --	in bytes
-	procedure addtoFrame (Object:   in out mp2Processor;
-	                      V:        byteArray;
-	                      nbits:    short_Integer) is
+	procedure Add_to_Frame (Object  : in out mp2Processor;
+	                        Data    : byteArray;
+	                        Nbits   : short_Integer) is
 	   lf:     Integer := 
 	           (if Object. baudRate = 48000 then Object. MP2framesize
 	                                      else 2 * Object. MP2framesize);
@@ -71,9 +72,9 @@ package body mp2_handler is
 	begin
 	   for i in 0 .. Integer (nbits) - 1 loop
 	      if Object. MP2Header_OK = 2 then
-	         addbittoMP2 (Object. MP2frame. all,
-	                      v (i),
-	                      Object. MP2bitCount);
+	         Add_bit_to_MP2 (Object. MP2frame. all,
+	                         Data (i),
+	                         Object. MP2bitCount);
 	         Object. MP2bitCount   := Object. MP2bitCount + 1;
 	         if Object. MP2bitCount >= lf then
 	            count := kjmp2_decode_frame (Object. context' Address,
@@ -95,13 +96,13 @@ package body mp2_handler is
 	            Object. MP2bitCount      := 0;
 	         end if;
 	      elsif Object. MP2Header_OK = 0 then	-- no sync yet
-	         if v (i) = 01 then		-- all bits should be a "1"
+	         if Data (i) = 01 then		-- all bits should be a "1"
 	            Object. MP2HeaderCount  := Object. MP2HeaderCount + 1;
 	            if Object. MP2HeaderCount = 12 then -- we have 12 '1' bits in a row
 	               Object. MP2bitCount := 0;
 	               for j in 0 .. 12 - 1 loop
-	                  addbittoMP2 (Object. MP2frame. all,
-	                                      1, Object. MP2bitCount);
+	                  Add_Bit_to_MP2 (Object. MP2frame. all,
+	                                           1, Object. MP2bitCount);
 	                  Object. MP2bitCount   := Object. MP2bitCount + 1;
 	               end loop;
 	               Object. MP2Header_OK  := 1;	-- next state
@@ -110,9 +111,9 @@ package body mp2_handler is
 	             Object. MP2HeaderCount   := 0;
 	         end if;
 	      elsif Object. MP2Header_OK = 1 then	
-	         addbittoMP2 (Object. MP2frame. all,
-	                      v (i),
-	                      Object. MP2bitCount);
+	         Add_Bit_to_MP2 (Object. MP2frame. all,
+	                         Data (i),
+	                         Object. MP2bitCount);
 	         Object. MP2bitCount	:= Object. MP2bitCount + 1;
 	         if Object. MP2bitCount = 24 then   -- relevant part header
 	            Object. baudRate := 
@@ -129,6 +130,6 @@ package body mp2_handler is
 	         end if;
 	      end if;
 	   end loop;
-	end addtoFrame;
+	end Add_to_Frame;
 end mp2_handler;
 

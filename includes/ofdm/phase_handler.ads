@@ -38,8 +38,8 @@ private
 	   Tu		: integer;
 	   K		: integer;
 	   Ref_Table	: complexArray_P;
-	   Forward_fft	: fft_handler. FFT_Processor_P;
-	   Backward_fft	: fft_handler. FFT_Processor_P;
+	   Forward_fft	: fft_handler. FFT_Processor (FORWARD, Mode);
+	   Backward_fft	: fft_handler. FFT_Processor (BACKWARD, Mode);
 	end record;
 	procedure	Initialize	(Object : in out Phase_Synchronizer);
 	procedure	Finalize	(Object : in out Phase_Synchronizer);

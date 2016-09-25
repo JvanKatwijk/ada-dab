@@ -29,10 +29,6 @@ package body phase_handler is
 	   Object. K              := header. K   (Object. Mode);
 	   Object. Ref_Table      := new complexArray (0 .. Object. Tu - 1);
 	   Object. Ref_Table. all := (Others => (0.0, 0.0));
-	   Object. Forward_fft    := new fft_handler.
-	                               FFT_Processor (FORWARD, Object. Tu);
-	   Object. Backward_fft   := new fft_handler.
-	                               FFT_Processor (BACKWARD, Object. Tu);
 	   for i in 1 ..  Object. K / 2 loop
 	      declare
 	         Phi_k : float;
@@ -48,14 +44,8 @@ package body phase_handler is
 	end Initialize;
 
 	procedure Finalize (Object : in out Phase_Synchronizer) is
-	   procedure Free_fft is
-	              new Ada. Unchecked_Deallocation (
-	                          Object   => fft_handler. FFT_Processor,
-	                          Name     => fft_handler. FFT_Processor_P);
 	begin
 	   Free_complexArray (Object. Ref_Table);
-	   Free_fft (Object. Forward_fft);
-	   Free_fft (Object. Backward_fft);
 	end Finalize;
 
 --	we will ensure that inputBuffer' length = Tu

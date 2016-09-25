@@ -37,9 +37,9 @@ package mp4_handler is
 	type mp4Processor  is new audio_handler. Audio_Processor with private;
 	type mp4Processor_P is access all mp4Processor;
 
-	procedure addtoFrame (Object  :   in out mp4Processor;
-	                      V       :   byteArray;
-	                      nbits   :   short_Integer);
+	procedure Add_to_Frame (Object  :   in out mp4Processor;
+	                        Data    :   byteArray;
+	                        Nbits   :   short_Integer);
 private
 	procedure processSuperframe (Object    :  in out mp4Processor;
 	                             frameBytes:  byteArray;

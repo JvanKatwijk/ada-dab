@@ -32,29 +32,28 @@
 --	with the processing of incoming dab data.
 
 --	Note CIF counts from 0 .. 3
-with msc_handler;
-with header;	use header;
-with Text_IO;	use Text_IO;
-with Ada. Exceptions; use Ada. Exceptions;
+with header;		use header;
+with Text_IO;		use Text_IO;
+with Ada. Exceptions;	use Ada. Exceptions;
 with Ada. Unchecked_Deallocation;
-with dab_handler; use dab_handler;
+with dab_handler;	use dab_handler;
 with audiopackage;
 package body msc_handler is
 	mode		: dabMode	:= Mode_1;	-- default
-	bitsperBlock	: Integer	:= 2 * 1536;	-- default
-	blocksperCIF	: Integer	:= 18;		-- default;
-	audio		: audiopackage. audioSink_P;
+	Bits_per_Block	: Integer	:= 2 * 1536;	-- default
+	Blocks_per_CIF	: Integer	:= 18;		-- default;
+	Audio_Handler	: audiopackage. audioSink_P;
 	task msc_processor is
-	   entry set_Mode	(mode	: dabMode);
+	   entry set_Mode         (Mode  : Dabmode);
 	   entry reset;
 	   entry stop;
-	   entry process_mscBlock (fbits: shortArray; blkno : Integer);
-	   entry set_audioData	  (d	: audioData);
+	   entry process_mscBlock (Fbits : shortArray; Blkno : Integer);
+	   entry set_audioData    (Data  : audioData);
 	end msc_processor;
 
-	procedure set_Mode	(mode: dabMode) is
+	procedure set_Mode        (Mode : Dabmode) is
 	begin
-	   msc_processor. set_Mode (mode);
+	   msc_processor. set_Mode (Mode);
 	end set_Mode;
 	
 	procedure reset is
@@ -62,9 +61,9 @@ package body msc_handler is
 	    msc_processor. reset;
 	end reset;
 
-	procedure set_audioData	(d	: audioData) is
+	procedure set_audioData    (Data : audioData) is
 	begin
-	   msc_processor. set_AudioData (d);
+	   msc_processor. set_AudioData (Data);
 	end set_audioData;
 
 	procedure stop is
@@ -72,49 +71,53 @@ package body msc_handler is
 	   msc_processor. stop;
 	end;
 
-	procedure process_mscBlock	(fbits	: shortArray;
-	                                 blkno	: Integer) is
+	procedure process_mscBlock	(Fbits	: shortArray;
+	                                 Blkno	: Integer) is
 	begin
-	   msc_processor. process_mscBlock (fbits, blkno);
+	   msc_processor. process_mscBlock (Fbits, Blkno);
 	end process_mscBlock;
 	   
 	procedure Free_dabProcessor is new Ada. Unchecked_DeAllocation (
 	   Object	=> dab_handler. dabProcessor,
 	   Name		=> dab_handler. dabProcessor_P);
+
 	task body msc_processor is
-	   CUSize	: constant Integer := 4 * 16;
-	   cifVector	: shortArray (0 .. 55296 - 1);
-	   cifCount	: Integer	:= 0;
-	   endMSC	: exception;
-	   theData	: audioData;
-	   dabModus	: dataMode;
-	   currentblk	: Integer	:= 0;
-	   work_to_be_done	: Boolean	:= False;
-	   startAddr	: short_Integer;
-	   Length	: short_Integer;
-	   the_dabProcessor	: dab_handler. dabProcessor_P	:= null;
+	   CUSize          : constant Integer := 4 * 16;
+	   Cif_Vector      : shortArray (0 .. 55296 - 1);
+	   Cif_Count       : Integer          := 0;
+	   The_Data        : audioData;
+	   Dabmodus        : dataMode;
+	   Current_Block   : Integer          := 0;
+	   Work_To_Be_Done : Boolean          := False;
+	   Start_Address   : short_Integer;
+	   Length          : short_Integer;
+	   The_Dabprocessor: Dab_Handler. Dabprocessor_P := null;
+	   endMSC          : exception;
 	begin
-	   accept set_Mode (mode : dabMode) do
-	      bitsperBlock	:= 2 * K (mode);
-	      case mode is
-	         when Mode_1	=> blocksperCIF := 18;
-	         when Mode_2	=> blocksperCIF := 72;
-	         when Mode_4	=> blocksperCIF := 36;
-	         when others	=> blocksperCIF	:= 18; -- should not happen
+
+	   accept Set_Mode (Mode : Dabmode) do
+	      Bits_per_Block	:= 2 * K (mode);
+	      case Mode is
+	         when Mode_1	=> Blocks_per_CIF := 18;
+	         when Mode_2	=> Blocks_per_CIF := 72;
+	         when Mode_4	=> Blocks_per_CIF := 36;
+	         when others	=> Blocks_per_CIF := 18; -- should not happen
 	      end case;
-	   end set_Mode;
+	   end Set_Mode;
+--
+--	The main loop
 	   loop
 	      select
 	         accept reset;
-	         work_to_be_done	:= false;
-	         currentblk		:= 0;
-	         cifCount		:= 0;
+	         Work_To_Be_Done   := false;
+	         Current_Block     := 0;
+	         Cif_Count         := 0;
 	      or
 	         accept stop;
-	         if the_dabProcessor /= null
+	         if The_Dabprocessor /= null
 	         then
-	            the_dabProcessor. stop;
-	            while not the_dabProcessor' terminated loop
+	            The_Dabprocessor. stop;
+	            while not The_Dabprocessor' terminated loop
 	               delay 0.01;
 	            end loop;
 	            put_line ("old dab handler now stopped");
@@ -122,54 +125,51 @@ package body msc_handler is
 	         end if;
 	         raise endMSC;
 	      or 
-	         accept set_audioData (d: audioData) do
-	            theData	:= d;
-	         end set_audioData;
-	         work_to_be_done	:= true;
-	         startAddr		:= theData. startAddr;
-	         Length			:= theData. Length;
-	         if  theData. ASCTy = 8#077#
-	         then
-	            dabModus	:= DAB_PLUS;
+	         accept Set_AudioData (Data: audioData) do
+	            The_Data         := Data;
+	         end Set_AudioData;
+	         Work_To_Be_Done     := true;
+	         Start_Address       := The_Data. startAddr;
+	         Length              := The_Data. Length;
+	         if The_Data. ASCTy = 8#077# then
+	            Dabmodus         := DAB_PLUS;
 	         else
-	            dabModus	:= DAB;
+	            Dabmodus         := DAB;
 	         end if;
-	         if the_dabProcessor /= null
-	         then
-	            the_dabProcessor. stop;
-	            while not the_dabProcessor' terminated loop
+
+	         if The_Dabprocessor /= null then
+	            The_Dabprocessor. stop;
+	            while not The_Dabprocessor' terminated loop
 	               delay 0.01;
 	            end loop;
 	            put_line ("old dab handler now stopped");
 	            Free_dabProcessor (the_dabProcessor);
 	         end if;
-	         the_dabProcessor	:= new dab_handler. dabProcessor
-	                                            (dabModus,
-	                                    Integer (theData. Length) * CUSize,
-	                                             theData. bitRate,
-	                                             theData. uepFlag,
-	                                             theData. protLevel,
-	                                             audio);
+	         The_Dabprocessor	:= new Dab_Handler. Dabprocessor
+	                                            (Dabmodus,
+	                                    Integer (The_Data. Length) * CUSize,
+	                                             The_Data. bitRate,
+	                                             The_Data. uepFlag,
+	                                             The_Data. protLevel,
+	                                             Audio_Handler);
 
 	      or
-	         accept process_mscBlock (fbits	: shortArray;
+	         accept Process_mscBlock (fbits	: shortArray;
 	                                  blkno	: Integer) do
-	            if work_to_be_done
-	            then
-	               currentblk:= (blkno - 5) mod blocksperCIF;
-	               cifVector (currentblk * bitsperBlock .. 
-	                            (currentblk  + 1) * bitsperBlock - 1) :=
+	            if Work_To_Be_done then
+	               Current_Block := (blkno - 5) mod Blocks_per_CIF;
+	               Cif_Vector (Current_Block * Bits_per_Block .. 
+	                          (Current_Block  + 1) * Bits_per_Block - 1) :=
 	                                        fbits;
 	            else
 	               return;
 	            end if;
 	         end process_mscBlock;
-	         if currentblk >= blocksperCIF - 1
-	         then	-- we have a full CIF
-	            cifCount	:= (cifCount + 1) mod 4;
-	            the_dabProcessor.
-	                   process (cifVector (Integer (startAddr) * CUSize ..
-	                                 Integer (startAddr + Length) * CUSize - 1));
+	         if Current_Block >= Blocks_per_CIF - 1 then  --  a full CIF
+	            Cif_Count	:= (Cif_Count + 1) mod 4;
+	            The_DabProcessor.
+	                   Process (Cif_Vector (Integer (Start_Address) * CUSize ..
+	                                 Integer (Start_Address + Length) * CUSize - 1));
 	         end if;
 	      end select;
 	   end loop;
@@ -182,18 +182,16 @@ package body msc_handler is
 	res	: Boolean;
 begin
 
-	audio		:= new  audiopackage.
+	Audio_Handler       := new  audiopackage.
 	                              audioSink (48000,
 	                                         32768,
 	                                         audiopackage. HIGH_LATENCY);
-	audio. selectDefaultDevice (res);
-	if res
-	then
+	Audio_Handler. selectDefaultDevice (res);
+	if res then
 	   put_line ("setting default device succeeded");
 	end if;
-	audio. portAudio_start (res);
-	if res
-	then
+	Audio_Handler. portAudio_start (res);
+	if res then
 	   put_line ("starting device succeeded");
 	end if;
 end msc_handler;
