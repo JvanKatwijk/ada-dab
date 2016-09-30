@@ -21,17 +21,18 @@
 --
 with header;	use header;
 package pad_handler is
-	procedure processPAD (theAU : byteArray);
+	procedure Process_PAD         (theAU : byteArray);
+	procedure Reset;
 private
-	procedure Handle_Short_PAD (buffer  : byteArray);
-	procedure dynamic_Label (data    : byteArray;
-	                         Length  : short_Integer;
-	                         CI      : uint8_t);
-	procedure Handle_Variable_PAD (buffer                  : byteArray;
+	procedure Handle_Short_PAD    (Buffer                  : byteArray;
 	                               Contents_Indicator_flag : uint8_t);
-	function Map_PAD_Length (ind : uint8_t) return Integer;
-	procedure Add_Segment (Data : byteArray; 
-	                       Segment_Number : short_Integer;
-	                       Segment_Length : short_Integer;
-	                       isLast         : Boolean);
+	procedure Handle_Variable_PAD (Buffer                  : byteArray;
+	                               Contents_Indicator_flag : uint8_t);
+	procedure Dynamic_Label       (Data    : byteArray;
+	                               CI      : uint8_t);
+
+	procedure Add_Segment         (Segment_Number          : short_Integer;
+	                               Segment_Text            : byteArray;
+	                               Current_Fillpoint       : short_integer);
+	function Map_Length (EncodedLength : uint8_t) return uint8_t;
 end pad_handler;

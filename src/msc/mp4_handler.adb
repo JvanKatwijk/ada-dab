@@ -48,6 +48,7 @@ package body mp4_handler is
 	   Object. au_count          := 0;
 	   Object. au_errors         := 0;
 	   faad_decoder. reset;		
+	   pad_handler. reset;
 	end Initialize;
 
 	procedure Finalize (Object: in out mp4Processor) is
@@ -271,7 +272,7 @@ package body mp4_handler is
 	                               Integer (aac_frame_length) - 1);
 
 	             if (Shift_Right (theAU (0), 5) and 07) = 4 then
-	                pad_handler. processPAD (theAU);
+	                pad_handler. Process_PAD (theAU);
 	             end if;
 
 --	we add a few zero bytes to allow look ahead of the decoder

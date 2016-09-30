@@ -111,7 +111,6 @@ package Header is
 	for fftMode use (FORWARD => 0, BACKWARD => 1);
 
 --
---
 	type Get_Samples_Access is access procedure (X : out complexArray;
 	                                             Y: out Integer);
 	type Available_Samples_Access is access function return Integer;

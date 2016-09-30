@@ -152,9 +152,13 @@ package body Gui_Handler is
 	                label_fic_results. Set_Label (Integer' Image (Simple_message. val));
 	         when MSC_RESULTS	=>
 	                label_msc_results. Set_Label (Integer' Image (Simple_message. val));
+	         when TEXT_SIGNAL       =>
+	                 build_new_text_line (Simple_message. val);
+
 	         when others	=> null;
 	      end case;
 	   end loop;
+
 	   while string_messages. string_messages. amount > 0 loop
 	      string_messages. string_messages. Get (String_Message);
 	      case String_Message. key is
@@ -168,7 +172,17 @@ package body Gui_Handler is
 	   end loop;
 	   return true;
 	end dispatch;
---
+
+	messageString : String (1 .. 24) := (others => ' ');
+
+	procedure build_new_text_line (val : Integer) is
+	   myChar : Character :=  Character' Val (val);
+	begin
+	   messageString (1 .. 23) := messageString (2 .. 24);
+	   messageString (24)      := myChar;
+	   label_Text. set_Label (messageString);
+	end build_new_text_line;
+
 --	we handle the GUI on package level, since that gives the opportunity
 --	to handle requests and having access to the data
 	procedure Setup_GUI is
@@ -233,6 +247,10 @@ package body Gui_Handler is
 	   Gtk_New (label_ensemble, "ensemble name");
 	   Grid. Attach_Next_To (label_ensemble,
 	                           label_fic_results, POS_RIGHT, 2, 1);
+
+	   Gtk_New (label_Text, " dynamic label text                 ");
+	   Grid. Attach_Next_To (label_Text,
+	                           label_msc_results, POS_BOTTOM, 2, 3);
 
 	   Gtk_New (Programselector);
 	   Grid. Attach_Next_To (Programselector,

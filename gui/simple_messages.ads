@@ -23,7 +23,8 @@ package simple_messages is
 	                FIC_RESULTS,
 	                MSC_RESULTS,
 	                FINE_CORRECTOR_SIGNAL,
-	                COARSE_CORRECTOR_SIGNAL);
+	                COARSE_CORRECTOR_SIGNAL,
+	                TEXT_SIGNAL);
 	type message is
 	record
 	   key: SIGNAL;

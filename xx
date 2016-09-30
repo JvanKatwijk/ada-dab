@@ -1,5 +1,0 @@
-gcc -c -gnatpn -gnatyl uep_handler.adb
-gprbind main.bexch
-gnatbind main.ali
-gcc -c b__main.adb
-gcc main.o -gnatpn -lfftw3f -lrtlsdr -lairspy -lmirsdrapi-rsp -lfaad -lportaudio -lm -Wl,--as-needed -lgtk-3 -lgdk-3 -lpangocairo-1.0 -lpango-1.0 -latk-1.0 -lcairo-gobject -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -Wl,--export-dynamic -lgmodule-2.0 -pthread -lglib-2.0 -Wl,-z,relro -o main

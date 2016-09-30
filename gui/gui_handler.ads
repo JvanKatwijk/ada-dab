@@ -59,21 +59,23 @@ package Gui_Handler is
 	my_P		: Ofdm_Handler. Ofdm_Processor_P;
 	running		: Boolean	:= false;
 private	
-	dummy		: G_Source_Id;
+	dummy		   : G_Source_Id;
 --	for the GUI we need widgets
-	Win		: Gtk_Window;
-	Grid		: Gtk_Grid;
-	startButton	: Gtk_Button;
-	quitButton	: Gtk_Button;
-	label_channel	: Gtk_Label;
-	label_gain	: Gtk_Label;
-	label_fine_corr	: Gtk_Label;
-	label_coarse_corr	: Gtk_Label;
-	label_fic_results :	Gtk_Label;
-	label_msc_results :	Gtk_Label;
-	label_ensemble	: Gtk_Label;
-	programSelector	: Gtk_Combo_Box_Text;
+	Win		   : Gtk_Window;
+	Grid	           : Gtk_Grid;
+	startButton        : Gtk_Button;
+	quitButton         : Gtk_Button;
+	label_channel      : Gtk_Label;
+	label_gain         : Gtk_Label;
+	label_fine_corr    : Gtk_Label;
+	label_coarse_corr  : Gtk_Label;
+	label_fic_results  : Gtk_Label;
+	label_msc_results  : Gtk_Label;
+	label_ensemble     : Gtk_Label;
+	label_text         : Gtk_Label;
+	programSelector    : Gtk_Combo_Box_Text;
 
+	procedure build_new_text_line (val : Integer);
 --	and for (some of the) widgets, we need a callback
 	procedure start_clicked (Self : access Gtk_Button_Record'Class);
 	procedure button_quit (Self : access Gtk_Widget_Record'Class);
