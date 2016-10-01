@@ -393,7 +393,7 @@ package body Ofdm_Handler is
 	         end if;
 	      end;
 	   end loop;
-
+	   put_line ("green");
 --	The end of the null period is identified, it ends probably about 40 
 --	or 50 samples earlier
 <<SyncOnPhase>>

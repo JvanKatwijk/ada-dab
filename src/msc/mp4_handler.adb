@@ -63,15 +63,14 @@ package body mp4_handler is
 	                        Data     : byteArray;
 	                        Nbits    : short_Integer) is
 	   temp    :  Byte       := 0;
-           nbytes  :  Integer    := Integer (nbits / 8);
+           Nbytes  :  Integer    := Integer (Nbits / 8);
 	   fcVector:  firecode_Checker. checkVector;
-	   result  :  Boolean;
+	   Result  :  Boolean;
 	   Block_FillIndex:   Integer renames Object. Block_FillIndex;
 	begin
 --
---	pack the bits, resulting from the deconvolution
---	into bytes
-	   for i in 0 .. nbytes - 1 loop
+--	pack the bits, resulting from the deconvolution	into bytes
+	   for i in 0 .. Nbytes - 1 loop
 	      temp    := 0;
 	      for j in 0 .. 8 - 1 loop
 	         temp := Shift_Left (temp, 1) or (Data (8 * i + j) and 8#01#);
@@ -131,7 +130,7 @@ package body mp4_handler is
 	procedure processSuperframe (Object     : in out mp4Processor;
 	                             frameBytes : byteArray;
 	                             base       : short_Integer;
-	                             result     : out Boolean) is
+	                             Result     : out Boolean) is
 	   rsIn           : byteArray (0 .. 120 - 1);
 	   rsOut          : byteArray (0 .. 110 - 1);
 	   au_start       : uintArray;
@@ -147,7 +146,7 @@ package body mp4_handler is
 	   Samples_Out    : Integer;
 	   Errors_in_RS   : short_Integer;
 	begin
-	   result	:= False;	-- always a good start
+	   Result	:= False;	-- always a good start
 --	apply reed-solomon error repair
 --	OK, what we now have is a vector with RSDims * 120 uint8_t's
 --	in the superframe, containing parity bytes for error repair
@@ -166,12 +165,13 @@ package body mp4_handler is
 	      if Errors_in_RS > 0 then
 	         Object. nErrors	:= Object. nErrors + Errors_in_RS;
 	      elsif Errors_in_RS < 0 then
-	         result	:= false;
+	         Result	:= false;
 	         return;
 	      end if;
 
-	      for K in 0 .. 110 - 1 loop
-	         Object. RSout_Data (J + K * RSDims) := rsOut (K);
+	      for K in rsOut' Range loop
+	         Object. RSout_Data (J + (K - rsOut' First) * RSDims) :=
+	                                                  rsOut (K);
 	      end loop;
 	   end loop;
 --

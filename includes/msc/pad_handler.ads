@@ -29,10 +29,8 @@ private
 	procedure Handle_Variable_PAD (Buffer                  : byteArray;
 	                               Contents_Indicator_flag : uint8_t);
 	procedure Dynamic_Label       (Data    : byteArray;
+	                               Length  : short_Integer;
 	                               CI      : uint8_t);
 
-	procedure Add_Segment         (Segment_Number          : short_Integer;
-	                               Segment_Text            : byteArray;
-	                               Current_Fillpoint       : short_integer);
 	function Map_Length (EncodedLength : uint8_t) return uint8_t;
 end pad_handler;

@@ -31,7 +31,7 @@ with Ada. Exceptions;	use Ada. Exceptions;
 package body pad_handler is
 
 	procedure Process_PAD (theAU  : byteArray) is
-	   Count                      : Integer       := Integer (theAU (1));
+	   Count                      : Positive       := Integer (theAU (1));
 	   Buffer                     : byteArray (0 .. Count - 1);
 	   F_PAD_type	              : uint8_t;
 	   X_PAD_type	              : uint8_t;
@@ -63,7 +63,24 @@ package body pad_handler is
 	   if X_Pad_Type = 02 then	-- variable sized Xpad
 	      Handle_Variable_PAD (Buffer, Contents_Indicator_flag);
 	   end if;
-	end;
+	end process_PAD;
+--
+--	Ignore stuff that we cannot print
+	function Printable (Val : uint8_t) return Boolean is
+	   The_Char : Character := Character' Val (Val);
+	begin
+	   if The_Char = ' ' then
+	      return true;
+	   elsif 'a' <= The_Char and then The_Char <= 'z' then
+	      return true;
+	   elsif 'A' <= The_Char and then The_Char <= 'Z' then
+	      return true;
+	   elsif '0' <= The_Char and then The_Char <= '9' then
+	      return true;
+	   else
+	      return false;
+	   end if;
+	end Printable;
 --
 	procedure Handle_Short_PAD (Buffer                  : byteArray;
 	                            Contents_Indicator_Flag : uint8_t) is
@@ -79,7 +96,7 @@ package body pad_handler is
 	      Contents_Indicator := Buffer (Count - 4 -3);
 	      if (Contents_Indicator and 8#037#) = 02 or else
 	                     (Contents_Indicator and 8#037#) = 03 then
-	         Dynamic_Label (Data, Contents_Indicator);
+	         Dynamic_Label (Data, 3, Contents_Indicator);
 	      end if;
 	   end if;
 	end Handle_Short_PAD;
@@ -130,7 +147,9 @@ package body pad_handler is
 	               for J in 0 .. Integer (Subfield_Length) - 1 loop
 	                  Data (J) := Buffer (Integer (base) - J);
 	               end loop;
-	               Dynamic_Label (Data, Contents_Indicator_Table (I));
+	               Dynamic_Label (Data,
+	                              short_Integer (Subfield_Length),
+	                              Contents_Indicator_Table (I));
 	            end;
 	         end if;
 	         Base            := Base -  short_Integer (Subfield_Length);
@@ -141,10 +160,12 @@ package body pad_handler is
 	                                   return;
 	      end;
 	   end loop;
-	end;
-
-	dynamicLabelActive     : Boolean       := false;
-	segment_Length         : short_Integer := 0;
+	end Handle_Variable_PAD;
+--
+--	for the dynamic label we need
+	moreXPad               : Boolean       := false;
+	isLast_Segment         : Boolean       := false;
+	remaining_Data	       : short_Integer := 0;
 	segment_Number         : short_Integer := 0;
 	current_Fillpoint      : short_Integer := 0;
 	dynamicLabelSegment    : byteArray (0 .. 8192);
@@ -152,95 +173,98 @@ package body pad_handler is
 --      A dynamic label is created from a sequence of xpad
 --      fields, starting with CI = 2, continuing with CI = 3
 	procedure Dynamic_Label (Data    : byteArray;
+	                         length  : short_Integer;
 	                         CI      : uint8_t) is
+	   Data_Length     : short_Integer;
+	   totalDataLength : short_Integer;
 	begin
 	   if (CI and 8#037#) = 02 then     -- start with new segment
-	      if dynamicLabelActive then    -- handle previous segment
-	         Add_Segment (segment_Number,
-	                      dynamicLabelSegment,
-	                      current_Fillpoint);
-	      end if;
-
-	      if (segment_Number = 1) then
-	         dynamicLabelSegment (0) := uint8_t (Character' Pos (' '));
-	         current_Fillpoint   := 1;
-	      else
-	         current_Fillpoint   := 0;
-	      end if;
-	      dynamicLabelActive  := true;
-
 	      declare
-	         prefix    : uint16_t  :=
+	         prefix   : uint16_t  :=
 	                      Shift_Left (uint16_t (data (0)), 8) or
 	                                                uint16_t (data (1));
-	         field_1   : uint8_t   := data (1) and 8#017#;
+	         field_1   : uint8_t   := data (0) and 8#017#;
 	         Cflag     : uint8_t   := Shift_Right (data (0), 4) and 8#01#;
 	         firstFlag : uint8_t   := Shift_Right (data (0), 6) and 8#01#;
 	         lastFlag  : uint8_t   := Shift_Right (data (0), 5) and 8#01#;
 	      begin
+	         Data_Length            := length - 2;
+
 	         if firstFlag /= 0 then
 	            segment_Number     := 1;
 --	            charSet            := Shift_Right (data (1), 4) and 8#017#;
+	            dynamicLabelSegment (0) := Character' Pos (' ');
+	            current_Fillpoint  := 1;
 	         else
 	            segment_Number     := short_Integer (
-	                                  Shift_Right (data (1), 4) and 8#07#);
+	                                  Shift_Right (data (1), 4) and 8#07#) + 1;
 	         end if;
 
 	         if Cflag /= 0 then
+--	The only specified command is to clear the display
 	            current_Fillpoint  := 0;
-	            return;		-- do know know how to handle this
-	         else
-	            segment_Length     := short_Integer (field_1);
-	            for I in 0 .. Integer (data' Length) - 2 - 1 loop
-	               dynamicLabelSegment (Integer (current_Fillpoint) + I) :=
-	                                     data (2 + I);
+	         else              -- dynamic text length
+	            totalDataLength  := short_Integer (field_1) + 1;
+	            if length - 2 < totalDataLength then
+	               Data_Length := length - 2;
+	               moreXPad   := true;
+	            else
+	               Data_length := totalDatalength;
+	               moreXPad   := false;
+	            end if;
+--	convert dynamic label
+	            for J in 0 .. Integer (Data_Length) loop
+	                dynamicLabelSegment (Integer (current_Fillpoint)) := 
+	                                                 data (2 + J);
+	                current_Fillpoint := current_Fillpoint + 1;
 	            end loop;
-	            current_Fillpoint  :=  current_Fillpoint +
-	                                      short_Integer (data' Length) - 2;
+
+	            if lastFlag /= 0 then
+	               if not moreXPad then
+--	showLabel
+	                  for J in 0 .. Current_Fillpoint - 1 loop
+	                     if Printable (dynamicLabelSegment (Integer (J))) then
+	                        simple_messages. message_queue.
+	                              Put ((TEXT_SIGNAL,
+	                                 Integer (dynamicLabelSegment (Integer (J)))));
+	                     end if;
+	                  end loop;
+	               else
+	                  isLast_Segment := true;
+	               end if;
+	            else
+	               isLast_Segment := false;
+	            end if;
+	            remaining_Data  := totalDataLength - Data_Length;
 	         end if;
 	      end;
-	   elsif dynamicLabelActive and then (CI and 8#037#) = 03 then
-	      for I in 0 .. Integer (Data' Length) - 1 loop
-	         dynamicLabelSegment (Integer (current_Fillpoint) + I) :=
-	                                                  data (I);
+	   elsif (CI and 8#037#) = 03 and then moreXPad then
+	      if remaining_Data > length then
+	         Data_Length := length;
+	         remaining_Data := remaining_Data - length;
+	      else
+	         Data_Length := remaining_Data;
+	         moreXPad   := false;
+	      end if;
+
+	      for J in 0 .. Integer (Data_Length) - 1 loop
+                 dynamicLabelSegment (Integer (current_Fillpoint)) :=
+	                                                  data (J);
+	         current_Fillpoint  := current_Fillpoint + 1;
 	      end loop;
-	      current_Fillpoint  := current_Fillpoint + data' Length;
-	   else
-	      dynamicLabelActive := false;
+
+	      if not moreXPad and then isLast_Segment then
+	         for J in 0 .. Current_Fillpoint - 1 loop
+	            if Printable (dynamicLabelSegment (Integer (J))) then
+	               simple_messages. message_queue.
+	                             Put ((TEXT_SIGNAL,
+	                                 Integer (dynamicLabelSegment (Integer (J)))));
+	            end if;
+	         end loop;
+	      end if;
 	   end if;
 	end dynamic_Label;
 --
---	Ignore stuff that we cannot print
-	function Printable (Val : uint8_t) return Boolean is
-	   The_Char : Character := Character' Val (Val);
-	begin
-	   if The_Char = ' ' then
-	      return true;
-	   elsif 'a' <= The_Char and then The_Char <= 'z' then
-	      return true;
-	   elsif 'A' <= The_Char and then The_Char <= 'Z' then
-	      return true;
-	   elsif '0' <= The_Char and then The_Char <= '9' then
-	      return true;
-	   else
-	      return false;
-	   end if;
-	end;
---
---	Once we have a full "segment", i.e. a sequence of 1 subfield
---	with appType 
-	procedure Add_Segment (Segment_Number    : short_Integer;
-	                       Segment_Text      : byteArray;
-	                       Current_Fillpoint : short_integer) is
-	begin
-	   for I in 0 .. Current_Fillpoint - 1 loop
-	      if Printable (Segment_Text (Integer (I))) then
-	         simple_messages. message_queue.
-	                       Put ((TEXT_SIGNAL,
-	                                 Integer (Segment_Text (Integer (I)))));
-	      end if;
-	   end loop;
-	end;
 
 	function Map_Length (encodedLength : uint8_t)
 	                                          return uint8_t is
@@ -252,9 +276,10 @@ package body pad_handler is
 
 	procedure reset is
 	begin
-	   dynamicLabelActive      := false;
-	   segment_Length          := 0;
-	   segment_Number          := 0;
-	   current_Fillpoint       := 0;
+	   moreXPad               := false;
+	   isLast_Segment         := false;
+	   remaining_Data	  := 0;
+	   segment_Number         := 0;
+	   current_Fillpoint      := 0;
 	end;
 end pad_handler;

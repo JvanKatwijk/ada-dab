@@ -18,7 +18,7 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
--- 	The deconvolution for both uep and eep
+-- 	The deconvolution for  the equal error protection
 --
 with header;		use header;
 with prottables;	use prottables;

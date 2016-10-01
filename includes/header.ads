@@ -36,7 +36,7 @@ package Header is
 	subtype Byte is Interfaces. Unsigned_8;
 	subtype uint8_t is Interfaces. Unsigned_8;
 	subtype int8_t is Interfaces. Integer_8;
-	type byteArray is Array (Integer range <>) of Byte;
+	type byteArray is Array (Natural range <>) of Byte;
 	pragma Convention (C, byteArray);
 	type byteArray_P is access all byteArray;
 	procedure Free_byteArray is new Ada. Unchecked_Deallocation (
