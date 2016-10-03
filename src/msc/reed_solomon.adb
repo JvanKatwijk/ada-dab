@@ -25,21 +25,21 @@ with Ada. Exceptions; use Ada. Exceptions;
 package body reed_solomon is
 --
 --	
-	procedure	encode_rs (data:        byteArray;
-	                           cutLen:      short_Integer;
-	                           result:      out byteArray) is
+	procedure	Encode_RS (Data     : byteArray;
+	                           CutLen   : short_Integer;
+	                           Result   : out byteArray) is
 	   rf	: rsArray (0 .. codeLength - 1) := (Others => 0);
 	   bb	: rsArray (0 .. nroots - 1);
 	   messageLength : short_Integer := codeLength - cutLen - nroots;
 	begin
-	   for i in cutLen .. codeLength - 1 loop
-	     rf (i) :=  short_Integer (data (data' first + Integer (i - cutLen)));
+	   for i in CutLen .. codeLength - 1 loop
+	     rf (i) :=  short_Integer (Data (Data' First + Integer (i - CutLen)));
 	   end loop;
 
 	   enc (rf, bb);
 --	copy back the data
-	   for I in result' first .. result' first +  Integer (messageLength) - 1  loop
-	      result (I) :=  Byte (data (data' first + I - result' First));
+	   for I in Result' first .. Result' first + Integer (messageLength) - 1  loop
+	      Result (I) :=  Byte (Data (Data' First + I - Result' First));
 	   end loop;
 
 --	and add the parity bytes
@@ -48,39 +48,39 @@ package body reed_solomon is
 	                   Integer (codeLength - cutLen - nroots + I)) :=
 	                                      Byte (bb (I));
 	   end loop;
-	end encode_rs;
+	end Encode_Rs;
 
-	procedure decode_rs (data:        byteArray;
-	                     cutLen:      short_Integer;
-	                     result:      out byteArray;
-	                     corrs	: out short_Integer) is
+	procedure Decode_RS (Data    : byteArray;
+	                     CutLen  : short_Integer;
+	                     Result  : out byteArray;
+	                     corrs   : out short_Integer) is
 	   rf : rsArray (0 .. codeLength - 1);
 	begin
-	   rf (0 .. cutLen) := (Others	=> 0);
-	   for I in cutLen .. codeLength - 1 loop
-	      rf (I) := short_Integer (data (data' first + Integer (I - cutLen)));
+	   rf (0 .. CutLen) := (Others	=> 0);
+	   for I in CutLen .. codeLength - 1 loop
+	      rf (I) := short_Integer (Data (Data' First + Integer (I - cutLen)));
 	   end loop;
 
 	   dec (rf, corrs);
 
-	   for I in cutLen .. codeLength - nroots - 1 loop
-	      result (result' first +  Integer (I - cutLen)) := Byte (rf (I));
+	   for I in CutLen .. codeLength - nroots - 1 loop
+	      Result (Result' First +  Integer (I - CutLen)) := Byte (rf (I));
 	   end loop;
 	end decode_rs;
 --
 --	Basic encoder, returns - in outparameter "parityBytes"
-	procedure enc (data:        rsArray;
-	               parityBytes: out rsArray) is
+	procedure enc (Data        : rsArray;
+	               parityBytes : out rsArray) is
 	   feedback: short_Integer;
 	begin
 	   parityBytes	:= (Others => 0);
 	   for i in 0 .. codeLength - nroots - 1 loop
-	      feedback	:= poly2Power (addPoly (data (i), parityBytes (0)));
+	      feedback	:= poly2Power (addPoly (Data (i), parityBytes (0)));
 	      if feedback /= codeLength then	-- feedback term is non-zero
-	         for j in 1 .. nroots - 1 loop
-	            parityBytes (j) := addPoly (parityBytes (j),
+	         for J in 1 .. nroots - 1 loop
+	            parityBytes (J) := addPoly (parityBytes (J),
 	                                 power2Poly (multiplyPower (feedback,
-	                                             generator (nroots - j))));
+	                                             generator (nroots - J))));
 	         end loop;
 	      end if;
 --	shift

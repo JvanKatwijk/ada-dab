@@ -40,23 +40,23 @@ private
 	task type Ofdm_Worker (Object : Ofdm_Processor_P);
 	type Ofdm_Worker_P is access all Ofdm_Worker;
 	Exit_Ofdmprocessing :	exception;
-	procedure Get_Samples (Object : in out Ofdm_Processor;
-	                       Out_V  : out complexArray;
-	                       Phase  : Integer);
+	procedure Get_Samples (Object     : in out Ofdm_Processor;
+	                       Out_V      : out complexArray;
+	                       Phase_Ind  : Integer);
 
 	type Ofdm_Processor   (Mode             : Dabmode;
 	                       Fetch_Samples    : Get_Samples_Access;
 	                       Available_Samples: Available_Samples_Access) is
 	            new Ada. Finalization. Controlled with
 	   record
-	      Tu                   : Integer;
-	      Tg                   : Integer;
-	      Ts                   : Integer;
-	      Tnull                : Integer;
-	      Carriers             : Integer;
-	      Carrier_Diff         : Integer;
+	      Tu                   : Natural;
+	      Tg                   : Natural;
+	      Ts                   : Natural;
+	      Tnull                : Natural;
+	      Carriers             : Natural;
+	      Carrier_Diff         : Natural;
 	      L_Mode               : Integer;
-	      Samplecounter        : Integer;
+	      Samplecounter        : Natural;
 	      Current_Strength     : Float;
 	      Running              : Boolean;
 	      Buffer_Content       : Integer;

@@ -44,30 +44,32 @@ package body dab_handler is
 	      Object  => mp4_handler. mp4Processor,
 	      Name    => mp4_handler. mp4Processor_P);
 	   outV:       byteArray (0 ..  Integer (bitRate * 24 - 1));
-	   interleaveData: shortBlock (0 .. fragmentSize - 1, 0 .. 15);
+
+	   InterleaveData: shortBlock (0 .. fragmentSize - 1, 0 .. 15);
 	   countforInterleaver: short_Integer;
-	   the_protectionProcessor: protection_handler. protectionProcessor_P;
+
+	   The_ProtectionProcessor: protection_handler. protectionProcessor_P;
 
 	   tempBuffer:         shortArray (0 .. fragmentSize - 1);
-	   the_audioProcessor: audio_handler. Audio_Processor_P;
+	   The_AudioProcessor: audio_handler. Audio_Processor_P;
 	begin
-	   interleaveData       := (others => (others => 0));
+	   InterleaveData       := (others => (others => 0));
 	   countforInterleaver  := 0;
 
 	   if uepFlag = 0 then
-	      the_protectionProcessor :=
+	      The_ProtectionProcessor :=
 	                         new uepProcessor (bitRate, protLevel);
 	   else
-	      the_protectionProcessor :=
+	      The_ProtectionProcessor :=
 	                         new eepProcessor (bitRate, protLevel);
 	   end if;
 
 	   if dabModus = DAB then
-	      the_audioProcessor := new mp2_handler. mp2Processor (bitRate,
-	                                                            audio);
+	      The_AudioProcessor :=
+	                       new mp2_handler. mp2Processor (bitRate, audio);
 	   else
-	      the_audioProcessor := new mp4_handler. mp4Processor (bitRate,
-	                                                           audio);
+	      The_AudioProcessor :=
+	                       new mp4_handler. mp4Processor (bitRate, audio);
 	   end if;
 --
 --	It looks strange to me that we can use a single pointer to these
@@ -77,16 +79,17 @@ package body dab_handler is
 	      select
 	         accept stop;
 	            if uepFlag = 0 then
-	               Free_uepProcessor (uepProcessor_P (the_protectionProcessor));
+	               Free_uepProcessor (uepProcessor_P (The_ProtectionProcessor));
 	            else
-	               Free_eepProcessor (eepProcessor_P (the_protectionProcessor));
+	               Free_eepProcessor (eepProcessor_P (The_ProtectionProcessor));
 	            end if;
+
 	            if dabModus = DAB then
 	               Free_mp2Processor (mp2_handler.
-	                                  mp2Processor_P (the_audioProcessor));
+	                                  mp2Processor_P (The_AudioProcessor));
 	            else
 	               Free_mp4Processor (mp4_handler.
-	                                  mp4Processor_P (the_audioProcessor));
+	                                  mp4Processor_P (The_AudioProcessor));
 	            end if;
 	            exit;
 	         or 
@@ -107,29 +110,30 @@ package body dab_handler is
 	                  end loop;
 	               end;
 	            end loop;
+
 	            if countforInterleaver < 15 then
 	               countforInterleaver := countforInterleaver + 1;
 	            else
-	               the_protectionProcessor. deconvolve (tempBuffer, outV);
+	               The_ProtectionProcessor. deconvolve (tempBuffer, outV);
 --
 --	the in-line energy dispersal
 	               declare
 	                  shiftRegister: byteArray (0 .. 8) :=  (others => 1);
 	               begin
-	                  for i in outV' Range loop
+	                  for I in outV' Range loop
 	                     declare
 	                        B: uint8_t := shiftRegister (8) xor
 	                                                shiftRegister (4);
 	                     begin
-	                        for j in reverse 1 .. 8 loop
-	                           shiftRegister (j) := shiftRegister (j - 1);
+	                        for J in reverse 1 .. 8 loop
+	                           shiftRegister (J) := shiftRegister (J - 1);
 	                        end loop;
 	                        shiftRegister (0)   := b;
-	                        outV (i)            := outV (i) xor b;
+	                        outV (I)            := outV (I) xor b;
 	                     end;
 	                  end loop;
 	               end;
-	               the_audioProcessor. Add_to_Frame (outV, 24 * bitRate);
+	               The_AudioProcessor. Add_to_Frame (outV, 24 * bitRate);
 	            end if;
 	      end select;
 	   end loop;

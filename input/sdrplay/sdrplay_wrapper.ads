@@ -52,68 +52,116 @@ private
 	type localBuffer_P is access localBuffer;
 	sdrplayBuffer : localBuffer;
 --
-	task type sdrplayWorker (frequency : Integer; Gain : Integer);
-	type sdrplayWorker_P is access all sdrplayWorker;
-	procedure Free_Our_Worker is
-	           new Ada. Unchecked_Deallocation (
-	                   Object => sdrplayWorker,
-	                   Name   => sdrplayWorker_P);
-	Our_Worker    : sdrplayWorker_P	  := null;
---
---	functions to be used:
-	function mir_sdr_Init (gRdb             : Interfaces. C. int;
-	                       fsMhz            : Interfaces. C. double;
-	                       rfMhz            : Interfaces. C. double;
-	                       bwType           : Interfaces. C. int;
-	                       ifType           : Interfaces. C. int;
-	                       samplesperPacket : out Interfaces. C. int)
---	                       samplesperPacket : System. Address)
-	                             return Interfaces. C. int;
-	pragma Import (C, mir_sdr_Init, "mir_sdr_Init");
 
-	procedure mir_sdr_UnInit;
-	pragma Import (C, mir_sdr_UnInit, "mir_sdr_Uninit");
+	function mir_sdr_ApiVersion (version : out Interfaces. C. c_float)
+	                                          return Interfaces. C. int;
+	pragma Import (C, mir_sdr_ApiVersion, "mir_sdr_ApiVersion");
+
+	type Sdrplay_Callback_Type is access
+	          procedure (xi             : system. address;
+	                     xq             : system. address;
+	                     firstSampleNum : Interfaces. C. int;
+	                     grChanged      : Interfaces. C. int;
+	                     rfChanged      : Interfaces. C. int;
+	                     fsChanged      : Interfaces. C. int;
+	                     numSamples     : Interfaces. C. unsigned;
+	                     reset          : Interfaces. C. unsigned;
+	                     userData       : system. Address);
+	pragma Convention (C, Sdrplay_Callback_Type);
+
+	type Sdrplay_Gain_Callback_Type is access
+	           procedure (gRdB      : Interfaces. C. unsigned;
+	                      lnsGRdB   : Interfaces. C. unsigned;
+	                      userData  : system. Address);
+	pragma Convention (C, Sdrplay_Gain_Callback_Type);
+
+--	functions to be used:
+	function mir_sdr_StreamInit (gain             : out Interfaces. C. int;
+	                             inputRate        : Interfaces. C. double;
+	                             vfoFreq          : Interfaces. C. double;
+	                             bandWidth        : Interfaces. C. int;
+	                             ifType           : Interfaces. C. int;
+	                             lnaEnable        : Interfaces. C. int;
+                                     gRdb             : out Interfaces. C. int;
+	                             agcMode          : Interfaces. C. int;
+	                             samplesperPacket : out Interfaces. C. int;
+	                             myStreamCallback : Sdrplay_Callback_Type;
+	                             myGainCallback   : Sdrplay_Gain_Callback_Type;
+	                             userData         : system. Address)
+	                                          return Interfaces. C. int;
+	pragma Import (C, mir_sdr_StreamInit, "mir_sdr_StreamInit");
+
+	procedure mir_sdr_StreamUnInit;
+	pragma Import (C, mir_sdr_StreamUnInit, "mir_sdr_StreamUninit");
 --
-	procedure mir_sdr_SetDcMode (A  : Interfaces. C. int;
-	                             B  : Interfaces. C. int);
+	function mir_sdr_SetDcMode (A  : Interfaces. C. int;
+	                            B  : Interfaces. C. int)
+	                                  return Interfaces. C. int;
 	pragma Import (C, mir_sdr_SetDcMode, "mir_sdr_SetDcMode");
 
-	procedure mir_sdr_SetDcTrackTime (A : Interfaces. C. int);
+	function  mir_sdr_SetDcTrackTime (A : Interfaces. C. int)
+	                                  return Interfaces. C. int;
 	pragma Import (C, mir_sdr_SetDcTrackTime, "mir_sdr_SetDcTrackTime");
 
---	function mir_sdr_readPacket (xi        : System. Address;
---	                             xq        : System. Address;
---	                             fsn       : System. Address;
---	                             grChanged : System. Address;
---	                             rfChanged : System. Address;
---	                             fsChanged : System. Address)
---	                                        return Interfaces. C. int;
---	pragma Import (C, mir_sdr_readPacket, "mir_sdr_ReadPacket");
-
-	procedure mir_sdr_SetFs	(dfsHz : Interfaces. C. double;
+	function mir_sdr_SetFs	(dfsHz : Interfaces. C. double;
 	                         A     : Interfaces. C. int;
-	                         sync  : Interfaces. C. int);
+	                         sync  : Interfaces. C. int)
+	                                  return Interfaces. C. int;
 	pragma Import (C, mir_sdr_SetFs, "mir_sdr_SetFs");
 
-	procedure mir_sdr_SetRf (drfHz : Interfaces. C. double;
-	                         A     : Interfaces. C. int;
-	                         sync  : Interfaces. C. int);
+	function mir_sdr_SetRf (drfHz : Interfaces. C. double;
+	                        A     : Interfaces. C. int;
+	                        sync  : Interfaces. C. int)
+	                                  return Interfaces. C. int;
 	pragma Import (C, mir_sdr_SetRf, "mir_sdr_SetRf");
 
-	procedure mir_sdr_SetGr	 (gRdb : Interfaces. C. int;
+	function mir_sdr_SetGr	 (gRdb : Interfaces. C. int;
 	                          A    : Interfaces. C. int;
-	                          sync : Interfaces. C. int);
+	                          sync : Interfaces. C. int)
+	                                   return Interfaces. C. int;
 	pragma Import (C, mir_sdr_SetGr, "mir_sdr_SetGr");
 
-	procedure mir_sdr_SetParam (A  :  Interfaces. C. int;
-	                            B  :  Interfaces. C. int);
-	pragma Import (C, mir_sdr_SetParam, "mir_sdr_SetParam");
-
-	procedure mir_sdr_SetSyncUpdateSampleNum (S : Interfaces. C. int);
+	function mir_sdr_SetSyncUpdateSampleNum (S : Interfaces. C. int)
+	                                   return Interfaces. C. int;
 	pragma Import (C, mir_sdr_SetSyncUpdateSampleNum,
 	                            "mir_sdr_SetSyncUpdateSampleNum");
 
-	procedure mir_sdr_SetSyncUpdatePeriod (P : Interfaces. C. int);
+	function mir_sdr_SetSyncUpdatePeriod (P : Interfaces. C. int)
+	                                   return Interfaces. C. int;
 	pragma Import (C, mir_sdr_SetSyncUpdatePeriod,
 	                            "mir_sdr_SetSyncUpdatePeriod");
+
+	function mir_sdr_AgcControl (enable     : Interfaces. C. unsigned;
+	                             setPoint   : Interfaces. C. int;
+	                             knee_dBfs  : Interfaces. C. int;
+	                             decay_ms   : Interfaces. C. unsigned;
+	                             hang_ms    : Interfaces. C. unsigned;
+	                             syncUpdate : Interfaces. C. int;
+	                             lnsEnable  : Interfaces. C. int)
+	                                 return Interfaces. C. int;
+	pragma Import (C, mir_sdr_AgcControl, "mir_sdr_AgcControl");
+
+	function mir_sdr_DCoffsetIQimbalanceControl (
+	                                       DCEnable : Interfaces. C. int;
+	                                       IQEnable : Interfaces. C. int)
+	                                           return Interfaces. C. int;
+	pragma Import (C, mir_sdr_DCoffsetIQimbalanceControl,
+	                         "mir_sdr_DCoffsetIQimbalanceControl");
+	
+
+	procedure Sdrplay_Callback (xi             : system. address;
+	                            xq             : system. address;
+	                            firstSampleNum : Interfaces. C. int;
+	                            grChanged      : Interfaces. C. int;
+	                            rfChanged      : Interfaces. C. int;
+	                            fsChanged      : Interfaces. C. int;
+	                            numSamples     : Interfaces. C. unsigned;
+	                            reset          : Interfaces. C. unsigned;
+	                            userData       : system. Address);
+	pragma Convention (C, Sdrplay_Callback);
+
+	procedure  Sdrplay_Gain_Callback (gRdB      : Interfaces. C. unsigned;
+	                                  lnsGRdB   : Interfaces. C. unsigned;
+	                                  userData  : system. Address);
+	pragma Convention (C, Sdrplay_Gain_Callback);
 end sdrplay_wrapper;

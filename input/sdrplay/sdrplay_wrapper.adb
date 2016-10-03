@@ -19,167 +19,102 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 with Text_IO; use Text_IO;
+with System.Address_To_Access_Conversions;
+
 package body sdrplay_wrapper is
-	mir_sdr_BW_1_536  : constant Interfaces. C. int   := 1536;
-	mir_sdr_IF_Zero   : constant Interfaces. C. int   := 0;
-	Running           : Boolean                       := False;
-	Current_Gain      : Integer                       := 40;
-	VFO_Frequency     : Integer                       := 227000000;
-
-	type Kind_of_Request is (FREQ_CHANGE, GAIN_CHANGE, STOP_CHANGE);
-	type Request is
-	   record
-	      command:   Kind_of_Request;
-	      value:     Interfaces. C. int;
-	   end record;
+	mir_sdr_BW_1_536  : constant Interfaces. C. int    := 1536;
+	mir_sdr_IF_Zero   : constant Interfaces. C. int    := 0;
+	bandWidth         : constant Interfaces. C. int    := mir_sdr_BW_1_536;
+	mHz_1             : constant Interfaces. C. double := 1000000.0;
+	Running           : Boolean                        := False;
+	Current_Gain      : Integer                        := 40;
+	VFO_Frequency     : Integer                        := 227000000;
+	err               : Interfaces. C. int;
+	HardwareError     : exception;
+	Library_Version   : Interfaces. C. c_float;
 --
---	In order to - dynamically - change settings as gain or frequency
---	we use a simple buffer to store the requests.
-	type Request_Queue is array (Integer Range <>) of Request;
-	protected type Request_Handler (Size: Integer) is
-	   entry Put (Item  : Request);
-	   entry Get (Item  : out Request);
-	   function Amount return Integer;
-	   procedure Clean;
-	private
-	   Values   : Request_Queue (1 .. Size);
-	   Next_In  : Integer   := 1;
-	   Next_Out : Integer   := 1;
-	   Count    : Natural   := 0;
-	end Request_Handler;
-
-	protected body Request_Handler is
-	   entry Put (Item : in Request) when Count < Size is
-	   begin
-	      Values (Next_In) := Item;
-	      Next_In          := (Next_In mod Size) + 1;
-	      Count            := Count + 1;
-	   end Put;
-
-	   entry Get (Item: out Request) when Count > 0 is
-	   begin
-	      Item             := Values (Next_Out);
-	      Next_Out         := (Next_Out mod Size) + 1;
-	      Count            := Count - 1;
-	   end Get;
-
-	   function Amount return Integer is
-	   begin
-	      return Count;
-	   end;
-
-	   procedure Clean is
-	   begin
-	      Next_In          := 1;
-	      Next_Out         := 1;
-	      Count            := 0;
-	   end clean;
-	end Request_Handler;
-
-	ChangeRequests	: Request_Handler (10);
---
---	the "worker" will capture the samples and make them
---	into nice complex numbers.
---	minor changes for the frequency and settings of the
---	gain are done within the task. Changes in frequency
---	that require a Bandswitch involve a larger operation:
---	i.e. killing the task, and restarting it with the new
---	frequency in the new band.
-	task body sdrplayWorker is
-	   deviceRate    : Interfaces. C. double  := 2048000.0;
-	   bandWidth     : Interfaces. C. int     := mir_sdr_BW_1_536;
-	   sps           : Interfaces. C. int;
-	   err           : Interfaces. C. int;
-	   mHz_1         : Interfaces. C. double  := 1000000.0;
-	   HardwareError : exception;
+--	We prefer a callback not to reference anything not local
+--	or accessible through the parameters. So, we pass
+--	the ringbuffer as "userData" parameter.
+	procedure Sdrplay_Callback (xi             : system. address;
+	                            xq             : system. address;
+	                            firstSampleNum : Interfaces. C. int;
+	                            grChanged      : Interfaces. C. int;
+	                            rfChanged      : Interfaces. C. int;
+	                            fsChanged      : Interfaces. C. int;
+	                            numSamples     : Interfaces. C. unsigned;
+	                            reset          : Interfaces. C. unsigned;
+	                            userData       : system. Address) is
+--      xi_buffer and xq_buffer are actually  C arrays,
+--	provided for by the underlying sdrplay library
+--	We convert them to Ada-like arrays by an "arrayConverter"
+	   type shortArray is Array (0 .. Integer (numSamples) - 1) of short_Integer;
+	   package arrayConverter is
+	         new System. Address_To_Access_Conversions (shortArray);
+	   package bufferConverter is
+	         new System. Address_To_Access_Conversions (localBuffer);
+	   xi_buffer      : arrayConverter. Object_Pointer :=
+                                arrayConverter. To_Pointer (xi);
+	   xq_buffer      : arrayConverter. Object_Pointer :=
+                                arrayConverter. To_Pointer (xq);
+	   output_Buffer  : bufferConverter. Object_Pointer :=
+	                        bufferConverter. To_Pointer (userData);
+	   collect_Buffer : inputBuffer. buffer_Data (0 .. Integer (numSamples) - 1);
 	begin
-	   changeRequests. clean;
---	Note: the "API check" has been done by the owner of this thread
-	   err   := mir_sdr_Init (Interfaces. C. int (Gain),
-	                          DeviceRate  / mHz_1,
-	                          Interfaces. C. double (frequency) / mHz_1,
-	                          mir_sdr_BW_1_536,
-	                          mir_sdr_IF_Zero,
-	                          sps);
+	   for I in collect_Buffer' Range loop
+	      collect_Buffer (I) := (Float (xi_buffer (I)) / 2048.0,
+	                             Float (xq_buffer (I)) / 2048.0);
+	   end loop;
+	   output_Buffer. putDataIntoBuffer (collect_Buffer);
+	end Sdrplay_Callback;
+--
+--	The gain change callback is not used here
+	procedure  Sdrplay_Gain_Callback (gRdB      : Interfaces. C. unsigned;
+	                                  lnsGRdB   : Interfaces. C. unsigned;
+	                                  userData  : system. Address) is
+	begin
+	   null;
+	end;
+--
+--
+	procedure Restart_Reader (Success: out Boolean) is
+	   sps         : Interfaces. C. int;
+	   gRdBSystem  : Interfaces. C. int;
+	   agcMode     : Interfaces. C. int := 0;
+	begin
+	   if Running then
+	      Success  := true;
+	      return;
+	   end if;
 
+	   Success     := false;	-- just a default
+	   sdrplayBuffer. FlushRingBuffer;
+	   
+--	Note: the "API check" has been done by the owner of this thread
+	   err   := mir_sdr_StreamInit (Interfaces. C. int (Current_Gain),
+	                                Interfaces. C. double (inputRate)  / mHz_1,
+	                                Interfaces. C. double (VFO_Frequency) / mHz_1,
+	                                mir_sdr_BW_1_536,
+	                                mir_sdr_IF_Zero,
+	                                0,
+	                                gRdBSystem,
+	                                agcMode,
+	                                sps,
+	                                Sdrplay_Callback' Access,
+	                                Sdrplay_Gain_Callback' Access,
+	                                sdrplayBuffer' Address);
 	   if err /= 0 then
 	      put ("probleem init"); put_line (Integer' Image (Integer (err)));
 	      raise HardwareError;
 	   end if;
-	   mir_sdr_SetDcMode (4, 1);
-	   mir_sdr_SetDcTrackTime (63);
-	   mir_sdr_SetSyncUpdatePeriod (Interfaces. C. int (deviceRate) / 2);
-           mir_sdr_SetSyncUpdateSampleNum (Interfaces. C. int (sps));
-           mir_sdr_SetParam (102, 1);        -- DC corr
-           mir_sdr_SetParam (105, 0);        -- IQ corr
-	   declare
---	It is only after having processed the Init that we can build
---	the proper subtype for the buffers, a subtype we need in the
---	specification of the ReadPacket function
-	      type Sdrplay_Buffer is
-                 array (Integer range 0 .. Integer (sps) - 1) of
-	                                          Interfaces. C. short;
-	      xi:     Sdrplay_Buffer;
-	      xq:     Sdrplay_Buffer;
-	      function mir_sdr_readPacket (xi        : out Sdrplay_Buffer;
-	                                   xq        : out Sdrplay_Buffer;
-	                                   fsn       : out Interfaces. C. int;
-	                                   grChanged : out Interfaces. C. int;
-	                                   rfChanged : out Interfaces. C. int;
-	                                   fsChanged : out Interfaces. C. int)
-	                                        return Interfaces. C. int;
-	      pragma Import (C, mir_sdr_readPacket, "mir_sdr_ReadPacket");
-	      fs         : Interfaces. C. int;
-	      grc        : Interfaces. C. int;
-	      rfc        : Interfaces. C. int;
-	      fsc        : Interfaces. C. int;
-	      Work_Buffer : inputBuffer. buffer_data (0 .. Integer (sps) - 1);
-	   begin
-	      while Running loop           -- running is global here
-	         err :=  mir_sdr_ReadPacket (xi,
-	                                     xq,
-	                                     fs,
-	                                     grc,
-	                                     rfc,
-	                                     fsc);
-
-	         if err /= 0 then
-	            put ("error with reading");
-	            put_line (Integer' Image (Integer (err)));
-	         else
---	currently, we are not interested in the results other than the
---	actual data
-	            for I in 0 .. Integer (sps) - 1 loop
-	               Work_Buffer (i) :=
-	                         (Float (xi (I)) / 2048.0,
-	                          Float (xq (I)) / 2048.0);
-	            end loop;
-	            sdrplayBuffer. putDataIntoBuffer (Work_Buffer);
-	         end if;
-	         declare
-	            The_Request: Request;
-	         begin
-	            while changeRequests. amount > 0 loop
-	               changeRequests. Get (The_Request);
-	               case The_Request. Command is
-	                  when GAIN_CHANGE	=> 
-	                     mir_sdr_SetGr (The_Request. Value, 1, 0);
-	                  when FREQ_CHANGE	=>
-	                     mir_sdr_SetRf (
-	                            Interfaces. C. double (The_Request. Value),
-                                            1, 0);
-	                  when Others	=> -- should not happen
-	                     put_line ("Illegal command caught");
-	                     Running	:= false;
-	               end case;
-	            end loop;
-	         end;
-	      end loop;
-	      mir_sdr_UnInit;
-	   end;
-	   exception
-	      when Others	=> put_line ("sdrplayWorker Terminated");
-	end sdrplayWorker;
+	   err := mir_sdr_SetDcMode (4, 1);
+	   err := mir_sdr_SetDcTrackTime (63);
+	   err := mir_sdr_SetSyncUpdatePeriod (Interfaces. C. int (inputRate) / 4);
+           err := mir_sdr_SetSyncUpdateSampleNum (Interfaces. C. int (sps));
+           err := mir_sdr_DCoffsetIQimbalanceControl (0, 1);
+	   Running          := true;
+	   Success          := true;
+	end Restart_Reader;
 
 --	The SDRplay requires that a changing a frequency to
 --	one in a different band requires Uninit - Init.
@@ -215,21 +150,13 @@ package body sdrplay_wrapper is
 	      return;
 	   end if;
 --
---	If "worker" is not active, the change in frequency will
---	only be effective at the next instance of the "worker"
-	   if Our_Worker = NULL then         -- wait 
-	      VFO_Frequency := New_Frequency;
-	      return;
-	   end if;
-
 	   if Frequency_Banks (New_Frequency) /=
 	              Frequency_Banks (VFO_Frequency) then
 	      Stop_Reader;
 	      VFO_Frequency   := New_Frequency;
 	      Restart_Reader (res);
-	   else		-- just a local change
-	      changeRequests. Put ((FREQ_CHANGE,
-	                            Interfaces. C. int (New_Frequency)));
+	   else
+ 	      err := mir_sdr_SetRf (double (New_Frequency), 1, 0);
 	      VFO_Frequency	:= New_Frequency;
 	   end if;
 	end Set_VFOFrequency;
@@ -239,42 +166,17 @@ package body sdrplay_wrapper is
 	   if New_Gain < 0 or else New_Gain >= 102 then
 	      return;
 	   end if;
-
-	   if Our_Worker /= null then
-	      changeRequests. Put ((GAIN_CHANGE,
-	                                   Interfaces. C. int (New_Gain)));
-	      Current_Gain  := New_Gain;
-	   end if;
+	   Current_Gain := New_Gain;
+	   err := mir_sdr_SetGr (Interfaces. C. int (Current_Gain), 1, 0);
 	end Set_Gain;
-
-	procedure Restart_Reader (Success: out Boolean) is
-	begin
-
-	   if Our_Worker /= NULL then
-	      Success      := true;
-	      return;
-	   end if;
-
-	   sdrplayBuffer. FlushRingBuffer;
-	   Running     := true;
-	   
-	   Our_Worker   := new sdrplayWorker (VFO_Frequency, Current_Gain);
-	   Success         := true;
-	end Restart_Reader;
 
 	procedure Stop_Reader is
 	begin
-
-	   if Our_Worker = null then
+	   if not Running then
 	      return;	     -- do not bother
 	   end if;
-
+	   mir_sdr_StreamUninit;
 	   Running     := false;
-	   while not Our_Worker.all' Terminated loop
-	      delay 0.01;
-	   end loop;
-	   Free_Our_Worker (Our_Worker);
-	   Our_Worker   := null;
 	end Stop_Reader;
 
 	procedure Get_Samples (Out_V  : out complexArray;
@@ -300,4 +202,13 @@ package body sdrplay_wrapper is
 	begin
 	   return True;
 	end Valid_Device;
+begin
+	err	:= mir_sdr_ApiVersion (Library_Version);
+	if err /= 0 then
+	   put_line ("Error in querying library");
+	   raise  HardwareError;
+	else
+	   put ("Library version ");
+	   put_line (Float' Image (Float (Library_Version)));
+	end if;
 end sdrplay_wrapper;

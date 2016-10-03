@@ -38,7 +38,7 @@ package body Viterbi_Handler is
 	procedure Finalize	(Object: in out Viterbi_Processor) is
 	begin
 	   if Object. isOK then
---	delete_viterbi (Object. handler);
+	      delete_viterbi (Object. handler);
 	      Free_uintArray (Object. Symbols);
 	   end if;
 	end Finalize;

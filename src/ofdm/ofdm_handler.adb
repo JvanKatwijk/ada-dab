@@ -63,7 +63,7 @@ package body Ofdm_Handler is
 --	will be set/ controlled dynamically
 	   Object. The_Processor        := null;
 --
-	   for i in 0 .. Input_Rate - 1 loop
+	   for i in Object. OscillatorTable' Range loop
 	      Object. OscillatorTable (i) :=
 	              (Math. cos (float (i) * 2.0 * M_PI / float (Input_Rate)),
 	               Math. sin (float (i) * 2.0 * M_PI / float (Input_Rate)));
@@ -79,9 +79,9 @@ package body Ofdm_Handler is
 --	Someone (external to this function) will eventually
 --	set "Running" to false, indicating that the task, which
 --	will call Get_Samples, need to terminate
-	procedure Get_Samples (Object	: in out Ofdm_Processor;
-	                       Out_V	: out complexArray;
-	                       Phase	: Integer) is
+	procedure Get_Samples (Object     : in out Ofdm_Processor;
+	                       Out_V      : out complexArray;
+	                       Phase_Ind  : Integer) is
 	   Amount:   Integer   := Out_V' length;
 	begin
 
@@ -109,7 +109,7 @@ package body Ofdm_Handler is
 --	first: adjust frequency. We need Hz accuracy
 	   for I in Out_V' Range loop
 	      Object. Current_Phase :=
-	                  (Object. Current_Phase - Phase) mod Input_Rate;
+	                  (Object. Current_Phase - Phase_Ind) mod Input_Rate;
 	      Out_V (I)             := Out_V (I) *
 	                        Object. OscillatorTable (Object. Current_Phase);
 	      Object. Signal_Level  := 0.00001 * abs Out_V (I) +
@@ -187,12 +187,12 @@ package body Ofdm_Handler is
 --	ofdm handling. It calls upon the fic handler and the msc handler
 --
 	task body Ofdm_Worker is
-	   Tu               : Integer renames Object. Tu;
-	   Tg               : Integer renames Object. Tg;
-	   Ts               : Integer renames Object. Ts;
-	   Tnull            : Integer renames Object. Tnull;
-	   Carriers         : Integer renames Object. Carriers;
-	   Carrier_Diff	    : Integer renames Object. Carrier_Diff;
+	   Tu               : Natural renames Object. Tu;
+	   Tg               : Natural renames Object. Tg;
+	   Ts               : Natural renames Object. Ts;
+	   Tnull            : Natural renames Object. Tnull;
+	   Carriers         : Natural renames Object. Carriers;
+	   Carrier_Diff	    : Natural renames Object. Carrier_Diff;
 	   Start_Index      : Integer;
 	   Phase_Error      : complex;
 	   Counter          : Integer;
@@ -393,7 +393,7 @@ package body Ofdm_Handler is
 	         end if;
 	      end;
 	   end loop;
-	   put_line ("green");
+
 --	The end of the null period is identified, it ends probably about 40 
 --	or 50 samples earlier
 <<SyncOnPhase>>
