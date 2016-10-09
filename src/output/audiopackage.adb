@@ -39,12 +39,12 @@ package body audiopackage is
 --
 --	Note that we enter with complexes, where one complex number
 --	happily matches one "frame"
-	function paCallback (Input:       System. Address;
-	                     Output:      System. Address;
-	                     Frame_Count: Interfaces. C. unsigned_long;
-	                     TimeInfo:    access PaStreamCallbackTimeInfo;
-	                     StatusFlags: PaStreamCallbackFlags;
-	                     UserData:    System. Address)
+	function paCallback (Input       : System. Address;
+	                     Output      : System. Address;
+	                     Frame_Count : Interfaces. C. unsigned_long;
+	                     TimeInfo    : access PaStreamCallbackTimeInfo;
+	                     StatusFlags : PaStreamCallbackFlags;
+	                     UserData    : System. Address)
 	                        return PaStreamCallbackResult is
 	   subtype localBufferType is
 	         pa_ringBuffer. buffer_data (0 .. integer (Frame_Count) - 1);
@@ -60,9 +60,9 @@ package body audiopackage is
 --
 --	mybuffer is actually a C array, provided for by the underlying
 --	portaudio library, here named as My_Buffer
-	   My_Buffer: arrayConverter. Object_Pointer :=
+	   My_Buffer : arrayConverter. Object_Pointer :=
 	                        arrayConverter. To_Pointer (output);
-	   Amount:   Integer;
+	   Amount    : Integer;
 	begin
 	   if My_Environment. Callback_Returnvalue /= paContinue then
 	      return My_Environment. Callback_Returnvalue;
@@ -78,8 +78,8 @@ package body audiopackage is
 	   return My_Environment. Callback_Returnvalue;
 	end paCallBack;
 
-	procedure Initialize (Object: in out audiosink) is
-	   Error: PaError;
+	procedure Initialize (Object : in out audiosink) is
+	   Error : PaError;
 	begin
 	   if Object. Is_Initialized or else Object. Has_Error then
 	      return;	-- i.e. do not try it again
@@ -95,7 +95,7 @@ package body audiopackage is
 	   Object. Is_Running           := false;
 	end Initialize;
 
-	procedure Finalize	(Object: in out audiosink) is
+	procedure Finalize	(Object : in out audiosink) is
 	   Error: PaError;
 	begin
 	   if Object. Has_Error or else
@@ -116,19 +116,19 @@ package body audiopackage is
 	   Object. Is_Initialized := false;
 	end Finalize;
 
-	procedure selectDefaultDevice	(Object:   in out audiosink;
-	                                 res:      out boolean) is
+	procedure selectDefaultDevice	(Object  : in out audiosink;
+	                                 res     : out boolean) is
 	   Device_index	: PaDeviceIndex := Pa_GetDefaultOutputDevice;
 	begin
 	   selectDevice (Object, res, Device_Index);
 	end selectDefaultDevice;
 
-	procedure selectDevice (Object:       in out audiosink;
-	                        res:          out boolean;
-	                        Device_Index: PaDeviceIndex) is
-	   Error:             PaError;
-	   Device_Buffersize: integer;
-	   Selected_Latency:  aliased PaTime;
+	procedure selectDevice (Object       : in out audiosink;
+	                        res          : out boolean;
+	                        Device_Index : PaDeviceIndex) is
+	   Error             : PaError;
+	   Device_Buffersize : integer;
+	   Selected_Latency  : aliased PaTime;
 	begin
 	   if Object. Has_Error or else Device_Index = paNoDevice then
 	      res     := false;
@@ -178,8 +178,8 @@ package body audiopackage is
 	   res   := true;
 	end selectDevice;
 
-	procedure  portAudio_start (Object: in out audiosink;
-	                            result: out boolean) is
+	procedure  portAudio_start (Object : in out audiosink;
+	                            result : out boolean) is
 	   Error:    PaError;
 	begin
 --	default:
@@ -203,9 +203,9 @@ package body audiopackage is
 	   end if;
 	end portAudio_start;
 
-	procedure portAudio_stop (Object: in out audioSink) is
-	   Error:    PaError;
-	   Size:     integer;
+	procedure portAudio_stop (Object : in out audioSink) is
+	   Error  : PaError;
+	   Size   : Integer;
 	begin
 	   if not Object. Is_Initialized or else not Object. Is_Running then
 	      return;
@@ -220,9 +220,9 @@ package body audiopackage is
 	   size	:= pa_ringbuffer. GetRingBufferReadAvailable (Object. buffer);
 	end portAudio_stop;
 
-	procedure putSamples	(Object:     in out audiosink;
-	                         data:       complexArray; 
-	                         sampleRate: uint64_t) is
+	procedure putSamples	(Object     : in out audiosink;
+	                         data       : complexArray; 
+	                         sampleRate : uint64_t) is
 	   available:  integer :=
 	                 pa_ringbuffer.
 	                        GetRingBufferWriteAvailable (Object. buffer);
@@ -238,16 +238,16 @@ package body audiopackage is
 --
 --	scaling from 16000 -> 48000 is easy, just add
 --	zero samples and filter
-	procedure putSamples_16	(Object:    in out audiosink;
-	                         data:      complexArray) is
-	   buffer:   buffer_data (0 .. 3 * data' Length - 1);
+	procedure putSamples_16	(Object : in out audiosink;
+	                         Data   : complexArray) is
+	   buffer : buffer_data (0 .. 3 * data' Length - 1);
 	begin	
-	   for I in data' Range loop
+	   for I in Data' Range loop
 	      declare
-	         index : Integer := Integer (I - data' first);
+	         index : Integer := Integer (I - Data' first);
 	         Temp_Value : dataComplex;
 	      begin
-	         Temp_Value          := f_16. Pass (data (index));
+	         Temp_Value          := f_16. Pass (Data (index));
 	         buffer (3 * index)	:=
 	                       (Interfaces. C. C_float (Temp_Value. Re),
 	                        Interfaces. C. C_float (Temp_Value. Im));
@@ -265,17 +265,17 @@ package body audiopackage is
 	end putSamples_16;
 --
 --	mapping from 24000 -> 48000 is simple, just
---	add a zero sample to each input sample
-	procedure putSamples_24	(Object:    in out audiosink;
-	                         data:      complexArray) is
-	   buffer	: buffer_data (0 .. 2 * data' Length - 1);
+--	add a zero sample to each input samplea (and smooth by filtering)
+	procedure putSamples_24	(Object : in out audiosink;
+	                         Data   : complexArray) is
+	   buffer : buffer_data (0 .. 2 * data' Length - 1);
 	begin
-	   for i in data' Range loop
+	   for i in Data' Range loop
 	      declare
-	         index : Integer := Integer (i - data' First);
+	         index : Integer := Integer (i - Data' First);
 	         Temp_Value : dataComplex;
 	      begin
-	         Temp_Value    := f_24. Pass (data (index));
+	         Temp_Value    := f_24. Pass (Data (index));
 	         buffer (2 * index)	:= 
 	                      (Interfaces. C. C_float (Temp_Value. Re),
 	                       Interfaces. C. C_float (Temp_Value. Im));
@@ -292,14 +292,14 @@ package body audiopackage is
 --	Converting the rate from 32000 -> 48000 is in 2 steps,
 --	step 1 is upconverting to 96000,
 --	step 2 is downconverting by a factor of 2
-	procedure putSamples_32	(Object:  in out audiosink;
-	                         data:    complexArray) is
-	   buffer_1: complexArray (0 .. 3 * data' Length - 1);
-	   buffer_2: buffer_data (0 .. buffer_1' Length / 2 - 1);
+	procedure putSamples_32	(Object : in out audiosink;
+	                         data   : complexArray) is
+	   buffer_1 : complexArray (0 .. 3 * data' Length - 1);
+	   buffer_2 : buffer_data (0 .. buffer_1' Length / 2 - 1);
 	begin
-	   for i in data' Range loop
+	   for i in Data' Range loop
 	      declare
-	         index : Integer := Integer (i - data' first);
+	         index : Integer := Integer (i - Data' first);
 	      begin
 	         buffer_1 (3 * index)        := f_32. Pass (data (i));
 	         buffer_1 (3 * index + 1)    := f_32. Pass ((0.0, 0.0));
@@ -317,13 +317,13 @@ package body audiopackage is
 --
 --	This one is easy, just pass on the data
 	procedure putSamples_48	(Object:  in out audiosink;
-	                         data:    complexArray) is
+	                         Data:    complexArray) is
 	   buffer	: buffer_data (data' Range);
 	begin
-	   for I in data' Range loop
+	   for I in Data' Range loop
 	      buffer (I) := 
-	                  (Interfaces. C. C_float (data (I). Re),
-	                   Interfaces. C. C_float (data (I). Im));
+	                  (Interfaces. C. C_float (Data (I). Re),
+	                   Interfaces. C. C_float (Data (I). Im));
 	   end loop;
 	   pa_ringBuffer. putDataIntoBuffer (Object. buffer, buffer);
 	end putSamples_48;

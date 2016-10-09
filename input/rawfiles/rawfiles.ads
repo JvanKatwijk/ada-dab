@@ -32,11 +32,12 @@ with Interfaces. C_streams; use Interfaces. C_streams;
 with Gtk.Combo_Box;	use Gtk. Combo_Box;
 with Gtk.Combo_Box_Text;	use Gtk. Combo_Box_Text;
 package rawfiles is
-	procedure setupGainTable  (gainSelector: Gtk_Combo_Box_Text);
-	procedure	restartReader (res : out Boolean);
+	procedure	setupGainTable  (gainSelector: Gtk_Combo_Box_Text);
+	procedure	restartReader   (res : out Boolean);
 	procedure	stopReader;
 	function	Samples return Integer;
-	procedure	getSamples (output : out complexArray; amount : out Integer);
+	procedure	getSamples      (output : out complexArray;
+	                                 amount : out Integer);
 	function	isValid	return Boolean;
 	procedure	setVFOFrequency	(freq: Integer);
 	procedure	setExternalGain (gain: Integer);

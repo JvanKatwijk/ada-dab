@@ -33,10 +33,10 @@ with Gtk. Enums;	use Gtk. Enums;
 with simple_messages;   use simple_messages;
 with ofdm_handler;
 with header; use header;
---with rtlsdr_wrapper; use rtlsdr_wrapper;
+with rtlsdr_wrapper; use rtlsdr_wrapper;
 --with rawfiles; use rawfiles;
 --with airspy_wrapper; use airspy_wrapper;
-with sdrplay_wrapper; use sdrplay_wrapper;
+--with sdrplay_wrapper; use sdrplay_wrapper;
 with Text_IO; use Text_IO;
 with Ada. Unchecked_Deallocation;
 with Gdk.Event;
@@ -52,10 +52,10 @@ package Gui_Handler is
 ---------------------------------------------------------------------------
 -- to select an input device, uncomment the line for
 --	and the appropriate line "with xxxx"
---	package myDevice renames rawfiles;
---	package myDevice renames rtlsdr_wrapper;
+--	package My_Device renames rawfiles;
+	package My_Device renames rtlsdr_wrapper;
 --	package My_Device renames airspy_wrapper;
-	package My_Device renames sdrplay_wrapper;
+--	package My_Device renames sdrplay_wrapper;
 	my_P		: Ofdm_Handler. Ofdm_Processor_P;
 	running		: Boolean	:= false;
 private	

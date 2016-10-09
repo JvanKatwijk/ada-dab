@@ -36,8 +36,8 @@ package body sdrplay_wrapper is
 --	We prefer a callback not to reference anything not local
 --	or accessible through the parameters. So, we pass
 --	the ringbuffer as "userData" parameter.
-	procedure Sdrplay_Callback (xi             : system. address;
-	                            xq             : system. address;
+	procedure Sdrplay_Callback (xi             : access Interfaces.C. short;
+	                            xq             : access Interfaces.C. short;
 	                            firstSampleNum : Interfaces. C. int;
 	                            grChanged      : Interfaces. C. int;
 	                            rfChanged      : Interfaces. C. int;
@@ -54,9 +54,9 @@ package body sdrplay_wrapper is
 	   package bufferConverter is
 	         new System. Address_To_Access_Conversions (localBuffer);
 	   xi_buffer      : arrayConverter. Object_Pointer :=
-                                arrayConverter. To_Pointer (xi);
+                                arrayConverter. To_Pointer (xi. all' Address);
 	   xq_buffer      : arrayConverter. Object_Pointer :=
-                                arrayConverter. To_Pointer (xq);
+                                arrayConverter. To_Pointer (xq. all' Address);
 	   output_Buffer  : bufferConverter. Object_Pointer :=
 	                        bufferConverter. To_Pointer (userData);
 	   collect_Buffer : inputBuffer. buffer_Data (0 .. Integer (numSamples) - 1);

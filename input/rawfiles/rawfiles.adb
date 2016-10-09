@@ -32,77 +32,74 @@ with System; use System;
 with Interfaces; use Interfaces;
 with Text_IO; use Text_IO;
 package body rawfiles is
-function "abs" (Right: header. ComplexTypes. complex) return Float renames
-        header. complexTypes. "abs";
-type element is record
-a:	uint8_t;
-b:	uint8_t;
-end record;
+	function "abs" (Right: header. ComplexTypes. complex) return Float
+	                              renames header. complexTypes. "abs";
+	type element is record
+	   a : uint8_t;
+	   b : uint8_t;
+	end record;
 --	we read in segments of 10 millseconds at a time
-package localBuffer is new ringbuffer (element);
-use localBuffer;
+	package localBuffer is new ringbuffer (element);
+	use localBuffer;
 
-bufferSize	: constant	:=  4 * 32768;
-I_Buffer	: ringbuffer_data (32 * 32768);
-task doRead is
-	entry Start (name: String);
-end doRead;
+	bufferSize : constant          :=  4 * 32768;
+	I_Buffer   : ringbuffer_data (32 * 32768);
+	task doRead is
+	   entry Start (name : String);
+	end doRead;
 
-procedure restartReader (res : out Boolean) is
-begin
-	put_line ("restart called");
---	doRead. Start ("/usr/shared/dab-testfiles/mux-12a.raw");
---	doRead. Start ("/usr/shared/dab-testfiles/mux-12C-a.raw");
-	doRead. Start ("/usr/shared/dab-testfiles/7b-radio-bremen.raw");
-	res	:= true;
-end restartReader;
+	procedure restartReader (res : out Boolean) is
+	begin
+	   put_line ("restart called");
+--	   doRead. Start ("/usr/shared/dab-testfiles/mux-12a.raw");
+--	   doRead. Start ("/usr/shared/dab-testfiles/mux-12C-a.raw");
+	   doRead. Start ("/usr/shared/dab-testfiles/7b-radio-bremen.raw");
+	   res	:= true;
+	end restartReader;
 
-procedure stopReader is
-begin
-	abort doRead;
-end stopReader;
+	procedure stopReader is
+	begin
+	   abort doRead;
+	end stopReader;
 
-function isValid return Boolean is
-begin
-	return true;
-end isValid;
+	function isValid return Boolean is
+	begin
+	   return true;
+	end isValid;
 
-task body doRead is
-period		: Integer	:= (bufferSize * 1000) / (2 * 2048);	
-stopMaar	: exception;
-filePointer	: FILEs;
-subtype readerBuffer	is buffer_data (0 .. bufferSize - 1);
-lBuf		: readerBuffer;
-procedure do_readBuffer (data: out readerBuffer; result: out Integer) is
-n	: Integer;
-begin
-	n	:= Integer (fread (data' Address,
+	task body doRead is
+	   period      : Integer := (bufferSize * 1000) / (2 * 2048);	
+	   stopMaar    : exception;
+	   filePointer : FILEs;
+	   subtype readerBuffer is buffer_data (0 .. bufferSize - 1);
+	   lBuf        : readerBuffer;
+	   amount      : Integer;
+	   mode        : String	:= "r";
+	   procedure  do_readBuffer (data : out readerBuffer;
+	                             result: out Integer) is
+	      n : Integer;
+	   begin
+	      n := Integer (fread (data' Address,
 	                           size_t (1),
 	                           size_t (2 * data' Length),
 	                           filePointer));
-	if n < 2 * data' Length
-	then
-	   n := fseek (filePointer, 0, SEEK_SET);
-	   put_line ("end of file, restarting");
-	end if;
-	result	:= n / 2;
-end do_readBuffer;
-amount	: Integer;
-mode	: String	:= "r";
-begin
-	select
+	      if n < 2 * data' Length then
+	         n := fseek (filePointer, 0, SEEK_SET);
+	         put_line ("end of file, restarting");
+	      end if;
+	      result := n / 2;
+	   end do_readBuffer;
+	begin
 	   accept Start (name: String) do
 	      put ("going to start ");
-	      filePointer	:= fopen (name' Address, mode' Address );
-	      if filePointer = NULL_Stream
-	      then
+	      filePointer := fopen (name' Address, mode' Address );
+	      if filePointer = NULL_Stream then
 	         put ("could not open "); put_line (name);
 	         raise stopMaar;
 	      else
-	         put ("opened");
+	         put (name); put_line ("opened");
 	      end if;
 	   end Start;
-	   put_line ("starting the main loop");
 	   loop
 	      while I_Buffer. GetRingBufferWriteAvailable < lBuf' length loop
 	         delay 0.01;
@@ -116,50 +113,49 @@ begin
 
 	      I_Buffer. putDataIntoBuffer (lBuf);
 	   end loop;
-	end select;
-exception
-	when stopMaar => put_line ("doread normally finished");
-	when others	=> put_line ("problem");
-end doRead;
+	exception
+	   when stopMaar => put_line ("doread normally finished");
+	   when others   => put_line ("problem");
+	end doRead;
 
-procedure getSamples (output : out complexArray; amount : out Integer) is
-buffer	: buffer_data (output' Range);
-begin
-	if doRead' terminated
-	then
-	   amount := 0;
-	   return;
-	end if;
+	procedure getSamples (output : out complexArray;
+	                      amount : out Integer) is
+	   Buffer : buffer_data (output' Range);
+	begin
+	   if doRead' terminated then
+	      amount := 0;
+	      return;
+	   end if;
 
-	while not doRead' Terminated and then
+	   while not doRead' Terminated and then
 	          I_Buffer. GetRingBufferReadAvailable < output' Length loop
-	   delay 0.001;
-	end loop;
-	I_Buffer. getDataFromBuffer (buffer, amount);
-	for i in buffer' range loop
-	   output (i) := (float (Integer (buffer (i). a) - 128) / 128.0,
-	                  float (Integer (buffer (i). b) - 128) / 128.0);
-	end loop;
-end getSamples;
+	      delay 0.001;
+	   end loop;
+	   I_Buffer. getDataFromBuffer (buffer, amount);
+	   for i in Buffer' range loop
+	      output (i) := (float (Integer (buffer (i). a) - 128) / 128.0,
+	                     float (Integer (buffer (i). b) - 128) / 128.0);
+	   end loop;
+	end getSamples;
 
-function Samples return Integer is
-begin
-	return I_Buffer. GetRingBufferReadAvailable;
-end;
+	function Samples return Integer is
+	begin
+	   return I_Buffer. GetRingBufferReadAvailable;
+	end;
 
-procedure	setExternalGain (gain: Integer) is
-begin
-	null;
-end;
+	procedure setExternalGain (gain: Integer) is
+	begin
+	   null;
+	end;
 
-procedure	setVFOFrequency (freq: Integer) is
-begin
-	null;
-end;
+	procedure setVFOFrequency (freq: Integer) is
+	begin
+	   null;
+	end;
 
-procedure setupGainTable  (gainSelector: Gtk_Combo_Box_Text) is
-begin
-	null;
-end;
+	procedure setupGainTable  (gainSelector: Gtk_Combo_Box_Text) is
+	begin
+	   null;
+	end;
 
 end rawfiles;

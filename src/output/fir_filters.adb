@@ -48,8 +48,8 @@ package body fir_filters is
 	   Free_complexArray (filter. buffer);
 	end Finalize;
 
-	function Pass   (filter:  in out lowPass_filter;
-	                 data:    complex) return complex is
+	function Pass   (filter : in out lowPass_filter;
+	                 data   : complex) return complex is
 	   tmp:   complex      := (0.0, 0.0);
 	begin
 	   filter. buffer (filter. ip)  := data;

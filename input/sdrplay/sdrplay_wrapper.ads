@@ -56,10 +56,11 @@ private
 	function mir_sdr_ApiVersion (version : out Interfaces. C. c_float)
 	                                          return Interfaces. C. int;
 	pragma Import (C, mir_sdr_ApiVersion, "mir_sdr_ApiVersion");
-
+--
+--	xi and xq are access values, pointing to C arrays
 	type Sdrplay_Callback_Type is access
-	          procedure (xi             : system. address;
-	                     xq             : system. address;
+	          procedure (xi             : access Interfaces. C. short;
+	                     xq             : access Interfaces. C. short;
 	                     firstSampleNum : Interfaces. C. int;
 	                     grChanged      : Interfaces. C. int;
 	                     rfChanged      : Interfaces. C. int;
@@ -149,8 +150,8 @@ private
 	                         "mir_sdr_DCoffsetIQimbalanceControl");
 	
 
-	procedure Sdrplay_Callback (xi             : system. address;
-	                            xq             : system. address;
+	procedure Sdrplay_Callback (xi             : access Interfaces.C. short;
+	                            xq             : access Interfaces.C. short;
 	                            firstSampleNum : Interfaces. C. int;
 	                            grChanged      : Interfaces. C. int;
 	                            rfChanged      : Interfaces. C. int;

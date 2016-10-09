@@ -19,13 +19,16 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 package body fft_handler is
-	procedure do_FFT (Object:	in out FFT_Processor;
-	                  Vector:	in out complexArray) is
-	   procedure real_FFT (the_fft: System. Address;
-	                       vector: System. Address);
+	procedure do_FFT (Object : in out FFT_Processor;
+	                  Vector : in out complexArray) is
+	   subtype vectorType is complexArray (Vector' Range);
+	   procedure real_FFT (the_fft : System. Address;
+	                       Vector  : in out vectorType);
+--	                       vector  : System. Address);
 	   pragma Import (C, real_FFT, "execute_fft");
 	begin
-	   real_FFT (Object. field, Vector' Address);
+	   real_FFT (Object. field, Vector);
+--	   real_FFT (Object. field, Vector' Address);
 	end do_FFT;
 
         procedure Initialize (Object : in out FFT_Processor) is

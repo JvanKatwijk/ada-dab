@@ -25,7 +25,9 @@ with header;	use header;
 with System;	use System;
 with Ada. Finalization;
 with Ada. Unchecked_Deallocation;
-with Interfaces. C;	use Interfaces. C;
+with Interfaces; 
+with Interfaces. C; 
+
 package Viterbi_Handler is
 	type Viterbi_Processor (WordLength : Natural) is
 	          new Ada. Finalization. Controlled with private;
@@ -36,18 +38,18 @@ package Viterbi_Handler is
 	                      output : out byteArray);
 
 private
-	type uintArray is Array (Natural Range <>) of uint32_t;
-	type uintArray_P is access all uintArray;
-	procedure Free_uintArray is
+	type c_intArray is Array (Natural Range <>) of Interfaces. C. int;
+	type c_intArray_P is access all c_intArray;
+	procedure Free_c_intArray is
 	               new Ada. Unchecked_Deallocation (
-	                                    Object => uintArray,
-	                                    Name => uintArray_P);
+	                                    Object => c_intArray,
+	                                    Name => c_intArray_P);
 	type Viterbi_Processor (WordLength: Natural) is
 	          new Ada. Finalization. Controlled with 
 	   record
 	      Handler:   System. Address;
 	      isOK:      Boolean;
-	      Symbols:   access uintArray;
+	      Symbols:   c_intArray_P;
 	   end record;
 
 	K:	constant Integer	:= 7;
@@ -66,17 +68,6 @@ private
 	procedure Init_Viterbi (Handle      : system. address;
 	                        startState  : Interfaces. C. int);
 	pragma Import (C, Init_Viterbi, "init_viterbi");
-
-	procedure Update_Viterbi_Blk (Handle :  system. Address;
-	                              Symbols:  system. Address;
-	                              nbits  :   Interfaces. C. int);
-	pragma Import (C, Update_Viterbi_Blk, "update_viterbi_blk_GENERIC");
-
-	procedure Chainback_Viterbi (Handle    :  system. Address;
-	                             Output    :  system. Address;
-	                             Wordlength:  Interfaces. C. int;
-                                     EndState  :  Interfaces. C. int);
-	pragma	Import (C, Chainback_Viterbi, "chainback_viterbi");
 
 	procedure Delete_Viterbi   (Handle : system. Address);
 	pragma Import	(C, Delete_Viterbi, "delete_viterbi");

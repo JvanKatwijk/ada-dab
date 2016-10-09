@@ -146,7 +146,7 @@ package body Airspy_Wrapper is
 	         new System. Address_To_Access_Conversions (C_buffer);
 	      Databuffer_P    : arrayConverter. Object_Pointer :=
                                 arrayConverter. To_Pointer (transfer. samples);
---	my_buffer is now the Ada name for the incoming data
+--	"Data_Buffer" is now the Ada name for the incoming data
 	   begin
 	      for i in 0 .. Integer (transfer. Sample_Count) - 1 loop
 	         Conversion_Buffer (Conversion_Index) :=

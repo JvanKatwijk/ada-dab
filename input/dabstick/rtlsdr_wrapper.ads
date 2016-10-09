@@ -22,7 +22,7 @@ with Gtk.Main;
 with Gtk.Window;	use Gtk.Window;
 with Gtk.Widget;	use Gtk.Widget;
 with Glib.Object;
-with Glib.Main; use Glib.Main;
+with Glib.Main;		use Glib.Main;
 with Gtk.Grid;		use Gtk.Grid;
 with Gtk.Button;	use Gtk.Button;
 with Gtk.Label;		use Gtk.Label;
@@ -33,19 +33,91 @@ with ringbuffer;
 with Ada. Finalization; use Ada. Finalization;
 with Ada. Unchecked_Deallocation;
 with header; use header;
-with rtlsdr_ada; use rtlsdr_ada;
-with Interfaces; use Interfaces;
+with Interfaces. C;
 package rtlsdr_wrapper is
-	procedure setupGainTable  (gainSelector: Gtk_Combo_Box_Text);
-	procedure setVFOFrequency (frequency: Integer);
-	function getVFOFrequency  return Integer;
-	procedure restartReader   (result: out Boolean);
-	procedure stopReader;
-	procedure setExternalGain (gain : Integer);
-	procedure getSamples      (outV : out complexArray; amount : out Integer);
-	function Samples          return Integer;
-	function isValid	  return Boolean;
+	procedure Setup_GainTable  (gainSelector : Gtk_Combo_Box_Text);
+	procedure Set_VFOFrequency (frequency    : Positive);
+	function  Get_VFOFrequency  return Integer;
+	procedure Restart_Reader   (result       : out Boolean);
+	procedure Stop_Reader;
+	procedure Set_Gain         (gain         : Natural);
+	procedure Get_Samples      (outV         : out complexArray;
+	                            amount       : out Integer);
+	function Available_Samples return Integer;
+	function Valid_Device      return Boolean;
 private
+	type rtlsdr_dev	is new System. Address;
+	type rtlsdr_dev_t is access rtlsdr_dev;
+	type devicePointer	is access rtlsdr_dev_t;
+	READLEN_DEFAULT	: constant	:= 2 * 8192;
+
+	type rtlsdr_CallbackType is access
+	                procedure (buffer   : System. Address;
+	                           size     : Interfaces. C. int;
+	                           userData : System. Address);
+	pragma Convention (C, rtlsdr_CallbackType);
+
+	function rtlsdr_open_ada (device_p     : devicePointer;
+	                          deviceNumber : Interfaces. C. int)
+	                                           return Interfaces. C. int;
+	pragma Import (C, rtlsdr_open_ada,  "rtlsdr_open");
+
+	procedure rtlsdr_close_ada (device    : rtlsdr_dev_t);
+	pragma Import (C, rtlsdr_close_ada,  "rtlsdr_close");
+
+	procedure rtlsdr_set_center_freq_ada (device    : rtlsdr_dev_t;
+	                                      frequency : Interfaces. C. int);
+	pragma Import (C, rtlsdr_set_center_freq_ada, "rtlsdr_set_center_freq");
+
+	function rtlsdr_get_center_freq_ada (device : rtlsdr_dev_t)
+	                                            return Interfaces. C. int;
+	pragma Import (C, rtlsdr_get_center_freq_ada, "rtlsdr_get_center_freq");
+
+	procedure rtlsdr_set_tuner_gain_mode_ada (device: rtlsdr_dev_t;
+	                                          gainMode: Interfaces. C. int);
+	pragma Import (C, rtlsdr_set_tuner_gain_mode_ada,
+	                                         "rtlsdr_set_tuner_gain_mode");
+
+	procedure rtlsdr_set_tuner_gain_ada (device : rtlsdr_dev_t;
+	                                           gain : Interfaces. C. int);
+	pragma Import (C, rtlsdr_set_tuner_gain_ada, "rtlsdr_set_tuner_gain");
+
+	function rtlsdr_get_tuner_gain_ada (device : rtlsdr_dev_t)
+	                                             return Interfaces. C. int;
+	pragma Import (C, rtlsdr_get_tuner_gain_ada, "rtlsdr_get_tuner_gain");
+
+	procedure rtlsdr_set_sample_rate_ada (device : rtlsdr_dev_t;
+	                                             rate: Interfaces. C. int);
+	pragma Import (C, rtlsdr_set_sample_rate_ada, "rtlsdr_set_sample_rate");
+
+	function rtlsdr_get_sample_rate_ada (device : rtlsdr_dev_t)
+	                                              return Interfaces. C. int;
+	pragma Import (C, rtlsdr_get_sample_rate_ada,
+	                                     "rtlsdr_get_sample_rate");
+
+	function rtlsdr_reset_buffer_ada (device: rtlsdr_dev_t)
+	                                              return Interfaces. C. int;
+	pragma Import (C, rtlsdr_reset_buffer_ada, "rtlsdr_reset_buffer");
+
+	procedure rtlsdr_read_async_ada (device      : rtlsdr_dev_t;
+                                         theCallback : rtlsdr_CallbackType;
+                                         userData    : System. Address;
+	                                 bufNum      : Interfaces. C. int;
+	                                 bufLen      : Interfaces. C. int);
+	pragma Import (C, rtlsdr_read_async_ada, "rtlsdr_read_async");
+
+	procedure rtlsdr_cancel_async_ada (device: rtlsdr_dev_t);
+	pragma Import (C, rtlsdr_cancel_async_ada, "rtlsdr_cancel_async");
+
+	function rtlsdr_get_device_count_ada return Interfaces. C. int;
+	pragma Import (C, rtlsdr_get_device_count_ada,
+	                                         "rtlsdr_get_device_count");
+
+	function rtlsdr_set_freq_correction_ada (device : rtlsdr_dev_t;
+	                                         amount : Interfaces. C. int)
+	                                             return Interfaces. C. int;
+	pragma Import (C, rtlsdr_set_freq_correction_ada,
+	                                         "rtlsdr_set_freq_correction");
 
 	package rtlsdr_buffer is new ringbuffer (Byte);
 	use rtlsdr_buffer;
@@ -56,15 +128,18 @@ private
 	theBuffer	: rtlsdr_buffer. ringbuffer_data (32 * 32768);
 	lastFrequency	: Integer;
 	workerHandle	: rtlsdr_reader_P;
-	gains		: intArray_P;
-	gainsCount	: Integer;
+	type gainsArray is Array (Positive Range <>) of 
+	                                         Interfaces. C. int;
+	type gains_P is access all gainsArray;
+	gains		: gains_P;
+	gainsCount	: Interfaces. C. int;
 	theGain		: Integer;
 	vfoOffset	: Integer := 0;
 	valid		: Boolean;
 
-	procedure rtlsdr_Callback (buffer	: System. Address;
-	                      size	: Integer;
-	                      userData	: System. Address);
-   pragma Convention (C, rtlsdr_Callback);
+	procedure rtlsdr_Callback (buffer   : System. Address;
+	                           size     : Interfaces. C. int;
+	                           userData : System. Address);
+	pragma Convention (C, rtlsdr_Callback);
 end rtlsdr_wrapper;
 
