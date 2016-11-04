@@ -18,121 +18,13 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with Channel_Handler; use Channel_Handler;
+with Channel_Handler;
 with fic_handler; 
-with msc_handler;
 with Simple_Messages; use Simple_Messages;
 with String_Messages; use String_Messages;
 
 package body Gui_Handler is
-	Deleting	: Boolean	:= false;
---	called upon pressing the X to delete the window
-	procedure main_quit (Self : access Gtk_Widget_Record'Class) is
-	begin
-	   if Running then
-	      Running := false;
-	      my_P. stop;
-	      fic_handler. stop;
-	      msc_handler. stop;
-	      My_Device. Stop_Reader;
-	   end if;
-	   Gtk.Main.Main_Quit;
-	end main_quit;
---
---
-	procedure start_clicked (Self : access Gtk_Button_Record' Class) is
-	   Result	: Boolean;
-	begin
-	   Put_Line ("start clicked");
-	   My_Device. Restart_Reader (result);
-	   if not Result
-	   then
-	      put_line ("device did not start");
-	   else
-	      Running	:= true;
-	      programSelector. Remove_All;
-	      fic_handler. reset;
-	      my_P. reset;
-	   end if;
-	end start_clicked;
---
---	will be used for selecting a frequency
-	procedure Channelselector_Clicked (Self : access Gtk_Combo_Box_Record' Class) is
-	   El:		String	:= Self. Get_Active_Text;
-	   Frequency:	Integer;
-	begin
-	   Frequency	:= Channel_Handler. Set_Channelselect (el);
-	   msc_handler. reset;
-	   my_P. reset;
-	   fic_handler. reset;	-- go for a new fib
-	   if My_Device. Valid_Device then
-	      My_Device. Set_VFOFrequency (kHz (Frequency));
-	      fic_handler. reset;	-- go for a new fib
-	   end if;
-	   string_messages. string_messages. Cleanup;
-	   delay 2.0;	-- we have to clean up the fields in programselector
-	   Deleting	:= true;
-	   programSelector. Remove_All;
-	   Deleting	:= false;
-	   label_ensemble. Set_Label ("ensemble name");
-	end channelSelector_clicked;
---
-	procedure Gainselector_clicked (Self : access Gtk_Combo_Box_Record' Class) is
-	   El : String	:= Self. Get_Active_Text;
-	begin
-	   if My_Device. Valid_Device then
-	      My_Device. Set_Gain (Integer' Value (el));
---	      put ("Gain set to "); put_line (el);
-	   end if;
-	end Gainselector_clicked;
 
-	procedure Programselector_clicked
-	              (Self : access Gtk_Combo_Box_Record' Class) is
-	   Program_Descriptor: audioData;
-	   El: String	:= Self. Get_Active_Text;
-	begin
-	   if Deleting then
-	      return;
-	   end if;
-	   put ("program "); put (el); put_line ("selected");
-	   fic_handler. Data_for_Audioservice (El, Program_Descriptor);
-	   if Program_Descriptor. dataisThere then
-	      put ("startaddress ");
-	      put_line (short_Integer' Image (Program_Descriptor. startAddr));
-	      put ("Length ");
-	      put_line (short_Integer' Image (Program_Descriptor. length));
-	      put ("bitRate ");
-	      put_line (short_Integer' Image (Program_Descriptor. bitRate));
-	      put ("ASCTy");
-	      put_line (short_Integer' Image (Program_Descriptor. ASCTy));
-	      put ("protLevel");
-	      put_line (short_Integer' Image (Program_Descriptor. protLevel));
-	      put ("uepFlag ");
-	      put_line (short_Integer' Image (Program_Descriptor. uepFlag));
-	   end if;
-	   if Program_Descriptor. length > 0 and then
-	                          Program_Descriptor. bitrate > 0 then
-	      msc_handler. set_audioData (Program_Descriptor);
-	   else
-	      put_line ("sorry, do not know where to find the audio right now");
-	   end if;
-	end Programselector_clicked;
-
---	called after pressing the quit button
-	procedure button_quit (Self : access Gtk_Widget_Record' Class) is
-	begin
-	   if Running
-	   then
-	      Running	:= false;
-	      my_P. stop;
-	      My_Device. Stop_Reader;
-	      fic_handler. stop;
-	      msc_handler. stop;
-	   end if;
-	   Put_Line ("button_quit is called");
-	   Destroy (Self);
-	   Gtk.Main.Main_Quit;
-	end button_quit;
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 --	Internal dispatcher for messages from other tasks
@@ -184,8 +76,10 @@ package body Gui_Handler is
 	end build_new_text_line;
 
 --	we handle the GUI on package level, since that gives the opportunity
---	to handle requests and having access to the data
-	procedure Setup_GUI is
+--	to handle requests  processing of which requires
+--	calling functions and procedures in the different packages
+--	in front and backend.
+	procedure Create_GUI is
 	begin
 	   --  Initialize GtkAda.
 	   Gtk.Main.Init;
@@ -197,8 +91,6 @@ package body Gui_Handler is
 
 	   -- set the border width of the window
 	   Win.Set_Border_Width (10);
-	   -- connect the "destroy" signal
-	   Win.On_Destroy (main_quit'Access);
 
 	   -- Here we construct the container that is going pack our buttons
 	   Gtk_New (Grid);
@@ -206,22 +98,15 @@ package body Gui_Handler is
 	   Win.Add (Grid);
 	   Gtk_New (startButton, "Start");
 	   Grid. Attach (startButton, 0, 0, 1, 2);
-	   startButton. On_Clicked (start_clicked' access);
---
+
 	   Gtk_New (quitButton, "Quit");
 	   Grid. Attach_Next_To (quitButton, startButton, POS_BOTTOM, 1, 2);
-	   Widget_Callback.Object_Connect (quitButton,
-                                           "clicked",
-                     Widget_Callback.To_Marshaller (button_quit'Access),
-                                         Win);
 
 	   Gtk_New (Channel_Selector);
 	   Grid. Attach_Next_To (Channel_Selector, quitButton, POS_RIGHT, 2, 1);
-	   Channel_Selector. On_Changed (Channelselector_clicked' access);
 
 	   Gtk_New (Gain_Selector);
 	   Grid.Attach_Next_to (Gain_Selector, Channel_Selector, POS_RIGHT, 2, 1);
-	   Gain_Selector. On_Changed (Gainselector_clicked' access);
 
 	   Gtk_New (label_channel, "channels");
 	   Grid.Attach_Next_To (label_channel, startButton, POS_RIGHT, 2, 1);
@@ -255,11 +140,9 @@ package body Gui_Handler is
 	   Gtk_New (Programselector);
 	   Grid. Attach_Next_To (Programselector,
 	                           label_ensemble, POS_BOTTOM, 2, 1);
-	    programSelector.On_Changed (Programselector_clicked' access);
 --
 --
 	   Win. Show_All;
-	end Setup_GUI;
-begin
-	null;
+	end Create_GUI;
+
 end Gui_Handler;

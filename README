@@ -30,9 +30,6 @@ Sources are available under GPLV2/V3.
 ==============================================================================
 Notes on the program structure
 
-The sructure of the Ada version slightly differs from the C++ one. In
-Ada we make use of the "server" facilities provided by Ada tasking.
-
 The task "ofdmProcessor" is an actor task: it will read samples (the
 functions used for reading are passed as parameter) and it will do
 the whole ofdm handling (i.e. synchronizing in time and frequency

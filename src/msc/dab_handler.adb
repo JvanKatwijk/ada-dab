@@ -110,7 +110,7 @@ package body dab_handler is
 	                  end loop;
 	               end;
 	            end loop;
-
+--	just wait until the interleaver is "filled"
 	            if countforInterleaver < 15 then
 	               countforInterleaver := countforInterleaver + 1;
 	            else

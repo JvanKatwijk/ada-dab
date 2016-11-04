@@ -108,6 +108,18 @@ package body Header is
 	begin
 	   return 1000 * kHz (Frequency);
 	end mHz;
+
+	protected body locker is
+	   entry lock when Count > 0 is
+	   begin
+	      Count := Count - 1;
+	   end lock;
+
+	   procedure unlock is
+	   begin
+	      Count := Count + 1;
+	   end unlock;
+	end locker;
 end Header;
 
 

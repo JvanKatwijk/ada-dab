@@ -18,15 +18,15 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
+with header;		use header;
 with Text_IO;		use Text_IO;
 with Ada. Exceptions;	use Ada. Exceptions;
-with Ada. Unchecked_Deallocation;
-with header;		use header;
 with simple_messages;	use simple_messages;
-with fic_handler;
-with msc_handler;
+-- the generic components
+with phase_handler;
+with freq_interleaver;
 with fft_handler;
---
+
 package body Ofdm_Handler is
 	use header. ComplexTypes;
 	function "abs" (Right: header. ComplexTypes. complex)
@@ -38,96 +38,59 @@ package body Ofdm_Handler is
 	function conj (val: complexTypes. complex)
 	                                        return complexTypes. complex
 	                             renames complexTypes. Conjugate;
---
-	procedure Initialize (Object : in out Ofdm_Processor) is
-	begin
-	   Object. Tu                   := header. T_u (Object. Mode);
-	   Object. Tg                   := header. T_g (Object. Mode);
-	   Object. Ts                   := header. T_s (Object. Mode);
-	   Object. Tnull                := header. T_null (Object. Mode);
-	   Object. Carriers             := header. K  (Object. Mode);
-	   Object. Carrier_Diff         := header. Carrier_Diff (Object. Mode);
-	   Object. L_mode	        := header. L (Object. Mode);
-	   Object. Samplecounter	:= 0;
-	   Object. Current_Strength	:= 0.0;
 
-	   Object. Running              := false;
-	   Object. Buffer_Content       := 0;	
-	   Object. Current_Phase        := 0;
-	   Object. Signal_Level	        := 0.0;
-	   Object. Fine_Corrector       := 0;
-	   Object. Coarse_Corrector     := 0;
-	   Object. Correction_Flag      := true;
-	   Object. Token_Length         := 0;
---
---	will be set/ controlled dynamically
-	   Object. The_Processor        := null;
---
-	   for i in Object. OscillatorTable' Range loop
-	      Object. OscillatorTable (i) :=
-	              (Math. cos (float (i) * 2.0 * M_PI / float (Input_Rate)),
-	               Math. sin (float (i) * 2.0 * M_PI / float (Input_Rate)));
-	   end loop;
---	   put_line ("Initialization complete");
-	end Initialize;
+	package my_phaseHandler is new phase_handler (The_Mode);
+	package my_freqInterleaver is new freq_interleaver (The_Mode);
+	package my_fft is new fft_handler (FORWARD, The_Mode);
 
-	procedure Finalize (Object : in out Ofdm_Processor) is
-	begin
-	   null;
-	end Finalize;
---
 --	Someone (external to this function) will eventually
 --	set "Running" to false, indicating that the task, which
 --	will call Get_Samples, need to terminate
-	procedure Get_Samples (Object     : in out Ofdm_Processor;
-	                       Out_V      : out complexArray;
+	procedure Get_Samples (Out_V      : out complexArray;
 	                       Phase_Ind  : Integer) is
-	   Amount:   Integer   := Out_V' length;
+	   Amount : Integer   := Out_V' length;
 	begin
 
-	   if not Object. Running then
+	   if not Running then
 	      raise Exit_ofdmProcessing;
 	   end if;
 
-	   if Amount > Object. Buffer_Content then
-	      Object. Buffer_Content := Object. Available_Samples. all;
-	      while Object. Running and then
-	                       Object. Buffer_Content < Amount loop
+	   if Amount > Buffer_Content then
+	      Buffer_Content := Available_Samples;
+	      while Running and then
+	                       Buffer_Content < Amount loop
 	         delay 0.01;
-	         Object. Buffer_Content := Object. Available_Samples. all;
+	         Buffer_Content := Available_Samples;
 	      end loop;
 
-	      if not Object. Running then
+	      if not Running then
 	         raise Exit_OfdmProcessing;
 	      end if;
 	   end if;
 
 --	we have samples, let's get them
-	   Object. Fetch_Samples (Out_V, Amount);
-	   Object. Buffer_Content :=  Object. Buffer_Content - Amount;
+	   Fetch_Samples (Out_V, Amount);
+	   Buffer_Content :=  Buffer_Content - Amount;
 
 --	first: adjust frequency. We need Hz accuracy
 	   for I in Out_V' Range loop
-	      Object. Current_Phase :=
-	                  (Object. Current_Phase - Phase_Ind) mod Input_Rate;
+	      Current_Phase :=
+	                  (Current_Phase - Phase_Ind) mod Input_Rate;
 	      Out_V (I)             := Out_V (I) *
-	                        Object. OscillatorTable (Object. Current_Phase);
-	      Object. Signal_Level  := 0.00001 * abs Out_V (I) +
-	                                (1.0 - 0.00001) * Object. Signal_Level;
+	                        OscillatorTable (Current_Phase);
+	      Signal_Level  := 0.00001 * abs Out_V (I) +
+	                                (1.0 - 0.00001) * Signal_Level;
 	   end loop;
---
---	currently, tokenlength is not used
---	   Object. Token_Length         := Object. Token_Length + Amount;
 --
 --	Once a second (i.e. after INPUT_RATE samples), we
 --	show some data
-	   Object. Samplecounter    := Object. Samplecounter + Amount;
-	   if Object. Samplecounter >=  Input_Rate then
+	   Samplecounter    := Samplecounter + Amount;
+	   if Samplecounter >=  Input_Rate then
 	      simple_messages. message_queue. Put ((FINE_CORRECTOR_SIGNAL,
-	                                            Object. Fine_Corrector));
+	                                            Fine_Corrector));
 	      simple_messages. message_queue. Put ((COARSE_CORRECTOR_SIGNAL,
-	                                            Object. Coarse_Corrector));
-	      Object. Samplecounter := 0;
+	                                            Coarse_Corrector));
+	      Samplecounter := 0;
 	   end if; 
 
 	exception
@@ -138,61 +101,45 @@ package body Ofdm_Handler is
 --
 --
 --	we might consider a hard reset
-	procedure reset (Object : in out Ofdm_Processor)	is
+	procedure reset is
 	begin
-	   Object. Fine_Corrector	:= 0;
-	   Object. Coarse_Corrector	:= 0;
-	   Object. Correction_Flag	:= true;
+	   Fine_Corrector	:= 0;
+	   Coarse_Corrector	:= 0;
+	   Correction_Flag	:= true;
 	end reset;
 --
---
-	procedure stop (Object : in out Ofdm_Processor) is
-	   procedure Free_Worker is
-	          new Ada. Unchecked_Deallocation (
-	                          Object => Ofdm_Worker,
-	                          Name   => Ofdm_Worker_P);
+	procedure stop is
 	begin
-
-	   if Object. Running then
-	      Object. Running := false;
+	   if Running then
+	      Running := false;
 --	      put_line ("we zijn aan het aborten");
 
-	      while not Object. The_Processor' Terminated loop
+	      while not Ofdm_Worker' Terminated loop
 	         delay 0.01;
 	      end loop;
-	      Free_Worker (Object. The_Processor);
-	      Object. The_Processor	:= null;
 	   end if;
 	end stop;
 
-	function Is_Stopped (Object : Ofdm_Processor) return Boolean is
+	function Is_Stopped return Boolean is
 	begin
-	   return not  Object. Running;
+	   return not Running;
 	end is_stopped;
 	
-	procedure Start (Object : in out Ofdm_Processor;
-	                 Env    : Ofdm_Processor_P) is
+	procedure Start is
 	begin
-
-	   if Object. Running
-	   then
+	   if Running then
 	      return;
 	   end if;
 
-	   Object. The_Processor   := new Ofdm_Worker (Env);
-	   Object. Running         := true;
-	end start;
+	   Ofdm_Worker. Start;
+	   Running         := true;
+	end Start;
 
 --	the task is the main driver, it reads samples and does the
---	ofdm handling. It calls upon the fic handler and the msc handler
+--	ofdm handling. It sends the collected blocks to the
+--	fic- and msc handlers
 --
 	task body Ofdm_Worker is
-	   Tu               : Natural renames Object. Tu;
-	   Tg               : Natural renames Object. Tg;
-	   Ts               : Natural renames Object. Ts;
-	   Tnull            : Natural renames Object. Tnull;
-	   Carriers         : Natural renames Object. Carriers;
-	   Carrier_Diff	    : Natural renames Object. Carrier_Diff;
 	   Start_Index      : Integer;
 	   Phase_Error      : complex;
 	   Counter          : Integer;
@@ -224,7 +171,7 @@ package body Ofdm_Handler is
 	      Search_Range   : constant Integer	:= 36;
 	      Res_Vector     : Tu_Sized_Buffer renames Block_0_Buffer;
 	      M_min          : Float            := 1000.0;
-	      Index          : Integer          := Object. Tu;
+	      Index          : Integer          := Tu;
 	   begin
 --	we look at a special pattern consisting
 --	of zeros in the row of args between successive carriers.
@@ -265,7 +212,7 @@ package body Ofdm_Handler is
 	            end if;
 	         end;
 	      end loop;
-	      return Index - Object. Tu;
+	      return Index - Tu;
 	   end Compute_Offset;
 --
 --	All ofdm tokens, apart from "block 0" will be processed
@@ -278,13 +225,14 @@ package body Ofdm_Handler is
 	                            Blkno   : Integer) is
 	      Work_Vector : Tu_Sized_Buffer renames Buffer;
 	   begin
-	      Object. Ofdm_fft. do_FFT (Work_Vector);
+	      my_fft. do_FFT (Work_Vector);
 --
 --	Note that "mapIn" maps to -carriers / 2 .. carriers / 2
---	we did not set the fft output to low .. high
+--	we did not set the fft output to low .. high,
+--	so the order - in processing - remains high .. low
 	      for I in 0 .. Carriers - 1 loop
 	         declare
-	            Index   : Integer := Object. My_Mapper. Map_In (i);
+	            Index   : Integer := my_freqInterleaver. Map_In (i);
 	            R1      : complexTypes. complex;
 	         begin
 	            if Index < 0 then
@@ -308,10 +256,10 @@ package body Ofdm_Handler is
 	begin
 --
 --	here we start the task body
-	   Object. Running           := true;
-	   Object. Fine_Corrector    := 0;
-	   Object. Signal_Level      := 0.0;
-	   Object. Correction_Flag   := true;
+	   accept start;
+	   Fine_Corrector    := 0;
+	   Signal_Level      := 0.0;
+	   Correction_Flag   := true;
 
 --	Initing, to get a decent value for Signal_Level. The samples are just
 --	read, 
@@ -319,24 +267,24 @@ package body Ofdm_Handler is
 	      declare
 	         Dummy_Buf : Ts_Sized_Buffer;
 	      begin
-	         Object. Get_Samples (Dummy_Buf, 0);
+	         Get_Samples (Dummy_Buf, 0);
 	      end;
 	   end loop;
 --
---	This is then the main loop, implemented using goto's
---	when we are really out of sync, we will be here
+--	This is then the main loop, implemented using goto's.
+--	When we are really out of sync, we will be here
 <<notSynced>>
-	   Syncbuffer_Index          := 0;
-	   Object. Current_Strength  := 0.0;
+	   Syncbuffer_Index  := 0;
+	   Current_Strength  := 0.0;
 
 	   for I in 0 .. 50 loop
 	      declare
 	         Sample : complexArray (0 .. 0);
 	      begin
-	         Object. Get_Samples (Sample, 0);
+	         Get_Samples (Sample, 0);
 	         Env_Buffer (Syncbuffer_Index)  := abs Sample (0);
-	         Object. Current_Strength       :=
-	                           Object. Current_Strength + abs Sample (0);
+	         Current_Strength       :=
+	                           Current_Strength + abs Sample (0);
 	         Syncbuffer_Index               := Syncbuffer_Index + 1;
 	      end;
 	   end loop;
@@ -348,17 +296,15 @@ package body Ofdm_Handler is
 --	here we start looking for the null level, i.e. a dip
 	   Counter		:= 0;
 
-	   while Object. Current_Strength / 50.0 >
-	                              0.40 * Object. Signal_Level loop
+	   while Current_Strength / 50.0 >
+	                              0.40 * Signal_Level loop
 	      declare
 	         Sample: complexArray (0 .. 0);
 	      begin
-	         Object. Get_Samples (sample,
-	                              Object. Coarse_Corrector +
-	                                      Object. Fine_Corrector);
+	         Get_Samples (sample, Coarse_Corrector + Fine_Corrector);
 	         Env_Buffer (Syncbuffer_Index) := abs Sample (0);
-	         Object. Current_Strength      :=
-	                           Object. Current_Strength + abs Sample (0) -
+	         Current_Strength      :=
+	                           Current_Strength + abs Sample (0) -
 	                                   Env_Buffer (Syncbuffer_Index - 50);
 	         Syncbuffer_Index              := Syncbuffer_Index + 1;
 	         Counter                       := Counter + 1;
@@ -370,21 +316,20 @@ package body Ofdm_Handler is
 --
 --	It seems we just successfully passed the start of a null period,
 --	now start looking for the end of the null period.
+--	This "end" should be there within T_null samples,
+--	otherwise, just give up and start all over again
 <<SyncOnEndNull>>
 
 	   counter   := 0;
-	   while Object. Current_Strength / 50.0 <
-	                                0.75 * Object. Signal_Level loop
+	   while Current_Strength / 50.0 < 0.75 * Signal_Level loop
 	      declare
 	         Sample	: complexArray (0 .. 0);
 	      begin
-	         Object. Get_Samples (Sample,
-	                              Object. Coarse_Corrector +
-	                                          Object. Fine_Corrector);
+	         Get_Samples (Sample, Coarse_Corrector + Fine_Corrector);
 	         Env_Buffer (Syncbuffer_Index) := abs Sample (0);
 --	update 
-	         Object. Current_Strength      :=
-	             Object. Current_Strength + Env_Buffer (Syncbuffer_Index) -
+	         Current_Strength      :=
+	             Current_Strength + Env_Buffer (Syncbuffer_Index) -
 	                                 Env_Buffer (Syncbuffer_Index - 50);
 	         Syncbuffer_Index              := Syncbuffer_Index + 1;
 	         Counter                       := Counter + 1;
@@ -405,10 +350,8 @@ package body Ofdm_Handler is
 --	we skip the "dip" identification and come here right away.
 --
 --	Read in Tu samples and look for the startIndex
-	   Object. Get_Samples (Reference_Vector,
-	                        Object. Coarse_Corrector +
-	                               Object. Fine_Corrector);
-	   Start_Index   :=  Object. My_Phasesynchronizer.
+	   Get_Samples (Reference_Vector, Coarse_Corrector + Fine_Corrector);
+	   Start_Index   :=  my_Phasehandler.
 	                                 Find_Index (Reference_Vector, 3);
 	   if Start_Index < 0 then		-- no sync, try again
 	      goto notSynced;
@@ -420,21 +363,20 @@ package body Ofdm_Handler is
 	   Reference_Vector (0 .. Tu - Start_Index - 1) :=
 	                   Reference_Vector (Start_Index .. Tu - 1);
 	   if Start_Index > 0 then
-	      Object. Get_Samples (Reference_Vector (Tu - Start_Index .. Tu - 1),
-	                           Object. Coarse_Corrector +
-	                                        Object. Fine_Corrector);
+	      Get_Samples (Reference_Vector (Tu - Start_Index .. Tu - 1),
+	                           Coarse_Corrector + Fine_Corrector);
 	   end if;
 
 --	we  now have the contents of block 0 and
 --	set the reference vector for the frame
-	   Object. Ofdm_fft. do_FFT (Reference_Vector);
+	   my_fft. do_FFT (Reference_Vector);
 
 --	here we look only at computing a coarse offset when needed
 --	first check 
-	   if not Object. Correction_Flag then
-	      Object. Correction_Flag	:= not fic_handler. Sync_Reached;
+	   if not Correction_Flag then
+	      Correction_Flag	:= not Sync_Reached;
 	   end if;
-	   if Object. Correction_Flag then
+	   if Correction_Flag then
 	      declare
 	         Correction_Value : Integer :=
 	                              Compute_Offset (Reference_Vector);
@@ -442,13 +384,13 @@ package body Ofdm_Handler is
 	         if Correction_Value = 0
 	                  and then Previous_1 = 0
 	                  and then Previous_1 = Previous_2 then
-	            Object. Correction_Flag	:= false;
+	            Correction_Flag	:= false;
 	         elsif Correction_Value /= 100 then
-	            Object. Coarse_Corrector := Object. Coarse_Corrector +
+	            Coarse_Corrector := Coarse_Corrector +
 	                                        Correction_Value *
-	                                        Object. Carrier_Diff;
-	            if abs Object. Coarse_Corrector > kHz (35) then
-	               Object. Coarse_Corrector	:= 0;
+	                                        Carrier_Diff;
+	            if abs Coarse_Corrector > kHz (35) then
+	               Coarse_Corrector	:= 0;
 	            end if;
 	            Previous_2		:= Previous_1;
 	            Previous_1		:= Correction_Value;
@@ -461,56 +403,47 @@ package body Ofdm_Handler is
 --
 --	blocks 2, 3 and 4 contain the FIC data
 	   for Symbolcount in 2 .. 4 loop
-	      Object. Get_Samples (Ofdm_Buffer,
-	                       Object. Coarse_Corrector + Object. Fine_Corrector);
+	      Get_Samples (Ofdm_Buffer, Coarse_Corrector + Fine_Corrector);
 	      for I in 0 .. Tg - 1 loop
 	         Phase_Error := Phase_Error +
 	                          conj (Ofdm_Buffer (I)) * Ofdm_Buffer (Tu + I);
 	      end loop;
 	      
 	      Process_Token (Ofdm_Buffer (Tg .. Ts - 1), Ibits, Symbolcount);
-	      fic_handler.  process_ficBlock (Ibits, Symbolcount);
+	      process_ficBlock (Ibits, Symbolcount);
 	   end loop;
 --
 --	the others the MSC data
-	   for Symbolcount in 5 .. Object. L_mode loop
-	      Object. Get_Samples (Ofdm_Buffer,
-	                           Object. Coarse_Corrector +
-	                                        Object. fine_Corrector);
+	   for Symbolcount in 5 .. L_mode loop
+	      Get_Samples (Ofdm_Buffer, Coarse_Corrector + fine_Corrector);
 	      for I in 0 .. Tg - 1 loop
 	         Phase_Error := Phase_Error +
 	                        conj (Ofdm_Buffer (I)) * Ofdm_Buffer (Tu + I);
 	      end loop;
 	      Process_Token (Ofdm_Buffer (Tg .. Ts - 1), Ibits, Symbolcount);
-	      msc_handler.  process_mscBlock (Ibits, Symbolcount);
+	      process_mscBlock (Ibits, Symbolcount);
 	   end loop;
 
 <<NewOffset>>
 --	we integrate the newly found frequency error with the
 --	existing frequency offset
-	   Object. Fine_Corrector :=  Object. Fine_Corrector +
+	   Fine_Corrector :=  Fine_Corrector +
 	                              integer (0.1 * arg (Phase_Error) / M_PI *
-	                                     float (Object. Carrier_diff) / 2.0);
+	                                     float (Carrier_diff) / 2.0);
 
 --	OK,  here we are at the end of the frame
---	we assume everything went well and skip T_null samples
-
-	   Object. Get_Samples (Null_Buffer, 
-	                        Object. Coarse_Corrector + Object. Fine_Corrector);
+--	we assume everything went well and we just skip T_null samples
+	   Get_Samples (Null_Buffer, Coarse_Corrector + Fine_Corrector);
 	   Syncbuffer_Index	:= 0;
 
 --	Here we just check the validity of the fineCorrector
 
-	   if Object. Fine_Corrector >  Object. Carrier_diff / 2 then
-	      Object. Coarse_Corrector := 
-	                       Object. Coarse_Corrector +  Object. Carrier_Diff;
-	      Object. Fine_Corrector   :=
-	                       Object. Fine_Corrector - Object. Carrier_Diff;
-	   elsif Object. Fine_Corrector < - Object. Carrier_Diff / 2 then
-	      Object. Coarse_Corrector :=
-	                       Object. Coarse_Corrector - Object. Carrier_Diff;
-	      Object. Fine_Corrector   :=
-	                       Object. Fine_Corrector + Object. Carrier_Diff;
+	   if Fine_Corrector > Carrier_diff / 2 then
+	      Coarse_Corrector := Coarse_Corrector +  Carrier_Diff;
+	      Fine_Corrector   := Fine_Corrector - Carrier_Diff;
+	   elsif Fine_Corrector < - Carrier_Diff / 2 then
+	      Coarse_Corrector := Coarse_Corrector - Carrier_Diff;
+	      Fine_Corrector   := Fine_Corrector + Carrier_Diff;
 	   end if;
 <<ReadyForNewFrame>>
 	   goto SyncOnPhase;
@@ -520,6 +453,12 @@ package body Ofdm_Handler is
 	   when Error: others		=> Put ("Exception in ofdmProcessor: ");
 	                                   Put_Line (Exception_Name (Error));
 	end Ofdm_Worker;
-
+begin
+	for i in OscillatorTable' Range loop
+	   OscillatorTable (i) :=
+	              (Math. cos (float (i) * 2.0 * M_PI / float (Input_Rate)),
+	               Math. sin (float (i) * 2.0 * M_PI / float (Input_Rate)));
+	end loop;
+--	   put_line ("Initialization complete");
 end Ofdm_Handler;
 

@@ -20,28 +20,17 @@
 --
 
 with header;	use header;
-with Ada. Finalization;
-with fft_handler;
-with phasetable; use phasetable;
-
+Generic
+	The_Mode : DabMode;
 package Phase_Handler is
-	type Phase_Synchronizer (Mode : Dabmode) is new
-	               Ada. Finalization. Controlled with private;
-	type Phase_Synchronizer_P is access all Phase_Synchronizer;
-	function Find_Index (Object      : in out Phase_Synchronizer;
-	                     inputBuffer : complexArray;
+	function Find_Index (inputBuffer : complexArray;
 	                     Threshold   : Integer) return Integer;
 private
-	type Phase_Synchronizer (Mode : Dabmode) is new
-	               Ada. Finalization. Controlled with 
-	record
-	   Tu		: integer;
-	   K		: integer;
-	   Ref_Table	: complexArray_P;
-	   Forward_fft	: fft_handler. FFT_Processor (FORWARD, Mode);
-	   Backward_fft	: fft_handler. FFT_Processor (BACKWARD, Mode);
-	end record;
-	procedure	Initialize	(Object : in out Phase_Synchronizer);
-	procedure	Finalize	(Object : in out Phase_Synchronizer);
+	Tu		: Natural        := header. T_u (The_Mode);
+	K		: Natural        := header. K   (The_Mode);
+	Ref_Table	: complexArray (0 .. Tu - 1)
+	                                    := (Others => (0.0, 0.0));
+--	Forward_fft	: fft_handler. FFT_Processor (FORWARD, The_Mode);
+--	Backward_fft	: fft_handler. FFT_Processor (BACKWARD, The_Mode);
 end Phase_Handler;
 

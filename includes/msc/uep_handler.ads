@@ -20,7 +20,7 @@
 --
 -- 	The deconvolution for uep
 --
-with header; use header;
+with header;     use header;
 with protection_handler;  use protection_handler;
 with Interfaces; use Interfaces;
 with viterbi_handler; use viterbi_handler;

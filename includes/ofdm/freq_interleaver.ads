@@ -19,16 +19,11 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 with header; use header;
-with Ada. Finalization; use Ada. Finalization;
+generic
+	The_Mode : DabMode;
 package Freq_Interleaver is
-	type Interleaver (mode: Dabmode) is new Controlled with private;
-	function Map_In   (Object: Interleaver; n: integer) return integer;
-	type Interleaver_P is access all Interleaver;
+	function Map_In   (n: integer) return integer;
 private
-	type Interleaver (mode: Dabmode) is new Controlled with 
-	record
-	   Mapper_Table:  access intArray;
-	end record;
-	procedure Initialize	(Object: in out Interleaver);
-	procedure Finalize	(Object: in out Interleaver);
+	Tu             : integer	:= header. T_u (The_Mode);
+	Mapper_Table   : intArray (0 .. Tu - 1);
 end Freq_Interleaver;

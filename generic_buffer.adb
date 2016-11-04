@@ -18,28 +18,33 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with simple_messages; 
-package body simple_messages is
-
-	protected body data is
-	   entry Put (Item : in message) when Count < Size is
+package body Generic_Buffer is
+	protected body Buffer is
+	   entry Put (Item : element_type) when Count < Size is
 	   begin
-	      Values (Next_In) := Item;
-	      Next_In 	:= (Next_In mod Size) + 1;
-	      Count	:= Count + 1;
+	      Values (Next_In)	:= Item;
+	      Next_In 		:= (Next_In mod Size) + 1;
+	      Count		:= Count + 1;
 	   end Put;
 
-	   entry Get (Item: out message) when Count > 0 is
+	   entry Get (Item: out element_type) when Count > 0 is
 	   begin
-	      Item	:= Values (Next_Out);
-	      Next_Out	:= (Next_Out mod Size) + 1;
-	      Count	:= Count - 1;
+	      Item		:= Values (Next_Out);
+	      Next_Out		:= (Next_Out mod Size) + 1;
+	      Count		:= Count - 1;
 	   end Get;
 
 	   function amount return Integer is
 	   begin
 	      return Count;
 	   end;
-	end data;
-end simple_messages;
+
+	   procedure Reset is
+	   begin
+	      Next_In		:= 1;
+	      Next_Out		:= 1;
+	      Count	        := 0;
+	   end Reset;
+	end Buffer;
+end Generic_Buffer;
 

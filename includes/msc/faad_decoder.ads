@@ -81,8 +81,8 @@ private
 	function NeAACDecInit2 (handle  : System. Address;
 	                        asc     : asc_vector;
 	                        sz      : Interfaces. C. int;
-	                        sr      : System. Address;
-	                        ch      : System. Address )
+	                        sr      : out Interfaces. C. long; --System. Address;
+	                        ch      : out Interfaces. C. unsigned_char)
 	                                 return Interfaces. C. long;
 	pragma Import (C, NeAACDecInit2, "NeAACDecInit2");
 

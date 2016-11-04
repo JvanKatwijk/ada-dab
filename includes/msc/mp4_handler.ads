@@ -37,19 +37,19 @@ package mp4_handler is
 	type mp4Processor  is new audio_handler. Audio_Processor with private;
 	type mp4Processor_P is access all mp4Processor;
 
-	procedure Add_to_Frame (Object  :   in out mp4Processor;
-	                        Data    :   byteArray;
-	                        Nbits   :   short_Integer);
+	procedure Add_to_Frame (Object  : in out mp4Processor;
+	                        Data    : byteArray;
+	                        Nbits   : short_Integer);
 private
-	procedure processSuperframe (Object    :  in out mp4Processor;
-	                             frameBytes:  byteArray;
-	                             base      :  short_Integer;
-	                             result    :  out Boolean);
-	procedure Initialize	(Object	: in out mp4Processor);
-	procedure Finalize	(Object	: in out mp4Processor);
-	function dabPlus_crc	(Data_Vector    : byteArray;
-	                         Start_Byte     : uint16_t;
-	                         Length         : uint16_t) return Boolean;
+	procedure processSuperframe (Object     : in out mp4Processor;
+	                             frameBytes : byteArray;
+	                             base       : short_Integer;
+	                             result     : out Boolean);
+	procedure Initialize	    (Object     : in out mp4Processor);
+	procedure Finalize	    (Object     : in out mp4Processor);
+	function dabPlus_crc	    (Data_Vector: byteArray;
+	                             Start_Byte : uint16_t;
+	                             Length     : uint16_t) return Boolean;
 
    	type mp4Processor is new audio_handler. Audio_Processor with
 	   record

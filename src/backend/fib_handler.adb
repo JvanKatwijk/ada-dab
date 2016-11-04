@@ -293,14 +293,14 @@ package body fib_handler is
 --	SubChId		SubchannelIdentifier
 --	SCId		Service Component Identifier
 --
-	function HandleFIG0Extension2 (d:      fib_buffer;
-	                               offset: short_Integer;
-	                               cn:     short_Integer;
-	                               pd:     short_Integer)
+	function HandleFIG0Extension2 (d      : fib_buffer;
+	                               offset : short_Integer;
+	                               cn     : short_Integer;
+	                               pd     : short_Integer)
 	                                     return short_Integer is
-	   bitOffset:          short_Integer := offset;
-	   SId:                uint32_t;
-	   numberofComponents: short_Integer;
+	   bitOffset          : short_Integer := offset;
+	   SId                : uint32_t;
+	   numberofComponents : short_Integer;
 	begin
 	   if pd = 1 then	--  long Sid
 	      SId        := getLBits (d, bitOffset, 32);
@@ -335,15 +335,15 @@ package body fib_handler is
 	   return bitOffset;		-- Offset to bits is in Bytes
 	end HandleFIG0Extension2;
 
-	procedure process_FIG1  (d:       fib_buffer;
-	                         offset:  short_Integer) is
-	   charSet:    uint16_t;
-	   oe:         uint16_t;
-	   extension:  uint16_t;
-	   SId:        uint32_t;
-	   label:      String (1 .. 16);
-	   loffset:    short_Integer	:= offset;
-	   myIndex:    short_Integer;
+	procedure process_FIG1  (d      : fib_buffer;
+	                         offset : short_Integer) is
+	   charSet   : uint16_t;
+	   oe        : uint16_t;
+	   extension : uint16_t;
+	   SId       : uint32_t;
+	   label     : String (1 .. 16);
+	   loffset   : short_Integer  := offset;
+	   myIndex   : short_Integer;
 	begin
 	   charSet   := get_Bits (d, offset + 8, 4);
            oe        := get_Bits (d, offset + 8 + 4, 1);
@@ -400,11 +400,11 @@ package body fib_handler is
 	   return result;
 	end get_Bits;
 
-	function getLBits (d     : fib_Buffer;
-	                   offset: short_Integer;
-	                   size:   short_Integer) return uint32_t is
-	   result:      uint32_t := uint32_t (0);
-	   realOffset:  short_Integer	:= offset +  short_Integer (d'First);
+	function getLBits (d      : fib_Buffer;
+	                   offset : short_Integer;
+	                   size   : short_Integer) return uint32_t is
+	   result     : uint32_t        := uint32_t (0);
+	   realOffset : short_Integer   := offset +  short_Integer (d'First);
 	begin
 	   for I in short_Integer Range 0 .. size - 1 loop
 	      result := Interfaces. Shift_Left (result, 1);
@@ -415,7 +415,7 @@ package body fib_handler is
 --
 --	locate - and create if needed - a reference to
 --	the entry in the list of services
-	function findServiceId (Service_Id: uint32_t) return short_Integer is
+	function findServiceId (Service_Id : uint32_t) return short_Integer is
 	begin
 	   for I in listofServices' Range loop
 	      if listofServices (I). In_Use and then
@@ -438,14 +438,14 @@ package body fib_handler is
 --
 --	bind_audioService is the main processor for - what the name suggests -
 --	connecting the description of an audioservice to the Service Identifier
-	procedure bind_audioService (TMid:        short_Integer;
-	                             SId:         uint32_t;
-	                             compnr:      short_Integer;
-	                             subChId:     short_Integer;
-	                             ps_flag:     short_Integer;
-	                             ASCTy:       short_Integer) is
-	   S:          short_Integer := findServiceId (SId);
-	   firstFree:  short_Integer := -1;
+	procedure bind_audioService (TMid    : short_Integer;
+	                             SId     : uint32_t;
+	                             compnr  : short_Integer;
+	                             subChId : short_Integer;
+	                             ps_flag : short_Integer;
+	                             ASCTy   : short_Integer) is
+	   S         : short_Integer := findServiceId (SId);
+	   firstFree : short_Integer := -1;
 	begin
 	   for i in shortRange loop
 	      if not components (i). In_Use then
@@ -467,10 +467,10 @@ package body fib_handler is
            components (firstFree). ASCTy         := ASCTy;
 	end bind_audioService;
 
-	procedure process_FIB (p:  fib_buffer) is
-	   FIGtype:        uint16_t;
-	   processedBytes: short_Integer         := 0;
-	   bitOffset:      short_Integer         := 0;
+	procedure process_FIB (p  : fib_buffer) is
+	   FIGtype        : uint16_t;
+	   processedBytes : short_Integer         := 0;
+	   bitOffset      : short_Integer         := 0;
 	begin
 	   while processedBytes < 30 loop
 	      FIGtype   := get_Bits (p, bitOffset, 3);
@@ -501,7 +501,6 @@ package body fib_handler is
 	begin
 	   return Has_Name;
 	end syncReached;
---
 --
 	procedure Data_for_AudioService (Name_of_Program : String;
 	                                 Data            : out audioData) is

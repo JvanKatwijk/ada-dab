@@ -33,7 +33,6 @@ package firecode_checker is
 	function check (x: checkVector) return Boolean;
 
 private
-	procedure  run8 (regs: in out byteArray;
-	                      result: out uint16_t);
+	procedure  run8 (regs: in out byteArray; result: out uint16_t);
 end firecode_checker;
 

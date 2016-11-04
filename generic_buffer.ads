@@ -18,35 +18,22 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with string_messages; 
-package body string_messages is
-
-	protected body data is
-	   entry Put (Item : in message) when Count < Size is
-	   begin
-	      Values (Next_In) := Item;
-	      Next_In 	:= (Next_In mod Size) + 1;
-	      Count	:= Count + 1;
-	   end Put;
-
-	   entry Get (Item: out message) when Count > 0 is
-	   begin
-	      Item	:= Values (Next_Out);
-	      Next_Out	:= (Next_Out mod Size) + 1;
-	      Count	:= Count - 1;
-	   end Get;
-
-	   function amount return Integer is
-	   begin
-	      return Count;
-	   end;
-	
-	   entry Cleanup when Count >= 0 is
-	   begin
-	      Next_In		:= 1;
-	      Next_Out		:= 1;
-	      Count		:= 0;
-	   end Cleanup;
-	end data;
-end string_messages;
+with header; 
+generic
+	type element_type is private;
+package Generic_Buffer is
+	use header;
+	type Buffer_Data is array (Positive Range <>) of element_type;
+	protected type Buffer (Size: Integer) is
+	   entry Put (Item : element_type);
+	   entry Get (Item : out element_type);
+	   function amount return Integer;
+	   procedure Reset;
+	private
+	   Values:	Buffer_Data (1 .. Size);
+	   Next_In:	Integer	:= 1;
+	   Next_Out:	Integer := 1;
+	   Count:	Natural := 0;
+	end Buffer;
+end Generic_Buffer;
 

@@ -19,11 +19,10 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 with reed_solomon;
-with Interfaces; use Interfaces;
-with Text_IO; use Text_IO;
-with Ada. Exceptions; use Ada. Exceptions;
+with Interfaces;       use Interfaces;
+with Text_IO;          use Text_IO;
+with Ada. Exceptions;  use Ada. Exceptions;
 package body reed_solomon is
---
 --	
 	procedure	Encode_RS (Data     : byteArray;
 	                           CutLen   : short_Integer;
@@ -184,11 +183,11 @@ package body reed_solomon is
 --	Compute the roots of lambda by evaluating the
 --	lambda polynome for all (inverted) powers of the symbols
 --	of the data (Chien search)
-	procedure computeErrors (Lambda:     rsArray;
-	                         deg_lambda: short_Integer;
-	                         rootTable:  out rsArray;
-	                         locTable:   out rsArray;
-	                         rootCount:  out short_Integer) is
+	procedure computeErrors (Lambda     : rsArray;
+	                         deg_lambda : short_Integer;
+	                         rootTable  : out rsArray;
+	                         locTable   : out rsArray;
+	                         rootCount  : out short_Integer) is
 	   workRegister: rsArray := lambda;
 	   k:            short_Integer;
 	   result:       short_Integer;
@@ -222,19 +221,19 @@ package body reed_solomon is
 	end computeErrors;
 --
 --	Compute error evaluator poly
---	omega(x) = s(x)*lambda(x) (modulo x**NROOTS)
+--	omega(x) = s(x) * lambda (x) (modulo x ** NROOTS)
 --	in power form, and  find degree (omega).
 --
 --	Note that syndromes are in poly form, while lambda in power form
 
-	procedure computeOmega (syndromes:     rsArray;
-	                        lambda:        rsArray;
-	                        deg_lambda:    short_Integer;
-	                        omega:         out rsArray;
-	                        deg_omega:     out short_Integer)  is
-	   tmp:   short_Integer;
-	   xxx:   short_Integer;
-	   Res:   short_Integer;
+	procedure computeOmega (syndromes  : rsArray;
+	                        lambda     : rsArray;
+	                        deg_lambda : short_Integer;
+	                        omega      : out rsArray;
+	                        deg_omega  : out short_Integer)  is
+	   tmp  : short_Integer;
+	   xxx  : short_Integer;
+	   Res  : short_Integer;
 	begin
 	   for I in 0 .. nroots - 1 loop
 	      tmp        := 0;
@@ -259,16 +258,16 @@ package body reed_solomon is
 	   omega (nroots) 	:= codeLength;
 	end computeOmega;
 
-	procedure dec (data:    in out rsArray;
-	               corrs:   out short_Integer) is
-	   syndromes:    rsArray (0 .. nroots);
-	   Lambda:       rsArray (0 .. nroots);
-	   rootTable:    rsArray (0 .. nroots - 1);
-	   locTable:     rsArray (0 .. nroots - 1);
-	   omega:        rsArray (0 .. nroots);
+	procedure dec (data   : in out rsArray;
+	               corrs  : out short_Integer) is
+	   syndromes : rsArray (0 .. nroots);
+	   Lambda    : rsArray (0 .. nroots);
+	   rootTable : rsArray (0 .. nroots - 1);
+	   locTable  : rsArray (0 .. nroots - 1);
+	   omega     : rsArray (0 .. nroots);
 	   lambda_degree: short_Integer;
 	   omega_degree: short_Integer;
-	   rootCount:    short_Integer;
+	   rootCount : short_Integer;
 	   errors_found: Boolean;
 	begin
 --	step 1: syndromes in poly notation
@@ -295,13 +294,13 @@ package body reed_solomon is
 --      den = lambda_pr(inv(X(l))) all in poly-form
 --
 	   declare
-	      num1:     short_Integer;
-	      num2:     short_Integer;
-	      den:      short_Integer;
-	      tmp:      short_Integer;
-	      tmp1:     short_Integer;
-	      tmp2:     short_Integer;
-	      corrTerm: short_Integer;
+	      num1     : short_Integer;
+	      num2     : short_Integer;
+	      den      : short_Integer;
+	      tmp      : short_Integer;
+	      tmp1     : short_Integer;
+	      tmp2     : short_Integer;
+	      corrTerm : short_Integer;
 	   begin
 	      for j in Reverse 0 .. rootCount - 1 loop
 	         num1    := 0;

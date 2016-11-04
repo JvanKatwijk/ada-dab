@@ -54,10 +54,10 @@ package body faad_decoder is
 	                   bufferLength	: uint16_t;
 	                   samples_out	: out Integer;
 	                   pcmHandler	: audiopackage. audioSink_P) is
-	   samples:       Integer;
-	   channels:      Interfaces. C. unsigned_char;
-	   sample_rate:   Interfaces. C. long;
-	   outBuffer:     System. Address;
+	   samples     : Integer;
+	   channels    : Interfaces. C. unsigned_char;
+	   sample_rate : Interfaces. C. long;
+	   outBuffer   : System. Address;
 	begin
 --	AudioSpecificConfig structure (the only way to
 --	select 960 transform here!)
@@ -81,7 +81,7 @@ package body faad_decoder is
 	         core_ch_config	: short_Integer;
 	         asc:             asc_vector;
 	         pragma Convention (C, asc);
-	         init_result		: Interfaces. C. long;
+	         init_result    : Interfaces. C. long;
 	      begin
 -- 24/48/16/32 kHz
 	         if dacRate /= 0 then
@@ -115,8 +115,8 @@ package body faad_decoder is
 	         init_result	:= NeAACDecInit2 (aacHandle,
 	                                          asc,
 	                                          2,
-	                                          sample_rate' Address,
-	                                          channels' Address);
+	                                          sample_rate,
+	                                          channels);
 	         if init_result /= 0 then
 	            put_line ("Error initializing the faad decoder library");
 	            NeAACDecClose (aacHandle);

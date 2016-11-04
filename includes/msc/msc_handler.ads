@@ -29,8 +29,9 @@
 
 --	Note CIF counts from 0 .. 3
 with header; use header;
+generic
+	the_Mode : dabMode;
 package msc_handler is
-	procedure set_Mode		(Mode	: Dabmode);
 	procedure reset;
 	procedure stop;
 	procedure set_audioData		(Data	: audioData);

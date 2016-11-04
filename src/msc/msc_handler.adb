@@ -39,23 +39,14 @@ with Ada. Unchecked_Deallocation;
 with dab_handler;	use dab_handler;
 with audiopackage;
 package body msc_handler is
-	mode		: dabMode	:= Mode_1;	-- default
-	Bits_per_Block	: Integer	:= 2 * 1536;	-- default
-	Blocks_per_CIF	: Integer	:= 18;		-- default;
 	Audio_Handler	: audiopackage. audioSink_P;
 	task msc_processor is
-	   entry set_Mode         (Mode  : Dabmode);
 	   entry reset;
 	   entry stop;
 	   entry process_mscBlock (Fbits : shortArray; Blkno : Integer);
 	   entry set_audioData    (Data  : audioData);
 	end msc_processor;
 
-	procedure set_Mode        (Mode : Dabmode) is
-	begin
-	   msc_processor. set_Mode (Mode);
-	end set_Mode;
-	
 	procedure reset is
 	begin
 	    msc_processor. reset;
@@ -71,6 +62,18 @@ package body msc_handler is
 	   msc_processor. stop;
 	end;
 
+	function cifs (the_Mode : dabMode) return Integer is
+	   Blocks_per_CIF : Integer;
+	begin
+	   case the_Mode is
+	      when Mode_1	=> Blocks_per_CIF := 18;
+	      when Mode_2	=> Blocks_per_CIF := 72;
+	      when Mode_4	=> Blocks_per_CIF := 36;
+	      when others	=> Blocks_per_CIF := 18; -- should not happen
+	   end case;
+	   return Blocks_per_CIF;
+	end;
+
 	procedure process_mscBlock	(Fbits	: shortArray;
 	                                 Blkno	: Integer) is
 	begin
@@ -81,6 +84,10 @@ package body msc_handler is
 	   Object	=> dab_handler. dabProcessor,
 	   Name		=> dab_handler. dabProcessor_P);
 
+	procedure Free_audioProcessor is new Ada. Unchecked_DeAllocation (
+	   Object	=> audiopackage. audioSink,
+	   Name		=> audiopackage. audioSink_P);
+--
 	task body msc_processor is
 	   CUSize          : constant Integer := 4 * 16;
 	   Cif_Vector      : shortArray (0 .. 55296 - 1);
@@ -93,18 +100,9 @@ package body msc_handler is
 	   Length          : short_Integer;
 	   The_Dabprocessor: Dab_Handler. Dabprocessor_P := null;
 	   endMSC          : exception;
+	   Bits_per_Block  : Integer	:= 2 * K (the_Mode);
+	   Blocks_per_CIF  : Integer	:= cifs (the_Mode);
 	begin
-
-	   accept Set_Mode (Mode : Dabmode) do
-	      Bits_per_Block	:= 2 * K (mode);
-	      case Mode is
-	         when Mode_1	=> Blocks_per_CIF := 18;
-	         when Mode_2	=> Blocks_per_CIF := 72;
-	         when Mode_4	=> Blocks_per_CIF := 36;
-	         when others	=> Blocks_per_CIF := 18; -- should not happen
-	      end case;
-	   end Set_Mode;
---
 --	The main loop
 	   loop
 	      select

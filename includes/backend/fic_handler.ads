@@ -19,12 +19,14 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 with header; use header;
+generic
+	the_Mode : dabMode;
 package fic_handler is
 	procedure	Process_Ficblock (Data	: shortArray;
 	                                  Blkno	: Integer);
-	procedure	Set_BitsperBlock (mode: dabMode);
 	procedure	Stop;
 	procedure	Reset;
+	procedure	Restart;
 	procedure	Data_for_Audioservice (Name_of_Program: String;
 	                                       Data           : out audioData);
 	function	Sync_Reached return Boolean;

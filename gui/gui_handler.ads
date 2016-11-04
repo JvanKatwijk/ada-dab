@@ -43,7 +43,7 @@ with Gdk.Event;
 
 package Gui_Handler is
 	function Dispatch return boolean;
-	procedure Setup_GUI;
+	procedure Create_GUI;
 --
 --	apart from start/stop, we have two selectors
 	Gain_Selector	: Gtk_Combo_Box_Text;
@@ -56,9 +56,7 @@ package Gui_Handler is
 --	package My_Device renames rtlsdr_wrapper;
 	package My_Device renames airspy_wrapper;
 --	package My_Device renames sdrplay_wrapper;
-	my_P		: Ofdm_Handler. Ofdm_Processor_P;
 	running		: Boolean	:= false;
-private	
 	dummy		   : G_Source_Id;
 --	for the GUI we need widgets
 	Win		   : Gtk_Window;
@@ -75,13 +73,13 @@ private
 	label_text         : Gtk_Label;
 	programSelector    : Gtk_Combo_Box_Text;
 
+private	
 	procedure build_new_text_line (val : Integer);
 --	and for (some of the) widgets, we need a callback
-	procedure start_clicked (Self : access Gtk_Button_Record'Class);
-	procedure button_quit (Self : access Gtk_Widget_Record'Class);
-
-	procedure channelSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
-	procedure gainSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
-	procedure programSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
+--	procedure start_clicked      (Self : access Gtk_Button_Record'Class);
+--	procedure button_quit        (Self : access Gtk_Button_Record'Class);
+--	procedure channelSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
+--	procedure gainSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
+--	procedure programSelector_clicked (Self : access Gtk_Combo_Box_Record' Class);
 --
 end GUI_Handler;

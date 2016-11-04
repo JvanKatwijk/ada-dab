@@ -22,22 +22,14 @@
 with header;		use header;
 with Interfaces;	use Interfaces;
 with Interfaces. C;	use Interfaces. C;
-with Ada. Finalization;
 with system;
 
+generic
+	The_Kind  : fftMode;
+	The_Mode  : DabMode;
 package FFT_Handler is
-	type FFT_Processor (Kind: fftMode; Mode : Dabmode) is new
-	                         Ada. Finalization. Controlled with private;
-	type FFT_Processor_P	is access all FFT_Processor;
-	procedure do_FFT (Object: in out FFT_Processor;
-	                             Vector: in out complexArray);
+	procedure do_FFT (Vector: in out complexArray);
 private
-	type FFT_Processor (Kind: fftMode; Mode : Dabmode) is new
-	                      Ada. Finalization. Controlled with 
-	record
-	   Field	: System. Address;
-	end record;
-	procedure Initialize (Object : in out FFT_Processor);
-	procedure Finalize   (Object : in out FFT_Processor);
+	Field	: System. Address;
 end FFT_Handler;
 

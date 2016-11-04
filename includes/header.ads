@@ -114,7 +114,17 @@ package Header is
 	type Get_Samples_Access is access procedure (X : out complexArray;
 	                                             Y: out Integer);
 	type Available_Samples_Access is access function return Integer;
---private
---	type root is tagged record null; end record;
+
+	type process_mscBlock_Access is access procedure (Fbits : shortArray;
+	                                                  Blkn  : Integer);
+	type process_ficBlock_Access is access procedure (Fbits : shortArray;
+	                                                  Blkn  : Integer);
+	type Sync_Reached_Access is access function return Boolean;
+	protected type locker is
+	   entry lock;
+	   procedure unlock;
+	private
+	   count:	Natural := 1;
+	end;
 end Header;
 

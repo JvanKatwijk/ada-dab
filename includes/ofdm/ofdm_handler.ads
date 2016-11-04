@@ -19,60 +19,47 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 with header;	use header;
-with Ada. Finalization;
-with Ada. Unchecked_Deallocation;
-with phase_handler;
-with fft_handler;
-with freq_interleaver;
-
+Generic
+	The_Mode           : Dabmode;
+	with procedure Fetch_Samples (X : out complexArray; y : out Integer);
+	with function Available_Samples return Integer;
+	with procedure process_mscBlock (FBits : shortArray; Blkn : Integer);
+	with procedure process_ficBlock (FBits : shortArray; Blkn : Integer);
+	with function Sync_Reached return Boolean;
 package Ofdm_Handler is
-	type Ofdm_Processor (mode              : Dabmode;
-	                     Fetch_Samples     : Get_Samples_Access;
-	                     Available_Samples : Available_Samples_Access) is
-	                       new Ada. Finalization. Controlled with private;
-	type Ofdm_Processor_P is access all Ofdm_Processor;
-	procedure start (Object : in out ofdm_Processor;
-	                 env    : ofdm_Processor_P);
-	procedure Reset (Object : in out ofdm_Processor);
-	procedure Stop  (Object : in out ofdm_Processor);
-	function Is_Stopped (Object : Ofdm_Processor) return Boolean;
+	procedure start;
+	procedure Reset;
+	procedure Stop;
+	function Is_Stopped return Boolean;
 private
-	task type Ofdm_Worker (Object : Ofdm_Processor_P);
-	type Ofdm_Worker_P is access all Ofdm_Worker;
+	task Ofdm_Worker is
+	   entry start;
+	end;
 	Exit_Ofdmprocessing :	exception;
-	procedure Get_Samples (Object     : in out Ofdm_Processor;
-	                       Out_V      : out complexArray;
+	procedure Get_Samples (Out_V      : out complexArray;
 	                       Phase_Ind  : Integer);
 
-	type Ofdm_Processor   (Mode             : Dabmode;
-	                       Fetch_Samples    : Get_Samples_Access;
-	                       Available_Samples: Available_Samples_Access) is
-	            new Ada. Finalization. Controlled with
-	   record
-	      Tu                   : Natural;
-	      Tg                   : Natural;
-	      Ts                   : Natural;
-	      Tnull                : Natural;
-	      Carriers             : Natural;
-	      Carrier_Diff         : Natural;
-	      L_Mode               : Integer;
-	      Samplecounter        : Natural;
-	      Current_Strength     : Float;
-	      Running              : Boolean;
-	      Buffer_Content       : Integer;
-	      Current_Phase        : Integer;
-	      Signal_Level         : Float;
-	      Fine_Corrector       : Integer;
-	      Coarse_Corrector     : Integer;
-	      Correction_Flag      : Boolean;
-	      Token_Length         : Integer;
-	      The_Processor        : Ofdm_Worker_P;
-	      My_Phasesynchronizer : phase_handler. Phase_Synchronizer (Mode);
-	      Ofdm_fft             : fft_handler. FFT_Processor (FORWARD, Mode);
-	      My_Mapper            : freq_interleaver. interleaver (Mode);
-	      OscillatorTable      : complexArray (0 .. inputRate - 1);
-	   end record;
-	procedure Initialize	(Object : in out Ofdm_Processor);
-	procedure Finalize	(Object : in out Ofdm_Processor);
+	Tu                   : Natural	:= header. T_u (The_Mode);
+	Tg                   : Natural  := header. T_g (The_Mode);
+	Ts                   : Natural  := header. T_s (The_Mode);
+	Tnull                : Natural  := header. T_null (The_Mode);
+	Carriers             : Natural  := header. K (The_Mode);
+	Carrier_Diff         : Natural  := header. Carrier_Diff (The_Mode);
+	L_Mode               : Integer  := header. L (The_Mode);
+	Samplecounter        : Natural  := 0;
+	Current_Strength     : Float    := 0.0;
+	Running              : Boolean  := false;
+	Buffer_Content       : Integer  := 0;
+	Current_Phase        : Integer  := 0;
+	Signal_Level         : Float    := 0.0;
+	Fine_Corrector       : Integer  := 0;
+	Coarse_Corrector     : Integer  := 0;
+	Correction_Flag      : Boolean  := true;
+--	Ofdm_fft             : fft_handler. FFT_Processor (FORWARD, The_Mode);
+--
+--	It took a while before I detected that just declaring an array
+--	with the size of the OscillatorTable would cause a storage error
+	OscillatorTable      : complexArray_P :=
+	                                new complexArray (0 .. inputRate - 1);
 end ofdm_handler;
 

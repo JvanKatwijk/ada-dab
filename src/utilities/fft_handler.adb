@@ -19,35 +19,21 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 package body fft_handler is
-	procedure do_FFT (Object : in out FFT_Processor;
-	                  Vector : in out complexArray) is
+	procedure do_FFT (Vector : in out complexArray) is
 	   subtype vectorType is complexArray (Vector' Range);
 	   procedure real_FFT (the_fft : System. Address;
 	                       Vector  : in out vectorType);
 --	                       vector  : System. Address);
 	   pragma Import (C, real_FFT, "execute_fft");
 	begin
-	   real_FFT (Object. field, Vector);
---	   real_FFT (Object. field, Vector' Address);
+	   real_FFT (field, Vector);
 	end do_FFT;
 
-        procedure Initialize (Object : in out FFT_Processor) is
-	   function createDescriptor (Kind : Integer;
-	                              size : Integer)
+	function createDescriptor (Kind : Integer; size : Integer)
 	                                             return System. Address;
-	   pragma Import (C, createDescriptor, "createDescriptor");
-        begin
-	   Object. field	:=
-	               createDescriptor (
-	                           (if Object. Kind = FORWARD then 0 else 1),
-	                            T_u (Object. Mode));
-	end Initialize;
-
-	procedure Finalize (Object : in out FFT_Processor) is
-	   procedure deleteDescriptor (d : System. Address);
-	   pragma Import (C, deleteDescriptor, "deleteDescriptor");
-	begin
-	   deleteDescriptor (Object. field);
-	end Finalize;
+	pragma Import (C, createDescriptor, "createDescriptor");
+begin
+	field  := createDescriptor ((if The_Kind = FORWARD then 0 else 1),
+	                            T_u (The_Mode));
 end fft_handler;
 

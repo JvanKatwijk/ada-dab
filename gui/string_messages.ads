@@ -18,6 +18,7 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
+with generic_buffer;
 package string_messages is
 	type SIGNAL is (ENSEMBLE_SIGNAL,
 	                PROGRAM_SIGNAL);
@@ -26,19 +27,9 @@ package string_messages is
 	   key: SIGNAL;
 	   val: String (1 .. 16);
 	end record;
-	type Holder is array (Integer range <>) of message;
-	protected type data (Size: Integer) is
-	   entry Put (Item: in message);
-	   entry Get (Item: out message);
-	   function amount return Integer;
-	   entry Cleanup;
-	private
-	   Values:	Holder (1 .. Size);
-	   Next_In:	Integer	:= 1;
-	   Next_Out:	Integer := 1;
-	   Count:	Natural := 0;
-	end data;
-	string_messages: data (50);
+	package buffer is new Generic_Buffer (message);
+	use buffer;
+	string_messages: buffer. Buffer (50);
 end string_messages;
 
 
