@@ -33,10 +33,6 @@ with Gtk. Enums;	use Gtk. Enums;
 with simple_messages;   use simple_messages;
 with ofdm_handler;
 with header; use header;
---with rtlsdr_wrapper; use rtlsdr_wrapper;
---with rawfiles; use rawfiles;
-with airspy_wrapper; use airspy_wrapper;
---with sdrplay_wrapper; use sdrplay_wrapper;
 with Text_IO; use Text_IO;
 with Ada. Unchecked_Deallocation;
 with Gdk.Event;
@@ -50,12 +46,6 @@ package Gui_Handler is
 	Channel_Selector	: Gtk_Combo_Box_Text;
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
--- to select an input device, uncomment the line for
---	and the appropriate line "with xxxx"
---	package My_Device renames rawfiles;
---	package My_Device renames rtlsdr_wrapper;
-	package My_Device renames airspy_wrapper;
---	package My_Device renames sdrplay_wrapper;
 	running		: Boolean	:= false;
 	dummy		   : G_Source_Id;
 --	for the GUI we need widgets

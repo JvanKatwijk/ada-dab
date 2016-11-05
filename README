@@ -45,16 +45,17 @@ served (Note that the GUI can request to select a different channel or a
 different program, requiring a reset in FIC or MSC).
 
 The ficProcessor will - using the functions from the fibHandler -
-built a structure (kind of a directoy structure) with the data
+build a structure (kind of a directoy structure) with the data
 describing the (elements of) the ensemble, carrier in the channel.
-The ficProcessor as as one of its entries an entry where the GUI
+The ficProcessor has as one of its entries an entry where the GUI
 can ask for the data describing a program.
 
 The mscProcessor will accept all data from the MSC blocks, 
 passed on by the ofdmProcessor. It will build up the co-called
-CIF's. If a program is selected, the MSC processor will have been told
+CIF's. If a program is selected, the MSC processor will be told
 where the sequence of bits for the selected program is to be found,
-it extracts the sequence of bits and passes it on - after 
+and what the bitRate and protection for the bitstream is.
+The mscProcessor extracts the sequence of bits and passes it on - after 
 de-interleaving - to the appropriate sound handler.
 
 The sound handler selected is either the MP2 handler, using the kjmp2

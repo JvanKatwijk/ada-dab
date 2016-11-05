@@ -37,6 +37,10 @@ with Gui_Handler;	use Gui_Handler;
 with GNAT. Command_Line; use GNAT. Command_Line;
 with Text_IO;		use Text_IO;
 
+--with rtlsdr_wrapper; use rtlsdr_wrapper;
+--with rawfiles; use rawfiles;
+with airspy_wrapper; use airspy_wrapper;
+--with sdrplay_wrapper; use sdrplay_wrapper;
 --
 --	We do know the device we want to support, the (dab)Mode
 --	and the Band may be selected in the command line
@@ -45,7 +49,13 @@ procedure main is
 	The_Mode	: Dabmode	:= Mode_1;	-- default
 	The_Band	: Dabband	:= BAND_III;	-- default;
 	Result		: Boolean;
-	package My_Device renames Gui_Handler. My_Device;
+---------------------------------------------------------------------------
+-- to select an input device, uncomment the line for
+--	and the appropriate line "with xxxx"
+--	package My_Device renames rawfiles;
+--	package My_Device renames rtlsdr_wrapper;
+	package My_Device renames airspy_wrapper;
+--	package My_Device renames sdrplay_wrapper;
 begin
 --
 --	we allow command line parameters to be set for mode and band

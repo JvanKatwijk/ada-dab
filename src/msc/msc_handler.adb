@@ -38,13 +38,53 @@ with Ada. Exceptions;	use Ada. Exceptions;
 with Ada. Unchecked_Deallocation;
 with dab_handler;	use dab_handler;
 with audiopackage;
+with generic_buffer;
+--
+--	
+--	The msc handler does the (control of the) processing for
+--	the data blocks 5 .. L (The_Mode) of the DAB frames
+--	The processing load is not equally distributed over the
+--	arrival of these blocks. While in many cases, the data
+--	is just added to a verctor, in some cases the CIF is completed
+--	a program is selected, so further - quite heavy - processing
+--	is done.
+--	Assuming there are sufficient processors, it is worthwhile
+--	to allocate the load of the processing of a CIF to a
+--	separate processor (task).
+--
+--	While in the implementation of the FIC handling (with the
+--	same problem) the FIC handling is implemented in a task
+--	which is made into an asynchronous one by having all
+--	input come through a buffer, the mscHandler puts the
+--	incoming data into a buffer (to ensure that the caller
+--	i.e. the ofdm processor is not blocked) and a separate, intermediate,
+--	task will (try to) fetch the data from the buffer and
+--	call upon the "processor" processing the msc data.
+--	
 package body msc_handler is
-	Audio_Handler	: audiopackage. audioSink_P;
+	Bits_per_Block  : Integer	:= 2 * K (The_Mode);
+	Blocks_per_CIF  : Integer	:= cifs (The_Mode);
+
+	Audio_Handler	: audiopackage. audioSink_P :=
+	                       new  audiopackage.
+	                              audioSink (48000,
+	                                         32768,
+	                                         audiopackage. HIGH_LATENCY);
+	subtype msc_data is shortArray (0 .. Bits_per_Block - 1);
+
+	type buffer_element is record
+	   Blkno : Integer;
+	   Data  : msc_data;
+	end record;
+	package mscBuffer is new Generic_Buffer (buffer_element);
+	the_mscBuffer : mscBuffer. Buffer (L (The_Mode));
+
+	task helper;
 	task msc_processor is
 	   entry reset;
 	   entry stop;
-	   entry process_mscBlock (Fbits : shortArray; Blkno : Integer);
-	   entry set_audioData    (Data  : audioData);
+	   entry process_mscBlock (Element : buffer_Element);
+	   entry set_audioData    (Data    : audioData);
 	end msc_processor;
 
 	procedure reset is
@@ -60,24 +100,23 @@ package body msc_handler is
 	procedure stop is
 	begin
 	   msc_processor. stop;
+	   abort helper;
 	end;
 
-	function cifs (the_Mode : dabMode) return Integer is
-	   Blocks_per_CIF : Integer;
+	task body helper is
+	   Element : buffer_Element;
 	begin
-	   case the_Mode is
-	      when Mode_1	=> Blocks_per_CIF := 18;
-	      when Mode_2	=> Blocks_per_CIF := 72;
-	      when Mode_4	=> Blocks_per_CIF := 36;
-	      when others	=> Blocks_per_CIF := 18; -- should not happen
-	   end case;
-	   return Blocks_per_CIF;
+	   loop
+	      the_mscBuffer. Get (Element);
+	      msc_processor. process_mscBlock (Element);
+	   end loop;
 	end;
-
+	  
 	procedure process_mscBlock	(Fbits	: shortArray;
 	                                 Blkno	: Integer) is
+	   Element : buffer_Element := (Blkno, FBits);
 	begin
-	   msc_processor. process_mscBlock (Fbits, Blkno);
+	   the_mscBuffer. Put (Element);
 	end process_mscBlock;
 	   
 	procedure Free_dabProcessor is new Ada. Unchecked_DeAllocation (
@@ -100,8 +139,6 @@ package body msc_handler is
 	   Length          : short_Integer;
 	   The_Dabprocessor: Dab_Handler. Dabprocessor_P := null;
 	   endMSC          : exception;
-	   Bits_per_Block  : Integer	:= 2 * K (the_Mode);
-	   Blocks_per_CIF  : Integer	:= cifs (the_Mode);
 	begin
 --	The main loop
 	   loop
@@ -152,13 +189,12 @@ package body msc_handler is
 	                                             Audio_Handler);
 
 	      or
-	         accept Process_mscBlock (fbits	: shortArray;
-	                                  blkno	: Integer) do
+	         accept Process_mscBlock (Element : buffer_Element) do
 	            if Work_To_Be_done then
-	               Current_Block := (blkno - 5) mod Blocks_per_CIF;
+	               Current_Block := (Element. blkno - 5) mod Blocks_per_CIF;
 	               Cif_Vector (Current_Block * Bits_per_Block .. 
 	                          (Current_Block  + 1) * Bits_per_Block - 1) :=
-	                                        fbits;
+	                                        Element. Data;
 	            else
 	               return;
 	            end if;
@@ -179,11 +215,6 @@ package body msc_handler is
 	end msc_processor;
 	res	: Boolean;
 begin
-
-	Audio_Handler       := new  audiopackage.
-	                              audioSink (48000,
-	                                         32768,
-	                                         audiopackage. HIGH_LATENCY);
 	Audio_Handler. selectDefaultDevice (res);
 	if res then
 	   put_line ("setting default device succeeded");
@@ -193,5 +224,4 @@ begin
 	   put_line ("starting device succeeded");
 	end if;
 end msc_handler;
-
 

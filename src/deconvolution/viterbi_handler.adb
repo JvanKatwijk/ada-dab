@@ -42,8 +42,11 @@ package body Viterbi_Handler is
 	   end if;
 	end Finalize;
 
+	maskVector : constant byteArray (0 .. 7) :=
+	                         (1, 2, 4, 8, 16, 32, 64, 128);
+
 	function Getbit	(v : uint8_t; o: Integer) return uint8_t is
-	   mask	: uint8_t	:= Shift_Left (1, 7 - o);
+	   mask : uint8_t    := maskVector (7 - o);
 	begin
 	   return (if (v and mask) /= 0 then 1 else 0);
 	end Getbit;
@@ -64,7 +67,7 @@ package body Viterbi_Handler is
 	                                Output     : out outBuffer;
 	                                Wordlength : Interfaces. C. int;
                                         EndState   : Interfaces. C. int);
-	pragma	Import (C, Chainback_Viterbi, "chainback_viterbi");
+	   pragma Import (C, Chainback_Viterbi, "chainback_viterbi");
 	begin
 	   if not Object. isOK then
 	      return;
@@ -79,13 +82,15 @@ package body Viterbi_Handler is
 	      end if;
 	      Object. symbols (I) := Interfaces. C. int (Temp_Value);
 	   end loop;
-
+--
+--	The real work is done by C functions
 	   Update_Viterbi_Blk (Object. Handler,
 	                       Object. Symbols. all, 
 	                       Interfaces. C. int (Object. Wordlength + (K - 1)));
 	   Chainback_Viterbi (Object. Handler,
 	                      Data,
 	                      Interfaces. C. int (Object. Wordlength), 0);
+
 	   for I in 0 .. uint16_t (Object. Wordlength) - 1 loop
 	      output (Integer (I)) :=
 	                Getbit (data (Integer (Shift_Right (i, 3))),

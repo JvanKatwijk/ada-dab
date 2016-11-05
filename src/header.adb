@@ -99,6 +99,18 @@ package body Header is
 	   end case;
 	end Carrier_Diff;
 
+	function cifs (the_Mode : dabMode) return Integer is
+	   Blocks_per_CIF : Integer;
+	begin
+	   case the_Mode is
+	      when Mode_1	=> Blocks_per_CIF := 18;
+	      when Mode_2	=> Blocks_per_CIF := 72;
+	      when Mode_4	=> Blocks_per_CIF := 36;
+	      when others	=> Blocks_per_CIF := 18; -- should not happen
+	   end case;
+	   return Blocks_per_CIF;
+	end;
+
 	function	kHz	(Frequency: Integer) return Integer is
 	begin
 	   return 1000 * Frequency;

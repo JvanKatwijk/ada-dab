@@ -85,7 +85,7 @@ package Header is
 	function	Carrier_Diff (Mode: Dabmode) return integer;
 	function	kHz	(Frequency: Integer) return Integer;
 	function	mHz	(Frequency: Integer) return Integer;
-	
+	function	cifs	(The_Mode : dabMode) return Integer;
 	M_PI : constant := 3.1415926535;
 
 	subtype uint16_t is Interfaces. Unsigned_16;
