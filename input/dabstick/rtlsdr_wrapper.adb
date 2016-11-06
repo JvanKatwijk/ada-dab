@@ -1,3 +1,23 @@
+--
+--    Copyright (C) 2016
+--    Jan van Katwijk (J.vanKatwijk@gmail.com)
+--    Lazy Chair Programming
+--
+--    This file is part of the SDR-J (JSDR).
+--    SDR-J is free software; you can redistribute it and/or modify
+--    it under the terms of the GNU General Public License as published by
+--    the Free Software Foundation; either version 2 of the License, or
+--    (at your option) any later version.
+--
+--    SDR-J is distributed in the hope that it will be useful,
+--    but WITHOUT ANY WARRANTY; without even the implied warranty of
+--    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--    GNU General Public License for more details.
+--
+--    You should have received a copy of the GNU General Public License
+--    along with SDR-J; if not, write to the Free Software
+--    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+--
 with System. Address_to_Access_Conversions;
 with Ada. Unchecked_Deallocation;
 with glib; use glib;
@@ -19,11 +39,11 @@ package body rtlsdr_wrapper is
 --	set up
 --
 --	This callback will be called 2048000 / 8192 (i.e. app 250)
---	times a second
+--	times a second and is kept simple: just put the data into
+--	the buffer
 	procedure rtlsdr_Callback (buffer   : System. Address;
 	                           size	    : Interfaces. C. int;
 	                           userData : System. Address) is
--- 
 --      mybuffer is actually a C array, provided for by the underlying
 --      osmocom library
 	   my_buffer   : arrayConverter. Object_Pointer :=
@@ -44,7 +64,6 @@ package body rtlsdr_wrapper is
 	                          null_Address,		-- user Data
 	                          0,
 	                          Interfaces. C. int (READLEN_DEFAULT));
-	   put_line ("end of task reached");
 	end rtlsdr_reader;
 
 	procedure Set_VFOFrequency (frequency : Positive) is
@@ -97,6 +116,7 @@ package body rtlsdr_wrapper is
 	      put ("waiting for termination"); New_Line (1);
 	      delay 0.5;
 	   end loop;
+
 	   Free_Handler (workerHandle);
 	   workerHandle := null;
 	end Stop_Reader;

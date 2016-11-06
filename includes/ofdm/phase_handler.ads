@@ -23,14 +23,12 @@ with header;	use header;
 Generic
 	The_Mode : DabMode;
 package Phase_Handler is
-	function Find_Index (inputBuffer : complexArray;
+	Tu		: Natural        := header. T_u (The_Mode);
+	subtype bufferType is complexArray (0 .. Tu - 1);
+	function Find_Index (inputBuffer : bufferType;
 	                     Threshold   : Integer) return Integer;
 private
-	Tu		: Natural        := header. T_u (The_Mode);
 	K		: Natural        := header. K   (The_Mode);
-	Ref_Table	: complexArray (0 .. Tu - 1)
-	                                    := (Others => (0.0, 0.0));
---	Forward_fft	: fft_handler. FFT_Processor (FORWARD, The_Mode);
---	Backward_fft	: fft_handler. FFT_Processor (BACKWARD, The_Mode);
+	Ref_Table	: bufferType;
 end Phase_Handler;
 

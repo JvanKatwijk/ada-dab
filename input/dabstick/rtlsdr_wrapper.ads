@@ -46,9 +46,9 @@ package rtlsdr_wrapper is
 	function Available_Samples return Integer;
 	function Valid_Device      return Boolean;
 private
-	type rtlsdr_dev	is new System. Address;
-	type rtlsdr_dev_t is access rtlsdr_dev;
-	type devicePointer	is access rtlsdr_dev_t;
+	type rtlsdr_dev	   is new System. Address;
+	type rtlsdr_dev_t  is access rtlsdr_dev;
+	type devicePointer is access rtlsdr_dev_t;
 	READLEN_DEFAULT	: constant	:= 2 * 8192;
 
 	type rtlsdr_CallbackType is access

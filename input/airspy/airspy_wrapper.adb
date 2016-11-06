@@ -39,12 +39,14 @@ package body Airspy_Wrapper is
 --	buffer for transfer to data into the ringbuffer
 	Local_Buffer      : airspy_buffer. buffer_data (0 .. 2048000 / 500 - 1);
 
---	we read 500 buffers per second, and we have to convert them
+--	we read in 500 buffers per second, and we have to convert them
 --	to the DAB input rate of 2048000 samples per second
---	Conversion is by simple linear interpolation. Since we do no know
+--	Conversion is by simple linear interpolation. Since we do not know
 --	the inputrate (yet), we cannot yet decide on the size of the
 --	conversionbuffer.
 	Conversion_Buffer : complexArray_P;
+--
+--	The mapping tables are known though
 	Conversion_Index  : Integer	:= 0;
 	Maptable_Int      : FloatArray	(0 .. 2048000 / 500 - 1);
 	Maptable_Float    : FloatArray	(0 .. 2048000 / 500 - 1);
@@ -83,6 +85,7 @@ package body Airspy_Wrapper is
 	      Success     := true;
 	      return;
 	   end if;
+
 	   The_Buffer. FlushRingBuffer;
 	   Handler_Returns   := Airspy_Set_Sample_Type (device_P. all,
 	                                              AIRSPY_SAMPLE_FLOAT32_IQ);
@@ -123,11 +126,9 @@ package body Airspy_Wrapper is
 	   if not Running then
 	      return;
 	   end if;
---	   put ("we stoppen");
 	   Airspy_Stop_Rx (device_P. all);
 	   Running	:= false;
 	end Stop_Reader;
---
 --
 	function Airspy_Callback (Transfer: Airspy_Transfer_P)
 	                                            return Interfaces.C.int is
@@ -138,7 +139,7 @@ package body Airspy_Wrapper is
 --	we do the rate conversion "in-line"
 	   declare
 	      type Airspy_Data is array (Integer range <>) of 
-	                                        Interfaces.C.C_float;
+	                                        Interfaces. C. C_float;
 	      pragma Convention (C, Airspy_Data);
 	      subtype C_Buffer is Airspy_Data (0 .. 
 	                          Integer (Transfer. Sample_Count) * 2 - 1);

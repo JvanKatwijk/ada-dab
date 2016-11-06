@@ -52,7 +52,6 @@ private
 	type localBuffer_P is access localBuffer;
 	sdrplayBuffer : localBuffer;
 --
-
 	function mir_sdr_ApiVersion (version : out Interfaces. C. c_float)
 	                                          return Interfaces. C. int;
 	pragma Import (C, mir_sdr_ApiVersion, "mir_sdr_ApiVersion");

@@ -21,7 +21,7 @@
 with header;		use header;
 with Text_IO;		use Text_IO;
 with Ada. Exceptions;	use Ada. Exceptions;
-with simple_messages;	use simple_messages;
+with simple_messages;
 -- the generic components
 with phase_handler;
 with freq_interleaver;
@@ -29,6 +29,7 @@ with fft_handler;
 
 package body Ofdm_Handler is
 	use header. ComplexTypes;
+	use simple_messages;
 	function "abs" (Right: header. ComplexTypes. complex)
 	                                        return Float renames
                                      header. ComplexTypes. "abs";
@@ -50,7 +51,6 @@ package body Ofdm_Handler is
 	                       Phase_Ind  : Integer) is
 	   Amount : Integer   := Out_V' length;
 	begin
-
 	   if not Running then
 	      raise Exit_ofdmProcessing;
 	   end if;
@@ -82,7 +82,7 @@ package body Ofdm_Handler is
 	                                (1.0 - 0.00001) * Signal_Level;
 	   end loop;
 --
---	Once a second (i.e. after INPUT_RATE samples), we
+--	Once a second (i.e. after Input_Rate samples), we
 --	show some data
 	   Samplecounter    := Samplecounter + Amount;
 	   if Samplecounter >=  Input_Rate then
@@ -339,7 +339,7 @@ package body Ofdm_Handler is
 	      end;
 	   end loop;
 
---	The end of the null period is identified, it ends probably about 40 
+--	The end of the null period is identified, it ended probably about 40 
 --	or 50 samples earlier
 <<SyncOnPhase>>
 
@@ -362,6 +362,8 @@ package body Ofdm_Handler is
 --	read in the samples from "block 0"
 	   Reference_Vector (0 .. Tu - Start_Index - 1) :=
 	                   Reference_Vector (Start_Index .. Tu - 1);
+--
+--	Note that Start_Index = 0 is also a possibility
 	   if Start_Index > 0 then
 	      Get_Samples (Reference_Vector (Tu - Start_Index .. Tu - 1),
 	                           Coarse_Corrector + Fine_Corrector);
@@ -433,6 +435,7 @@ package body Ofdm_Handler is
 
 --	OK,  here we are at the end of the frame
 --	we assume everything went well and we just skip T_null samples
+--	after which we expect the next frame to be visible
 	   Get_Samples (Null_Buffer, Coarse_Corrector + Fine_Corrector);
 	   Syncbuffer_Index	:= 0;
 

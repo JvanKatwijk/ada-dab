@@ -63,8 +63,6 @@ package body Fic_Handler is
 	fic_Locker : locker;
 
 	task Fic_Processor;
-
---
 --
 	procedure Stop is
 	   command : fic_data;
@@ -93,6 +91,7 @@ package body Fic_Handler is
 	   command. ofdm_data  := (Others => 0);
 	   the_ficBuffer. Put (command);
 	end Restart;
+
 	procedure Data_for_Audioservice (Name_of_Program : String;
 	                                 Data            : out audioData) is
 	begin

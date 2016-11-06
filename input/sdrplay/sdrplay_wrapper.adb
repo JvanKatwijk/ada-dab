@@ -19,7 +19,7 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 with Text_IO; use Text_IO;
-with System.Address_To_Access_Conversions;
+with System. Address_To_Access_Conversions;
 
 package body sdrplay_wrapper is
 	mir_sdr_BW_1_536  : constant Interfaces. C. int    := 1536;
@@ -77,7 +77,7 @@ package body sdrplay_wrapper is
 	end;
 --
 --
-	procedure Restart_Reader (Success: out Boolean) is
+	procedure Restart_Reader (Success : out Boolean) is
 	   sps         : Interfaces. C. int;
 	   gRdBSystem  : Interfaces. C. int;
 	   agcMode     : Interfaces. C. int := 0;
@@ -145,7 +145,6 @@ package body sdrplay_wrapper is
 	procedure Set_VFOFrequency (New_Frequency : Integer) is
 	   res:   Boolean;
 	begin
-
 	   if Frequency_Banks (New_Frequency) = -1 then   -- illegal
 	      return;
 	   end if;
