@@ -19,21 +19,23 @@
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
 
-with phasetable; 
+with text_IO; use Text_IO;
+with phasetable; use phasetable;
 with fft_handler;
 --
 --	Determines the start of the Tu section of the first 
 --	data block in a DAB frame
 package body phase_handler is
 	use complexTypes;
-	package Phases_for_Mode is new PhaseTable (The_Mode);
+
 	package Forward_fft is new fft_handler (FORWARD, The_Mode);
 	package Backward_fft is new fft_handler (BACKWARD, The_Mode);
 
 --	we will ensure that inputBuffer' length = Tu
-	function	Find_Index (inputBuffer : bufferType;
+	function	Find_Index (inputBuffer : complexArray;
 	                            threshold   : integer) return integer is
-	   Res_Vector  : complexArray   := inputBuffer;
+--	   Res_Vector  : complexArray (0 .. inputBuffer' Length - 1) := 
+	   Res_Vector  : complexArray := inputBuffer;
 	   Max_Index   : Integer        := -1;
 	   Sum         : Float          := 0.0;
 	   Max         : Float          := 0.0;
@@ -75,16 +77,14 @@ package body phase_handler is
 	   end if;
 	end Find_Index;
 begin
---
---	Create the Ref_Table
 	for i in 1 ..  K / 2 loop
 	   declare
 	      Phi_k : float;
 	   begin
-	      Phi_k		:= Phases_for_Mode. get_Phi (i);
+	      Phi_k		:= Phasetable. get_Phi (i, The_Mode);
 	      Ref_Table (i) 	:=
 	                     (Math. Cos (Phi_k), Math. Sin (Phi_k));
-              Phi_k 		:= Phases_for_Mode. get_Phi (-i);
+              Phi_k 		:= Phasetable. get_Phi (-i, The_Mode);
               Ref_Table (Tu - i) :=
 	                      (Math. Cos (Phi_k), Math. sin (Phi_k));
 	   end;

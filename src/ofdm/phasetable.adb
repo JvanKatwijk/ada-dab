@@ -21,9 +21,10 @@
 
 package body Phasetable is
 
-	function Get_Element (N:	integer) return Phasetable_Element is
+	function Get_Element (N:	integer;
+	                      Mode:	Dabmode) return Phasetable_Element is
 	begin
-	   case The_Mode is
+	   case Mode is
 	      when Mode_1 =>
 	         return ModeI_table (ModeI_table' first + N);
 	      when Mode_2 =>
@@ -46,14 +47,14 @@ package body Phasetable is
 	   end case;
 	end H_table;
 
-	function Get_Phi (K: Integer) return Float is
-	   K_prime         : Integer;
-	   I               : Integer;
-	   N               : Integer;
+	function Get_Phi (K: Integer; Mode: Dabmode) return Float is
+	   K_prime:	Integer;
+	   I:		Integer;
+	   N:		Integer;
 	   Current_Element : Phasetable_Element;
-	   Index           : Integer := 0;
+	   Index:	Integer := 0;
 	begin
-	   Current_Element := Get_Element (Index);
+	   Current_Element := Get_Element (index, mode);
 	   while Current_Element. Kmin /= -1000 loop
 	      if Current_Element. Kmin <= k and then
 	                           K <= Current_Element. Kmax then
@@ -63,7 +64,7 @@ package body Phasetable is
 	         return M_PI / 2.0 * Float (H_table (I, K - K_prime) + N);
 	      end if;
 	      Index	:= Index + 1;
-	      Current_Element := Get_Element (Index);
+	      Current_Element := Get_Element (Index, Mode);
 	   end loop;
 	   return 0.0;
 	end Get_Phi;

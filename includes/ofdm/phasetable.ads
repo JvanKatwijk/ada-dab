@@ -20,10 +20,8 @@
 --
 
 with header; use header;
-generic
-	The_Mode : DabMode;
 package Phasetable is
-	function Get_Phi (k : Integer) return Float;
+	function Get_Phi (k : Integer; mode: Dabmode) return Float;
 private
 	type Phasetable_Element is
 	   record
