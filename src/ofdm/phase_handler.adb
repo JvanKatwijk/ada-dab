@@ -20,7 +20,7 @@
 --
 
 with text_IO; use Text_IO;
-with phasetable; use phasetable;
+with phasetable; 
 with fft_handler;
 --
 --	Determines the start of the Tu section of the first 
@@ -28,14 +28,14 @@ with fft_handler;
 package body phase_handler is
 	use complexTypes;
 
+	package Phases_for_Table is new phaseTable (The_Mode);
 	package Forward_fft is new fft_handler (FORWARD, The_Mode);
 	package Backward_fft is new fft_handler (BACKWARD, The_Mode);
 
 --	we will ensure that inputBuffer' length = Tu
-	function	Find_Index (inputBuffer : complexArray;
+	function	Find_Index (inputBuffer : bufferType;
 	                            threshold   : integer) return integer is
---	   Res_Vector  : complexArray (0 .. inputBuffer' Length - 1) := 
-	   Res_Vector  : complexArray := inputBuffer;
+	   Res_Vector  : bufferType     := inputBuffer;
 	   Max_Index   : Integer        := -1;
 	   Sum         : Float          := 0.0;
 	   Max         : Float          := 0.0;
@@ -81,10 +81,10 @@ begin
 	   declare
 	      Phi_k : float;
 	   begin
-	      Phi_k		:= Phasetable. get_Phi (i, The_Mode);
+	      Phi_k		:= Phases_for_Table. get_Phi (i);
 	      Ref_Table (i) 	:=
 	                     (Math. Cos (Phi_k), Math. Sin (Phi_k));
-              Phi_k 		:= Phasetable. get_Phi (-i, The_Mode);
+              Phi_k 		:= Phases_for_Table. get_Phi (-i);
               Ref_Table (Tu - i) :=
 	                      (Math. Cos (Phi_k), Math. sin (Phi_k));
 	   end;
