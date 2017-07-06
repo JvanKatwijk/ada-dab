@@ -387,6 +387,18 @@ package body fib_handler is
 	   end case;
 	end process_FIG1;
 
+	procedure process_FIG2  (d      : fib_buffer;
+	                         offset : short_Integer) is
+	begin
+	   null;
+	end process_FIG2;
+
+	procedure process_FIG3  (d      : fib_buffer;
+	                         offset : short_Integer) is
+	begin
+	   null;
+	end process_FIG3;
+
 	function get_Bits (d:      fib_Buffer;
 	                   offset: short_Integer;
 	                   size:   short_Integer) return uint16_t is
@@ -485,7 +497,7 @@ package body fib_handler is
 	   end loop;
 	end process_FIB;
 
-	procedure reset is
+	procedure Reset is
 	begin
 	   Has_Name   := false;
 	   for I in listofServices' Range loop

@@ -30,7 +30,7 @@ package mp2_handler is
 
 	procedure Add_to_Frame (Object  : in out mp2Processor;
 	                        Data    : byteArray;
-	                        nbits   : short_Integer);
+	                        nbits   : int16_t);
 private
 	type C_intArray is array (Integer range <>) of Interfaces. C. int;
 	type kjmp2_context_t is

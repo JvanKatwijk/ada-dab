@@ -39,11 +39,11 @@ package mp4_handler is
 
 	procedure Add_to_Frame (Object  : in out mp4Processor;
 	                        Data    : byteArray;
-	                        Nbits   : short_Integer);
+	                        Nbits   : int16_t);
 private
 	procedure processSuperframe (Object     : in out mp4Processor;
 	                             frameBytes : byteArray;
-	                             base       : short_Integer;
+	                             base       : int16_t;
 	                             result     : out Boolean);
 	procedure Initialize	    (Object     : in out mp4Processor);
 	procedure Finalize	    (Object     : in out mp4Processor);
@@ -61,7 +61,7 @@ private
 	      Blocks_InBuffer  :  Integer;
 	      Framecount       :  Integer;
 	      Frameerrors      :  Integer;
-	      nErrors          :  short_Integer;
+	      nErrors          :  int16_t;
 	      au_count         :  Integer;
 	      au_errors        :  Integer;
 	   end record;

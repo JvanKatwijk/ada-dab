@@ -18,7 +18,8 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with header;	use header;
+with header;	    use header;
+with generic_buffer; 
 Generic
 	The_Mode           : Dabmode;
 	with procedure Fetch_Samples (X : out complexArray; y : out Integer);
@@ -32,9 +33,6 @@ package Ofdm_Handler is
 	procedure Stop;
 	function Is_Stopped return Boolean;
 private
-	task Ofdm_Worker is
-	   entry start;
-	end;
 	Exit_Ofdmprocessing :	exception;
 	procedure Get_Samples (Out_V      : out complexArray;
 	                       Phase_Ind  : Integer);
@@ -61,5 +59,28 @@ private
 --	with the size of the OscillatorTable would cause a storage error
 	OscillatorTable      : complexArray_P :=
 	                                new complexArray (0 .. inputRate - 1);
+--
+	  --   some shorthands
+	subtype Tu_Sized_Buffer      is complexArray (0 .. Tu - 1);
+	subtype Ts_Sized_Buffer      is complexArray (0 .. Ts - 1);
+	subtype Tnull_Sized_Buffer   is complexArray (0 .. Tnull - 1);
+	subtype Ibit_Vector          is shortArray   (0 .. 2 * Carriers - 1);
+
+--   some vectors
+	Reference_Vector  : Tu_Sized_Buffer;
+	Ofdm_Buffer       : Ts_Sized_Buffer;
+	Null_Buffer       : Tnull_Sized_Buffer;
+
+	task Ofdm_Worker is
+	   entry start;
+	end;
+	task Ofdm_Decoder is
+	   entry start;
+	   entry Block_0   (Data : Tu_Sized_Buffer);
+	   entry Put       (Blkno : Natural; Data : Tu_Sized_Buffer);
+	end;
+
+	function Compute_Offset (Block_0_Buffer: Tu_Sized_Buffer)
+                                                          return Integer;
 end ofdm_handler;
 

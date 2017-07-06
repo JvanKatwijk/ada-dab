@@ -4,10 +4,9 @@ project dab_receiver is
 	for languages use ("C", "Ada");
 	for Main use ("main.adb");
 	for Exec_dir use "bin";
-	type Build_Mode_Type is
-	   ("Normal", "Fast");
+	type Build_Mode_Type is ("Normal", "Fast");
 	Build_Mode	: Build_Mode_Type	:= external ("Build_Mode", "Fast");
-	for Source_Dirs use (".", "input/dabstick", "input/rawfiles", "input/airspy", "input/sdrplay", "src", "src/utilities", "src/ofdm", "src/backend", "src/msc", "src/output", "includes", "includes/utilities", "includes/ofdm", "includes/backend", "includes/msc", "includes/output", "src/deconvolution", "gui",  "c_files");
+	for Source_Dirs use (".", "input",  "input/dabstick", "input/rawfiles", "input/airspy", "input/sdrplay", "src", "src/utilities", "src/ofdm", "src/backend", "src/msc", "src/output", "includes", "includes/utilities", "includes/ofdm", "includes/backend", "includes/msc", "includes/output", "src/deconvolution", "gui",  "c_files");
 
 	case Build_Mode is
 	   when "Normal"	=>
@@ -19,7 +18,7 @@ project dab_receiver is
 package Compiler is
 	case Build_Mode is
 	   when "Normal"	=>
-	      for Default_Switches ("Ada") use ("-pg");
+	      for Default_Switches ("Ada") use ("-g");
 	   when "Fast"		=>
 	      for Default_Switches ("Ada") use ("-gnatpn", "-gnatyl", "-flto");
 	end case;
@@ -27,9 +26,9 @@ end Compiler;
 package Linker is
 	case Build_Mode is
 	   when "Normal"	=>
-	      for Default_Switches ("Ada") use ("-pg","-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
+	      for Default_Switches ("Ada") use ("-g", "-lfftw3f_threads", "-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
 	   when "Fast"		=>
-	      for Default_Switches ("Ada") use ("-flto", "-gnatpn","-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
+	      for Default_Switches ("Ada") use ("-flto", "-gnatpn", "-lfftw3f_threads","-lfftw3f", "-lrtlsdr", "-lairspy", "-lmirsdrapi-rsp", "-lfaad", "-lportaudio", "-lm");
 	end case;
 end Linker;
 end dab_receiver;

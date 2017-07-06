@@ -2,7 +2,7 @@ with header; use header;
 with Interfaces;	use Interfaces;
 with audiopackage;	use audiopackage;
 package dab_handler is
-	task type dabProcessor (dabModus	: dataMode;
+	task type Dabprocessor (dabModus	: dataMode;
 	                        fragmentSize	: Integer;
 	                        bitRate		: short_Integer;
 	                        uepFlag		: short_Integer;
@@ -13,8 +13,8 @@ package dab_handler is
 	end dabProcessor;
    type dabProcessor_P is access all dabProcessor;
 private
-   type shortBlock	is array (Integer Range <>,
-	                          short_Integer range <>) of short_Integer;
+   type shortBlock	is array (short_integer Range <>,
+	                          Integer range <>) of short_Integer;
    type shortBlock_P	is access all shortBlock;
 end dab_handler;
 

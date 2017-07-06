@@ -122,8 +122,9 @@ package body rtlsdr_wrapper is
 	end Stop_Reader;
 
 	procedure Set_Gain (gain : Natural) is
+	  index : Natural := Natural (Integer (gain) * Integer (gainsCount) / 100);
 	begin
-	   rtlsdr_set_tuner_gain_ada (device. all, Interfaces. C. int (gain));
+	   rtlsdr_set_tuner_gain_ada (device. all, Interfaces. C. int (index));
 	   theGain   := gain;
 	end Set_Gain;
 
@@ -153,13 +154,6 @@ package body rtlsdr_wrapper is
 	   return valid;
 	end valid_Device;
 
-	procedure Setup_GainTable (gainSelector : Gtk_Combo_Box_Text) is
-	begin
-	   for I in 0 .. Integer (gainsCount) - 1 loop
-	      gainSelector. Insert_Text (Gint (I),
-	                                 Integer' Image (Integer (gains (i))));
-	   end loop;
-	end Setup_GainTable;
 begin
 	device		:= new rtlsdr_dev_t; 
 	inputRate	:= 2048000;
@@ -195,28 +189,31 @@ begin
 
 
 	declare
-	   function rtlsdr_get_tuner_gains_ada (device : rtlsdr_dev_t;
-	                                        dummy  : Integer)
+	   function rtlsdr_get_tuner_gains_count (device : rtlsdr_dev_t;
+	                                          dummy  : Integer)
 	                                             return Interfaces. C. int;
-	   pragma Import (C, rtlsdr_get_tuner_gains_ada, "rtlsdr_get_tuner_gains");
+	   pragma Import (C, rtlsdr_get_tuner_gains_count, "rtlsdr_get_tuner_gains");
 	begin
-	   gainsCount   := rtlsdr_get_tuner_gains_ada (device. all, 0);
+	   gainsCount   := rtlsdr_get_tuner_gains_count (device. all, 0);
 	   put (Integer' Image (Integer (gainsCount)));
 	   put_line (" gain values supported");
 	   declare
 	      subtype g is gainsArray (0 .. Integer (gainsCount) - 1);
-	      procedure rtlsdr_get_tuner_gains_ada (device : rtlsdr_dev_t;
-	                                            gains  : out g);
+	      function rtlsdr_get_tuner_gains_ada (device : rtlsdr_dev_t;
+	                                            gains  : out g)
+	                                             return Interfaces. C. int;
 	      pragma Import (C, rtlsdr_get_tuner_gains_ada,
 	                                  "rtlsdr_get_tuner_gains");
+	      dummy : interfaces. C. int;
 	   begin
-	      gains	:= new g;
-	      rtlsdr_get_tuner_gains_ada (device. all, gains. all);
+	      gains     := new g;
+	      dummy	:= rtlsdr_get_tuner_gains_ada (device. all, gains. all);
 	   end;
 --	will be overruled:
 	   rtlsdr_set_tuner_gain_mode_ada (device. all, 1);
-	   theGain	:=  Integer (gainsCount) / 2;
-	   rtlsdr_set_tuner_gain_ada      (device. all, gains (theGain));
+	   theGain	:=  50;
+	   rtlsdr_set_tuner_gain_ada      (device. all,
+	                                   gains (Integer (gainsCount) / 2));
 	   for i in gains' Range loop
 	      declare 
 	         tmp : float	:= float (gains (i)) / 10.0;

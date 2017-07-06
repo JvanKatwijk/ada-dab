@@ -1,7 +1,8 @@
+
 --
 --    Copyright (C) 2016
 --    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--    Lazy Chair Computing
 --
 --    This file is part of the SDR-J (JSDR).
 --    SDR-J is free software; you can redistribute it and/or modify
@@ -18,18 +19,18 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
---
-with header;		use header;
-with Interfaces;	use Interfaces;
-with Interfaces. C;	use Interfaces. C;
+with header;            use header;
+with Interfaces;        use Interfaces;
+with Interfaces. C;     use Interfaces. C;
 with system;
 
 generic
-	The_Kind  : fftMode;
-	The_Mode  : DabMode;
-package FFT_Handler is
-	procedure do_FFT (Vector: in out complexArray);
-private
-	Field	: System. Address;
-end FFT_Handler;
+	direction : fftDirection;
+        The_Mode  : DabMode;
+package fft_driver is
+	fftSize:	constant Natural := T_u (The_Mode);
+	subtype fftVector is complexArray (0 .. fftSize - 1); 
+
+	procedure do_FFT (v : in out fftVector);
+end fft_driver;
 

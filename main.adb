@@ -1,8 +1,7 @@
-
 --
 --    Copyright (C) 2016
 --    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--    Lazy Chair Computing
 --
 --    This file is part of the SDR-J (JSDR).
 --    SDR-J is free software; you can redistribute it and/or modify
@@ -37,10 +36,11 @@ with Gui_Handler;	use Gui_Handler;
 with GNAT. Command_Line; use GNAT. Command_Line;
 with Text_IO;		use Text_IO;
 
---with rtlsdr_wrapper; use rtlsdr_wrapper;
---with rawfiles; use rawfiles;
+with device_handler; use device_handler;
+with rtlsdr_wrapper; use rtlsdr_wrapper;
+with rawfiles; use rawfiles;
 with airspy_wrapper; use airspy_wrapper;
---with sdrplay_wrapper; use sdrplay_wrapper;
+with sdrplay_wrapper; use sdrplay_wrapper;
 --
 --	We do know the device we want to support, the (dab)Mode
 --	and the Band may be selected in the command line
@@ -50,17 +50,13 @@ procedure main is
 	The_Band	: Dabband	:= BAND_III;	-- default;
 	Result		: Boolean;
 ---------------------------------------------------------------------------
--- to select an input device, uncomment the line for
---	and the appropriate line "with xxxx"
---	package My_Device renames rawfiles;
---	package My_Device renames rtlsdr_wrapper;
-	package My_Device renames airspy_wrapper;
---	package My_Device renames sdrplay_wrapper;
+	thedevice	: device_P;
 begin
 --
---	we allow command line parameters to be set for mode and band
+	theDevice := null;
+--	we allow command line parameters to be set for mode, band and device
 	loop
-           case Getopt ("m:  b: ") is   
+           case Getopt ("m:  b: d:") is   
 	      when 'm' =>
 	         if Parameter = "Mode_1" then
 	            the_Mode := Mode_1;
@@ -69,17 +65,30 @@ begin
 	         else
 	            the_Mode := Mode_4;
 	         end if;
+
 	      when 'b' =>
 	         if Parameter = "L_BAND" then
 	            the_Band := L_BAND;
 	         else
 	            the_Band := BAND_III;
 	         end if;
+
+	      when 'd' =>
+	         if Parameter = "raw" then
+	           theDevice := new rawfiles. raw_device;
+	         elsif parameter = "airspy" then
+	           theDevice := new airspy_wrapper. airspy_device;
+	         else
+	           theDevice := new rawfiles. raw_device;
+	         end if;
+	       
 	      when others => 
 	         exit;
 	   end case;
 	end loop;
---
+
+	theDevice := new rawfiles. raw_device;
+
 --	we set up the gui, just create the objects and layouts
 --	but the connects are made later on
 	Create_GUI;
@@ -95,8 +104,8 @@ begin
 	   package my_ficHandler is new fic_handler (the_Mode);
 	   package my_ofdmHandler is
 	                  new ofdm_handler (The_Mode,
-	                                    my_Device.     Get_Samples,
-	                                    my_Device.     Available_Samples,
+	                                    theDevice.     Get_Samples,
+	                                    theDevice.     Available_Samples,
 	                                    my_mscHandler. process_mscBlock,
 	                                    my_ficHandler. process_ficBlock,
 	                                    my_ficHandler. Sync_Reached);
@@ -107,10 +116,11 @@ begin
 	   begin
 	      if Running then
 	         Running := false;
+	         put_line ("plaats 1");
 	         my_ofdmHandler. stop;
 	         my_ficHandler. stop;
 	         my_mscHandler. stop;
-	         My_Device. Stop_Reader;
+	         theDevice. Stop_Reader;
 	      end if;
 	      Gtk. Main. Main_Quit;
 	   end main_quit;
@@ -120,10 +130,11 @@ begin
 	   begin
 	      if Running then
 	         Running := false;
+	         put_line ("plaats 2");
 	         my_ofdmHandler. stop;
 	         my_ficHandler. stop;
 	         my_mscHandler. stop;
-	         My_Device. Stop_Reader;
+	         theDevice. Stop_Reader;
 	      end if;
 	      Destroy (Self);
 	      Gtk. Main. Main_Quit;
@@ -138,14 +149,13 @@ begin
 	         return;
 	      end if;
 
-	      My_Device. Restart_Reader (result);	
+	      theDevice. Restart_Reader (result);	
 	      if not Result then
 	         put_line ("device did not start");
 	      else
 	         Running := true;
 	         programSelector. Remove_All;
 	         my_ficHandler. reset;
-	         my_ficHandler. restart;
 	         my_ofdmHandler. reset;
 	      end if;
 	   end start_clicked;
@@ -160,9 +170,9 @@ begin
 	      my_mscHandler. reset;
 	      my_ofdmHandler. reset;
 	      my_ficHandler. reset;	-- go for a new fib
-	      if My_Device. Valid_Device then
-	         My_Device. Stop_Reader;
-	         My_Device. Set_VFOFrequency (kHz (Frequency));
+	      if theDevice. Valid_Device then
+	         theDevice. Stop_Reader;
+	         theDevice. Set_VFOFrequency (kHz (Frequency));
 	      end if;
 	      string_messages. string_messages. Reset;
 
@@ -175,10 +185,19 @@ begin
 	      programSelector. Remove_All;
 	      Deleting	:= false;
 	      label_ensemble. Set_Label ("ensemble name");
-	      if My_Device. Valid_Device then
-	            My_Device. Restart_Reader (result);
+	      if theDevice. Valid_Device then
+	            theDevice. Restart_Reader (result);
 	      end if;
-	      my_ficHandler. restart;
+	      begin
+	         my_ofdmHandler. Reset;
+	      exception
+	         when others => put_line ("het was ofdm");
+	      end;
+	      begin
+	         my_ficHandler. Reset;
+	      exception
+	         when others => put_line ("het was fic");
+	      end;
 	   end channelSelector_clicked;
 
 	   procedure Programselector_clicked
@@ -218,8 +237,8 @@ begin
 	                     (Self : access Gtk_Combo_Box_Record' Class) is
 	      El : String	:= Self. Get_Active_Text;
 	   begin
-	      if My_Device. Valid_Device then
-	         My_Device. Set_Gain (Integer' Value (el));
+	      if theDevice. Valid_Device then
+	         theDevice. Set_Gain (Integer' Value (el));
 	      end if;
 	   end Gainselector_clicked;
 
@@ -244,9 +263,8 @@ begin
 	   quitButton.         On_Clicked
 	                       (button_quit'  Unrestricted_Access);
 
-	   My_Device. Setup_Gaintable (Gain_Selector);
 --	start the device, ....
-	   My_Device. Restart_Reader (Result);
+	   theDevice. Restart_Reader (Result);
 	   if not Result then
 	      put_line ("Could not open input device");
 	      return;

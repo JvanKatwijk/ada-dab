@@ -34,6 +34,8 @@ private
 --	we already passed the crc and start unpacking
    procedure process_FIG0	(p: fib_buffer; offset: short_Integer);
    procedure process_FIG1	(d: fib_buffer; offset: short_Integer);
+   procedure process_FIG2	(d: fib_buffer; offset: short_Integer);
+   procedure process_FIG3	(d: fib_buffer; offset: short_Integer);
 
    procedure FIG0Extension1(d: fib_buffer; offset: short_Integer);
    function HandleFIG0Extension1 (d	: fib_buffer;

@@ -25,9 +25,9 @@ with Text_IO;	      use Text_IO;
 
 package body faad_decoder is
 	amount	: Integer	:= 0;
-	function get_aac_channel_configuration (m_mpeg_surround_config: short_Integer;
-	                                        aacChannelMode		: short_Integer) 
-	                                       return short_Integer is
+	function get_aac_channel_configuration (m_mpeg_surround_config: int16_t;
+	                                        aacChannelMode		: int16_t) 
+	                                       return int16_t is
 	begin
 	   case m_mpeg_surround_config is
 	      when 0	=>	-- no surround
@@ -46,10 +46,10 @@ package body faad_decoder is
 	   aacInitialized	:= false;
 	end reset;
 
-	procedure mp42pcm (dacRate	: short_Integer;
-	                   sbrFlag	: short_Integer;
-	                   mpegSurround	: short_Integer;
-	                   aacChannelMode	: short_Integer;
+	procedure mp42pcm (dacRate	: int16_t;
+	                   sbrFlag	: int16_t;
+	                   mpegSurround	: int16_t;
+	                   aacChannelMode	: int16_t;
 	                   buffer	: byteArray;
 	                   bufferLength	: uint16_t;
 	                   samples_out	: out Integer;
@@ -78,7 +78,7 @@ package body faad_decoder is
 	   if not aacInitialized then
 	      declare
 	         core_sr_index	: uint16_t;
-	         core_ch_config	: short_Integer;
+	         core_ch_config	: int16_t;
 	         asc:             asc_vector;
 	         pragma Convention (C, asc);
 	         init_result    : Interfaces. C. long;
@@ -148,7 +148,7 @@ package body faad_decoder is
 	      return;
 	   end if;
 --
---	The aacDecoder returns a C array, however, we do no know
+--	The aacDecoder returns a C array, however, we do not know
 --	on beforehand the index constraints. We solve that by
 --	creating a converter of the returned array address to
 --	a decent Ada pointer to a C array

@@ -23,7 +23,7 @@ generic
 	the_Mode : dabMode;
 package fic_handler is
 	procedure	Process_Ficblock (Data	: shortArray;
-	                                  Blkno	: Integer);
+	                                  Blkno	: Natural);
 	procedure	Stop;
 	procedure	Reset;
 	procedure	Restart;

@@ -18,7 +18,7 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with Gtk.Combo_Box_Text;	use Gtk. Combo_Box_Text;
+with device_handler;		use device_handler;
 with System;			use System;
 with header;			use header;
 with Interfaces;		use Interfaces;
@@ -26,16 +26,33 @@ with Interfaces.C;		use Interfaces. C;
 with ringbuffer;
 
 package Airspy_Wrapper is
-	procedure Setup_Gaintable  (Gain_Selector : Gtk_Combo_Box_Text);
-	procedure Set_VFOFrequency (New_Frequency : Integer);
-	procedure Restart_Reader   (Success       : out Boolean);
-	procedure Stop_Reader;
-	procedure Set_Gain	   (New_Gain      : Integer);
-	procedure Get_Samples      (Out_V         : out complexArray;
-	                            amount        : out Integer);
-	function Available_Samples  return Integer;
-	function Valid_Device       return Boolean;
+	use header. complexTypes;
+	type airspy_device is new device with private;
+	type airspy_device_p is access all airspy_device;
+
+	overriding
+	procedure Restart_Reader   (Object       : in out airspy_device;
+	                            Success      : out Boolean);
+        procedure Stop_Reader      (Object       : in out airspy_device);
+        procedure Set_VFOFrequency (Object       : in out airspy_device;
+	                            New_Frequency: Natural);
+        procedure Set_Gain         (Object       : in out airspy_device;
+	                            New_Gain     : Natural);
+        procedure Get_Samples      (Object       : in out airspy_device;
+	                            Out_V        : out complexArray;
+                                    Amount       : out Natural);
+        function Available_Samples (Object       : airspy_device) return Natural;
+        function Valid_Device      (Object       : airspy_device) return Boolean;
 private
+	procedure Initialize (Object: in out airspy_device);
+	procedure Finalize   (Object: in out airspy_device);
+
+	use header. complexTypes;
+	package Airspy_Buffer is new ringBuffer (complex);
+	use Airspy_Buffer;
+
+--
+--	airspy stuff
 	type Airspy_Error is (
            AIRSPY_SUCCESS,
            AIRSPY_TRUE,
@@ -86,20 +103,8 @@ private
 	                                           return Airspy_Error;
 	pragma Import (C, Airspy_Open, "airspy_open");
 
-	procedure Airspy_Set_Vga_Gain	(Device   : system. Address;
-	                                 Vga_Gain : Interfaces. C. int);
-	pragma Import (C, Airspy_Set_Vga_Gain, "airspy_set_vga_gain");
-
-	procedure Airspy_Set_Mixer_Gain	(Device     : system. Address;
-	                                 Mixer_Gain : Interfaces. C. int);
-	pragma Import (C, Airspy_Set_Mixer_Gain, "airspy_set_mixer_gain");
-
-	procedure Airspy_Set_Lna_Gain	(Device   : system. Address;
-	                                 Lna_Gain : Interfaces. C. int);
-	pragma Import (C, Airspy_Set_Lna_Gain, "airspy_set_lna_gain");
-
-	procedure Airspy_Set_Sensitivity (device      : system. Address;
-	                                  Sensitivity :	Interfaces. C. int);
+	procedure Airspy_Set_Sensitivity (Device   : system. Address;
+	                                  gain : Interfaces. C. int);
 	pragma Import (C, Airspy_Set_Sensitivity, "airspy_set_sensitivity_gain");
 
 	function Airspy_Is_Streaming (Device : system. Address)
@@ -139,5 +144,35 @@ private
 	                        return Interfaces. C. int;
 	pragma Convention (C, Airspy_Callback);
 --
+
+	type airspy_device is new device with
+	record
+	   The_Buffer    : Airspy_Buffer. ringBuffer_data (16 * 32768);
+	   Input_Rate    : Integer;
+--	buffer for transfer to data into the ringbuffer
+	   Local_Buffer  : airspy_buffer. buffer_data (0 .. 2048000 / 500 - 1);
+
+--	we read in 500 buffers per second, and we have to convert them
+--	to the DAB input rate of 2048000 samples per second
+--	Conversion is by simple linear interpolation. Since we do not know
+--	the inputrate of the device (yet),
+--	we cannot yet decide on the size of the
+--	conversionbuffer.
+	   Conversion_Buffer : complexArray_P;
+--
+--	The mapping tables are known though
+	   Conversion_Index  : Integer	:= 0;
+	   Maptable_Int      : FloatArray	(0 .. 2048000 / 500 - 1);
+	   Maptable_Float    : FloatArray	(0 .. 2048000 / 500 - 1);
+
+	   Result            : Airspy_Error;
+--	abstract away from the hardware
+	   Device_P          : access System. Address := new System. Address;
+--
+	   Running           : Boolean;
+	   Device_Is_Valid   : Boolean;
+	   Sensitivity	     : Natural;
+	   Last_Frequency    : Integer	:= 225000000;	-- dummy
+	end record;
 end Airspy_Wrapper;
 

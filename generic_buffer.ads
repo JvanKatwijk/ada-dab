@@ -23,16 +23,16 @@ generic
 	type element_type is private;
 package Generic_Buffer is
 	use header;
-	type Buffer_Data is array (Positive Range <>) of element_type;
+	type Buffer_Data is array (Natural Range <>) of element_type;
 	protected type Buffer (Size: Integer) is
 	   entry Put (Item : element_type);
 	   entry Get (Item : out element_type);
 	   function amount return Integer;
 	   procedure Reset;
 	private
-	   Values:	Buffer_Data (1 .. Size);
-	   Next_In:	Integer	:= 1;
-	   Next_Out:	Integer := 1;
+	   Values:	Buffer_Data (0 .. Size);
+	   Next_In:	Integer	:= 0;
+	   Next_Out:	Integer := 0;
 	   Count:	Natural := 0;
 	end Buffer;
 end Generic_Buffer;

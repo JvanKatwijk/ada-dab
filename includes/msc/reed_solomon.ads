@@ -20,34 +20,34 @@
 with header; use header;
 with galois;
 generic
-	symsize:  short_Integer;
-	gfPoly:   short_Integer;
-	fcr:      short_Integer;
-	prim:     short_Integer;
-	nroots:   short_Integer;
+	symsize:  int16_t;
+	gfPoly:   int16_t;
+	fcr:      int16_t;
+	prim:     int16_t;
+	nroots:   int16_t;
 package reed_solomon is
 
 	procedure encode_rs (data   : byteArray;
-	                     cutLen : short_Integer;
+	                     cutLen : int16_t;
 	                     result : out byteArray);
 	procedure decode_rs (data   : byteArray;
-	                     cutLen : short_Integer;
+	                     cutLen : int16_t;
 	                     result : out byteArray;
-	                     corrs  : out short_Integer);
+	                     corrs  : out int16_t);
 private
-	type rsArray is Array (short_Integer Range <>) of short_Integer;
+	type rsArray is Array (int16_t Range <>) of short_Integer;
 	subtype nrootsArray is rsArray (0 .. nroots);
 	procedure enc       (data   : rsArray;
 	                     parityBytes: out rsArray);
 	procedure dec	    (data   : in out rsArray;
-	                     corrs  : out short_Integer);
+	                     corrs  : out int16_t);
 
 	package myGalois is new galois (symsize, gfPoly);
 	use myGalois;
 	Generator:       nrootsArray := (Others	=> 0);
-	codeLength:      short_Integer;
-	iprim:           short_Integer;
-	index:           short_Integer;
-	root:            short_Integer;
+	codeLength:      int16_t;
+	iprim:           int16_t;
+	index:           int16_t;
+	root:            int16_t;
 end reed_solomon;
 

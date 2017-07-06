@@ -64,7 +64,7 @@ package body mp2_handler is
 --	in bytes
 	procedure Add_to_Frame (Object  : in out mp2Processor;
 	                        Data    : byteArray;
-	                        Nbits   : short_Integer) is
+	                        Nbits   : int16_t) is
 	   lf:     Integer := 
 	           (if Object. baudRate = 48000 then Object. MP2framesize
 	                                      else 2 * Object. MP2framesize);

@@ -1,7 +1,7 @@
 --
 --    Copyright (C) 2016
 --    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--    Lazy Chair Computing
 --
 --    This file is part of the SDR-J (JSDR).
 --    SDR-J is free software; you can redistribute it and/or modify
@@ -83,7 +83,7 @@ package body Gui_Handler is
 	begin
 	   --  Initialize GtkAda.
 	   Gtk.Main.Init;
-	   dummy	:= Timeout_Add (500, dispatch' access);
+	   dummy	:= Timeout_Add (500, Dispatch' access);
 
 	   -- create a top level window
 	   Gtk_New (Win);
@@ -141,7 +141,10 @@ package body Gui_Handler is
 	   Grid. Attach_Next_To (Programselector,
 	                           label_ensemble, POS_BOTTOM, 2, 1);
 --
---
+	   for I in Integer Range 0 .. 100 loop
+	      Gain_Selector. Insert_text (Glib. Gint (i), Integer' Image (i));
+           end loop;
+
 	   Win. Show_All;
 	end Create_GUI;
 

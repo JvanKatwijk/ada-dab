@@ -1,7 +1,7 @@
 --
 --    Copyright (C) 2016
 --    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--    Lazy Chair Computing
 --
 --    This file is part of the SDR-J (JSDR).
 --    SDR-J is free software; you can redistribute it and/or modify
@@ -23,14 +23,14 @@ package body Generic_Buffer is
 	   entry Put (Item : element_type) when Count < Size is
 	   begin
 	      Values (Next_In)	:= Item;
-	      Next_In 		:= (Next_In mod Size) + 1;
+	      Next_In 		:= (Next_In + 1) mod Size;
 	      Count		:= Count + 1;
 	   end Put;
 
 	   entry Get (Item: out element_type) when Count > 0 is
 	   begin
 	      Item		:= Values (Next_Out);
-	      Next_Out		:= (Next_Out mod Size) + 1;
+	      Next_Out		:= (Next_Out + 1) mod Size;
 	      Count		:= Count - 1;
 	   end Get;
 
@@ -41,8 +41,8 @@ package body Generic_Buffer is
 
 	   procedure Reset is
 	   begin
-	      Next_In		:= 1;
-	      Next_Out		:= 1;
+	      Next_In		:= 0;
+	      Next_Out		:= 0;
 	      Count	        := 0;
 	   end Reset;
 	end Buffer;

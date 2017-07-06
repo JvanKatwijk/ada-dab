@@ -25,30 +25,49 @@
 -- 	File reader:
 --	For the (former) files with 8 bit raw data from the
 --	dabsticks  Very simplified here, just for testing
-
-with Interfaces. C_streams; use Interfaces. C_streams;
-with Text_IO;	use Text_IO;
+--
+with header; use header;
+with ringbuffer;
+with System; use System;
+with Interfaces; use Interfaces;
+with Text_IO; use Text_IO;
 package body rawfiles is
 	function "abs" (Right: header. ComplexTypes. complex) return Float
 	                              renames header. complexTypes. "abs";
-	procedure Restart_Reader (Object : in out raw_device; Success : out Boolean) is
+	type element is record
+	   a : uint8_t;
+	   b : uint8_t;
+	end record;
+--	we read in segments of 10 millseconds at a time
+	package localBuffer is new ringbuffer (element);
+	use localBuffer;
+
+	bufferSize : constant          :=  4 * 32768;
+	I_Buffer   : ringbuffer_data (32 * 32768);
+	task doRead is
+	   entry Start (name : String);
+	end doRead;
+
+	procedure Restart_Reader (res : out Boolean) is
 	begin
 	   put_line ("restart called");
-	   abort Object. theWorker. All;
-	   Object. theWorker := new doRead;
-	   Object. theWorker. Start (Object. theBuffer,
-	                          "/usr/shared/dab-testfiles/7b-radio-bremen.raw");
-	   Success	:= true;
+--	   doRead. Start ("/usr/shared/dab-testfiles/mux-12a.raw");
+--	   doRead. Start ("/usr/shared/dab-testfiles/mux-12C-a.raw");
+	   doRead. Start ("/usr/shared/dab-testfiles/7b-radio-bremen.raw");
+--	   doRead. Start ("/usr/shared/dab-testfiles/6A NDR NDS (Visselhovede).raw");
+--	   doRead. Start ("/usr/shared/dab-testfiles/11D Radio fuer NRW.raw");
+--	   doRead. Start ("/usr/shared/dab-testfiles/5C DR Deutschland (Bremen Walle, SFN).raw");
+	   res	:= true;
 	end Restart_Reader;
 
-	procedure Stop_Reader (Object : in out raw_device) is
+	procedure Stop_Reader is
 	begin
-	   abort Object. theWorker. All;
+	   abort doRead;
 	end Stop_Reader;
 
-	function Valid_Device (Object : raw_device) return Boolean is
+	function Valid_Device return Boolean is
 	begin
-	   return True;
+	   return true;
 	end Valid_Device;
 
 	task body doRead is
@@ -73,9 +92,8 @@ package body rawfiles is
 	      end if;
 	      result := n / 2;
 	   end do_readBuffer;
-	   ourBuffer : Buffer_P;
 	begin
-	   accept Start (theBuffer : Buffer_P; name: String) do
+	   accept Start (name: String) do
 	      put ("going to start ");
 	      filePointer := fopen (name' Address, mode' Address );
 	      if filePointer = NULL_Stream then
@@ -84,10 +102,9 @@ package body rawfiles is
 	      else
 	         put (name); put_line (" opened");
 	      end if;
-	      ourBuffer := theBuffer;
 	   end Start;
 	   loop
-	      while ourBuffer. GetRingBufferWriteAvailable < lBuf' length loop
+	      while I_Buffer. GetRingBufferWriteAvailable < lBuf' length loop
 	         delay 0.01;
 	      end loop;
 	
@@ -97,61 +114,51 @@ package body rawfiles is
 	         lbuf := (others => (uint8_t (0), uint8_t (0)));
 	      end if;
 
-	      ourBuffer. putDataIntoBuffer (lBuf);
+	      I_Buffer. putDataIntoBuffer (lBuf);
 	   end loop;
 	exception
 	   when stopMaar => put_line ("doread normally finished");
 	   when others   => put_line ("problem");
 	end doRead;
 
-	procedure Get_Samples (Object : in out raw_device;
-	                       out_V   : out complexArray;
-	                       amount : out Natural) is
-	   Buffer : buffer_data (out_V' Range);
+	procedure Get_Samples (output : out complexArray;
+	                       amount : out Integer) is
+	   Buffer : buffer_data (output' Range);
 	begin
-	   if Object. theWorker. All' Terminated then
+	   if doRead' terminated then
 	      amount := 0;
 	      return;
 	   end if;
 
-	   while not Object. theWorker. All' Terminated and then
-	      Object. theBuffer. GetRingBufferReadAvailable < out_V' Length loop
+	   while not doRead' Terminated and then
+	          I_Buffer. GetRingBufferReadAvailable < output' Length loop
 	      delay 0.001;
 	   end loop;
-
-	   Object. theBuffer. getDataFromBuffer (buffer, amount);
-	   for i in Buffer' Range loop
-	      out_V (i) := (float (Integer (buffer (i). a) - 128) / 128.0,
-	                    float (Integer (buffer (i). b) - 128) / 128.0);
+	   I_Buffer. getDataFromBuffer (buffer, amount);
+	   for i in Buffer' range loop
+	      output (i) := (float (Integer (buffer (i). a) - 128) / 128.0,
+	                     float (Integer (buffer (i). b) - 128) / 128.0);
 	   end loop;
 	exception
 	   when others => put_line ("een exceptie");
 	end Get_Samples;
 
-	function  Available_Samples (Object : raw_device) return Natural is
+	function Available_Samples return Integer is
 	begin
-	   return Object. theBuffer. GetRingBufferReadAvailable;
+	   return I_Buffer. GetRingBufferReadAvailable;
 	end Available_Samples;
 
-	procedure Set_Gain (Object    : in out raw_device;
-	                    new_Gain  : Natural) is
+	procedure Set_Gain (gain: Integer) is
 	begin
 	   null;
 	end Set_Gain;
 
-	procedure Set_VFOFrequency (Object : in out raw_device;
-	                            New_Frequency: Natural) is
+	procedure Set_VFOFrequency (freq: Integer) is
 	begin
 	   null;
 	end;
 
-	procedure Initialize (Object: in out raw_device) is
-	begin
-	   Object. theBuffer := new ringbuffer_data (1024 * 1024);
-	   Object. theWorker := new doRead;
-	end;
-
-        procedure Finalize   (Object: in out raw_device) is
+	procedure Setup_GainTable  (gainSelector: Gtk_Combo_Box_Text) is
 	begin
 	   null;
 	end;

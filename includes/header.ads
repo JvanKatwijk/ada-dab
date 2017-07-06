@@ -49,6 +49,7 @@ package Header is
 	          Object => intArray, Name => intArray_P);
 
 	subtype short is short_Integer;
+	subtype int16_t is short_Integer;
 	type shortArray is Array (Integer Range <>) of short_Integer;
 	pragma Convention (C, shortArray);
 	type shortArray_P is access all shortArray;
@@ -68,6 +69,7 @@ package Header is
 	          Object => floatArray, Name => floatArray_P);
 
 	type complexArray is array (integer range <>) of complexTypes. complex;
+	for complexArray' Alignment use 32;
 	pragma Convention (C, complexArray);
 	type complexArray_P is access complexArray;
 	procedure Free_complexArray is new Ada. Unchecked_Deallocation (
@@ -110,6 +112,8 @@ package Header is
 	type fftMode is (FORWARD, BACKWARD);
 	for fftMode use (FORWARD => 0, BACKWARD => 1);
 
+	type fftDirection is (FFTW_FORWARD, FFTW_BACKWARD);
+	for fftDirection use (FFTW_FORWARD => -1, FFTW_BACKWARD => 1);
 --
 	type Get_Samples_Access is access procedure (X : out complexArray;
 	                                             Y: out Integer);

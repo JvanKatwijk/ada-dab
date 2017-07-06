@@ -33,7 +33,7 @@ package body mp4_handler is
 	type uintArray	is Array (uint16_t Range 0 .. 20) of uint16_t;
 
 	procedure Initialize (Object: in out mp4Processor) is
-	   bitRate	: short_Integer renames Object. bitRate;
+	   bitRate	: int16_t renames Object. bitRate;
 	   RSDims	: Integer renames Object. RSDims;
 	begin
 	   Object. Superframe_size   := Integer (110 * (bitRate / 8));
@@ -61,7 +61,7 @@ package body mp4_handler is
 --	that function does what the name suggests
 	procedure Add_to_Frame (Object   : in out mp4Processor;
 	                        Data     : byteArray;
-	                        Nbits    : short_Integer) is
+	                        Nbits    : int16_t) is
 	   temp    :  Byte       := 0;
            Nbytes  :  Integer    := Integer (Nbits / 8);
 	   fcVector:  firecode_Checker. checkVector;
@@ -112,7 +112,7 @@ package body mp4_handler is
 --	the superframe
 	   processSuperFrame (Object,
 	                      Object. RSin_Data. all,
-	                      short_Integer (Block_FillIndex * nbytes),
+	                      int16_t (Block_FillIndex * nbytes),
 	                      result);
 
 	   if not result then	-- we will try it again, next time
@@ -129,7 +129,7 @@ package body mp4_handler is
 --	extract the audio frames
 	procedure processSuperframe (Object     : in out mp4Processor;
 	                             frameBytes : byteArray;
-	                             base       : short_Integer;
+	                             base       : int16_t;
 	                             Result     : out Boolean) is
 	   rsIn           : byteArray (0 .. 120 - 1);
 	   rsOut          : byteArray (0 .. 110 - 1);
@@ -141,10 +141,10 @@ package body mp4_handler is
 	   psFlag         : uint8_t;
 	   mpegSurround   : uint16_t;
 	   RSout_Data     : byteArray renames Object. RSout_Data. all;
-	   bitRate        : short_Integer renames Object. bitRate;
+	   bitRate        : int16_t renames Object. bitRate;
 	   RSDims         : Integer renames Object. RSDims;
 	   Samples_Out    : Integer;
-	   Errors_in_RS   : short_Integer;
+	   Errors_in_RS   : int16_t;
 	begin
 	   Result	:= False;	-- always a good start
 --	apply reed-solomon error repair
@@ -280,10 +280,10 @@ package body mp4_handler is
 	               theAU (Integer (J)) := 0;
 	            end loop;
 
-	            faad_decoder. mp42pcm (short_Integer (dacRate),
-	                                   short_Integer (sbrFlag),
-	                                   short_Integer (mpegSurround),
-	                                   short_Integer (aacChannelMode),
+	            faad_decoder. mp42pcm (int16_t (dacRate),
+	                                   int16_t (sbrFlag),
+	                                   int16_t (mpegSurround),
+	                                   int16_t (aacChannelMode),
 	                                   theAU,
 	                                   aac_frame_length,
 	                                   Samples_Out,

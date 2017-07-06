@@ -30,8 +30,9 @@ with mp4_handler;
 with mp2_handler;
 
 package body dab_handler is
-	interleaveDelays: constant  shortArray (0 .. 16 - 1) := 
-	          (15, 7, 11, 3, 13, 5, 9, 1, 14, 6, 10, 2, 12, 4, 8, 0);
+	interleaveMap : constant shortArray (0 .. 16 - 1) :=
+	          (0,  8,  4, 12,  2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15);
+
 	task body dabProcessor is
            procedure Free_uepProcessor is new Ada. Unchecked_DeAllocation (
 	      Object => uepProcessor, Name  => uepProcessor_P);
@@ -44,18 +45,23 @@ package body dab_handler is
 	      Object  => mp4_handler. mp4Processor,
 	      Name    => mp4_handler. mp4Processor_P);
 	   outV:       byteArray (0 ..  Integer (bitRate * 24 - 1));
-
-	   InterleaveData: shortBlock (0 .. fragmentSize - 1, 0 .. 15);
-	   countforInterleaver: short_Integer;
+--
+--	As may be guessed, the interleaveData array is the working env for
+--	deinterleaving. When started, we first have to fill the
+--	array, that is why the count is there.
+--	The "current" row in the array is indicated by interleaverIndex
+	   interleaveData: shortBlock (0 .. 15, 0 .. fragmentSize - 1) :=
+	                                          (others => (others => 0));
+	   countforInterleaver: int16_t := 0;
+	   interleaverIndex   : int16_t := 0;
 
 	   The_ProtectionProcessor: protection_handler. protectionProcessor_P;
 
-	   tempBuffer:         shortArray (0 .. fragmentSize - 1);
+	   Data_In           : shortArray (0 .. fragmentSize - 1);
+	   tempX             : shortArray (0 .. fragmentSize - 1);
 	   The_AudioProcessor: audio_handler. Audio_Processor_P;
+	   
 	begin
-	   InterleaveData       := (others => (others => 0));
-	   countforInterleaver  := 0;
-
 	   if uepFlag = 0 then
 	      The_ProtectionProcessor :=
 	                         new uepProcessor (bitRate, protLevel);
@@ -94,27 +100,29 @@ package body dab_handler is
 	            exit;
 	         or 
 	            accept Process (Data: shortArray) do
-	               tempBuffer   := Data;
+	               Data_in := data;
 	            end Process;
 -- first interleaving, we do it in-line
 	            for I in Integer range 0 .. fragmentSize - 1 loop
 	               declare
-	                  Index   : Integer := Integer (I mod 16);
+	                  Index          : Integer := Integer (I mod 16);
+	                  currentRow     : int16_t :=
+	                      int16_t ((interleaverIndex +
+	                                       interleaveMap (Index)) mod 16);
 	               begin
-	                  interleaveData (I, interleaveDelays (Index)) :=
-	                                                tempBuffer (I);
-	                  tempBuffer (I) := interleaveData (I, 0);
-	                  for J in short_Integer Range 1 ..
-	                               interleaveDelays (index) loop
-	                     interleaveData (I, J - 1) := interleaveData (I, J);
-	                  end loop;
+	                  tempX (I) := Interleavedata (currentRow, I);
+	                  interleaveData (InterleaverIndex, I) :=
+	                                                     Data_In (I);
 	               end;
 	            end loop;
+	            interleaverIndex :=
+	                  int16_t ((interleaverIndex + 1) mod 16);
+
 --	just wait until the interleaver is "filled"
 	            if countforInterleaver < 15 then
 	               countforInterleaver := countforInterleaver + 1;
 	            else
-	               The_ProtectionProcessor. deconvolve (tempBuffer, outV);
+	               The_ProtectionProcessor. deconvolve (tempX, outV);
 --
 --	the in-line energy dispersal
 	               declare
@@ -133,6 +141,7 @@ package body dab_handler is
 	                     end;
 	                  end loop;
 	               end;
+
 	               The_AudioProcessor. Add_to_Frame (outV, 24 * bitRate);
 	            end if;
 	      end select;

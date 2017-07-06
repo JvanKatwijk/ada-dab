@@ -1,13 +1,15 @@
 --
---    Copyright (C) 2016
---    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--	Reed-Solomon decoder
+--	Copyright 2002 Phil Karn, KA9Q
+--	May be used under the terms of the GNU General Public License (GPL)
 --
---    This file is part of the SDR-J (JSDR).
---    SDR-J is free software; you can redistribute it and/or modify
---    it under the terms of the GNU General Public License as published by
---    the Free Software Foundation; either version 2 of the License, or
---    (at your option) any later version.
+--	Rewritten - and slightly adapted while doing so -
+--	as a C++ class for use in the sdr-j dab decoder(s)
+--	Copyright 2015 Jan van Katwijk
+--	May be used under the terms of the GNU General Public License (GPL)
+--
+--	and now rewriten as an Ada package for use in the Ada version
+--	of the DAB decoder
 --
 --    SDR-J is distributed in the hope that it will be useful,
 --    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,21 +20,20 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with reed_solomon;
 with Interfaces;       use Interfaces;
 with Text_IO;          use Text_IO;
 with Ada. Exceptions;  use Ada. Exceptions;
 package body reed_solomon is
 --	
 	procedure	Encode_RS (Data     : byteArray;
-	                           CutLen   : short_Integer;
+	                           CutLen   : int16_t;
 	                           Result   : out byteArray) is
 	   rf	: rsArray (0 .. codeLength - 1) := (Others => 0);
 	   bb	: rsArray (0 .. nroots - 1);
-	   messageLength : short_Integer := codeLength - cutLen - nroots;
+	   messageLength : int16_t := codeLength - cutLen - nroots;
 	begin
 	   for i in CutLen .. codeLength - 1 loop
-	     rf (i) :=  short_Integer (Data (Data' First + Integer (i - CutLen)));
+	     rf (i) :=  int16_t (Data (Data' First + Integer (i - CutLen)));
 	   end loop;
 
 	   enc (rf, bb);
@@ -50,14 +51,14 @@ package body reed_solomon is
 	end Encode_Rs;
 
 	procedure Decode_RS (Data    : byteArray;
-	                     CutLen  : short_Integer;
+	                     CutLen  : int16_t;
 	                     Result  : out byteArray;
-	                     corrs   : out short_Integer) is
+	                     corrs   : out int16_t) is
 	   rf : rsArray (0 .. codeLength - 1);
 	begin
 	   rf (0 .. CutLen) := (Others	=> 0);
 	   for I in CutLen .. codeLength - 1 loop
-	      rf (I) := short_Integer (Data (Data' First + Integer (I - cutLen)));
+	      rf (I) := int16_t (Data (Data' First + Integer (I - cutLen)));
 	   end loop;
 
 	   dec (rf, corrs);
@@ -70,7 +71,7 @@ package body reed_solomon is
 --	Basic encoder, returns - in outparameter "parityBytes"
 	procedure enc (Data        : rsArray;
 	               parityBytes : out rsArray) is
-	   feedback: short_Integer;
+	   feedback: int16_t;
 	begin
 	   parityBytes	:= (Others => 0);
 	   for i in 0 .. codeLength - nroots - 1 loop
@@ -96,9 +97,9 @@ package body reed_solomon is
 --
 --	Apply Horner on the input for root "root"
 	function getSyndrome (data : rsArray;
-	                      root : short_Integer) return short_Integer is
-	   syn:   short_Integer      := data (0);
-	   uu1:   short_Integer;
+	                      root : int16_t) return int16_t is
+	   syn:   int16_t      := data (0);
+	   uu1:   int16_t;
 	begin
 	   for j in 1 .. codeLength - 1 loop
 	      if syn = 0 then
@@ -131,11 +132,11 @@ package body reed_solomon is
 --	syndromes in poly-form in, Lambda in power form out
 	procedure computeLambda (syndromes:    rsArray;
 	                         Lambda:       out rsArray;
-	                         deg_lambda:   out short_Integer) is
+	                         deg_lambda:   out int16_t) is
 	   Corrector:     rsArray (syndromes' Range) := (others => 0);
-	   K:             short_Integer	:= 1;
-	   L:             short_Integer	:= 0;
-	   error:         short_Integer	:= syndromes (0);
+	   K:             int16_t	:= 1;
+	   L:             int16_t	:= 0;
+	   error:         int16_t	:= syndromes (0);
 	   oldLambda:     rsArray (Lambda' Range);
 	begin
 	   Lambda          := (others	=> 0);
@@ -184,13 +185,13 @@ package body reed_solomon is
 --	lambda polynome for all (inverted) powers of the symbols
 --	of the data (Chien search)
 	procedure computeErrors (Lambda     : rsArray;
-	                         deg_lambda : short_Integer;
+	                         deg_lambda : int16_t;
 	                         rootTable  : out rsArray;
 	                         locTable   : out rsArray;
-	                         rootCount  : out short_Integer) is
+	                         rootCount  : out int16_t) is
 	   workRegister: rsArray := lambda;
-	   k:            short_Integer;
-	   result:       short_Integer;
+	   k:            int16_t;
+	   result:       int16_t;
 	begin
 	   rootCount   := 0;
 --
@@ -228,12 +229,12 @@ package body reed_solomon is
 
 	procedure computeOmega (syndromes  : rsArray;
 	                        lambda     : rsArray;
-	                        deg_lambda : short_Integer;
+	                        deg_lambda : int16_t;
 	                        omega      : out rsArray;
-	                        deg_omega  : out short_Integer)  is
-	   tmp  : short_Integer;
-	   xxx  : short_Integer;
-	   Res  : short_Integer;
+	                        deg_omega  : out int16_t)  is
+	   tmp  : int16_t;
+	   xxx  : int16_t;
+	   Res  : int16_t;
 	begin
 	   for I in 0 .. nroots - 1 loop
 	      tmp        := 0;
@@ -259,15 +260,15 @@ package body reed_solomon is
 	end computeOmega;
 
 	procedure dec (data   : in out rsArray;
-	               corrs  : out short_Integer) is
+	               corrs  : out int16_t) is
 	   syndromes : rsArray (0 .. nroots);
 	   Lambda    : rsArray (0 .. nroots);
 	   rootTable : rsArray (0 .. nroots - 1);
 	   locTable  : rsArray (0 .. nroots - 1);
 	   omega     : rsArray (0 .. nroots);
-	   lambda_degree: short_Integer;
-	   omega_degree: short_Integer;
-	   rootCount : short_Integer;
+	   lambda_degree: int16_t;
+	   omega_degree: int16_t;
+	   rootCount : int16_t;
 	   errors_found: Boolean;
 	begin
 --	step 1: syndromes in poly notation
@@ -294,13 +295,13 @@ package body reed_solomon is
 --      den = lambda_pr(inv(X(l))) all in poly-form
 --
 	   declare
-	      num1     : short_Integer;
-	      num2     : short_Integer;
-	      den      : short_Integer;
-	      tmp      : short_Integer;
-	      tmp1     : short_Integer;
-	      tmp2     : short_Integer;
-	      corrTerm : short_Integer;
+	      num1     : int16_t;
+	      num2     : int16_t;
+	      den      : int16_t;
+	      tmp      : int16_t;
+	      tmp1     : int16_t;
+	      tmp2     : int16_t;
+	      corrTerm : int16_t;
 	   begin
 	      for j in Reverse 0 .. rootCount - 1 loop
 	         num1    := 0;
@@ -323,7 +324,7 @@ package body reed_solomon is
 --	lambda_pr of lambda [i]
 
 	         for i in Reverse 0 .. 
-	               short_Integer' min (lambda_degree, nroots - 1) / 2 loop
+	               int16_t' min (lambda_degree, nroots - 1) / 2 loop
 	            if Lambda (2 * i + 1) /= codeLength then
 	               tmp := multiplyPower (Lambda (2 * i + 1),
 	                                     powPower (2 * i, rootTable (j)));
@@ -359,7 +360,7 @@ package body reed_solomon is
 	   end;
 	   corrs  := rootCount;
 	end dec;
-	p1	: short_Integer;
+	p1	: int16_t;
 begin
 	codeLength	:= short (Shift_left (uint16_t (1),
 	                          Integer (symSize))) - 1;

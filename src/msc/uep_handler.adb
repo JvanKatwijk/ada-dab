@@ -124,8 +124,7 @@ package body uep_handler is
 	begin
 	   for i in profileTable' Range loop
 	      if profileTable (i). bitRate = bitRate and then
-	         profileTable (i). protLevel = protLevel
-	      then
+	         profileTable (i). protLevel = protLevel then
 	         return i;
 	      end if;
 	   end loop;

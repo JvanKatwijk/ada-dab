@@ -149,8 +149,7 @@ package body msc_handler is
 	         Cif_Count         := 0;
 	      or
 	         accept stop;
-	         if The_Dabprocessor /= null
-	         then
+	         if The_Dabprocessor /= null then
 	            The_Dabprocessor. stop;
 	            while not The_Dabprocessor' terminated loop
 	               delay 0.01;

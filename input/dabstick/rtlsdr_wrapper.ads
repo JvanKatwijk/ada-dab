@@ -35,7 +35,6 @@ with Ada. Unchecked_Deallocation;
 with header; use header;
 with Interfaces. C;
 package rtlsdr_wrapper is
-	procedure Setup_GainTable  (gainSelector : Gtk_Combo_Box_Text);
 	procedure Set_VFOFrequency (frequency    : Positive);
 	function  Get_VFOFrequency  return Integer;
 	procedure Restart_Reader   (result       : out Boolean);
