@@ -148,7 +148,7 @@ private
 	type airspy_device is new device with
 	record
 	   The_Buffer    : Airspy_Buffer. ringBuffer_data (16 * 32768);
-	   Input_Rate    : Integer;
+	   Actual_Rate   : Integer;
 --	buffer for transfer to data into the ringbuffer
 	   Local_Buffer  : airspy_buffer. buffer_data (0 .. 2048000 / 500 - 1);
 

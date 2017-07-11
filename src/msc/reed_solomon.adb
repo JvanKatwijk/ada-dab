@@ -66,7 +66,7 @@ package body reed_solomon is
 	   for I in CutLen .. codeLength - nroots - 1 loop
 	      Result (Result' First +  Integer (I - CutLen)) := Byte (rf (I));
 	   end loop;
-	end decode_rs;
+	end Decode_rs;
 --
 --	Basic encoder, returns - in outparameter "parityBytes"
 	procedure enc (Data        : rsArray;
@@ -115,65 +115,72 @@ package body reed_solomon is
 	   return syn;
 	end getSyndrome;
 
-	procedure computeSyndromes (data:       rsArray;
-	                            syndromes:  out rsArray;
-	                            no_errors:  out Boolean)  is
-	   synError:   uint16_t := 0;
+	procedure computeSyndromes (data      : rsArray;
+	                            syndromes : out rsArray;
+	                            no_errors : out Boolean)  is
+	   synError : uint16_t := 0;
 	begin
 -- form the syndromes; i.e., evaluate data (x) at roots of g(x) */
 	   for i in 0 .. nroots - 1 loop
 	      syndromes (i)   := getSyndrome (data, i);
 	      synError        := synError or uint16_t (syndromes (i));
 	   end loop;
-	   no_errors		:=  synError = 0;
+	   no_errors          :=  synError = 0;
 	end computeSyndromes;
 
 --	compute Lambda with Berlekamp-Massey
 --	syndromes in poly-form in, Lambda in power form out
-	procedure computeLambda (syndromes:    rsArray;
-	                         Lambda:       out rsArray;
-	                         deg_lambda:   out int16_t) is
-	   Corrector:     rsArray (syndromes' Range) := (others => 0);
+	procedure computeLambda (syndromes  : rsArray;
+	                         Lambda     : out rsArray;
+	                         deg_lambda : out int16_t) is
 	   K:             int16_t	:= 1;
 	   L:             int16_t	:= 0;
 	   error:         int16_t	:= syndromes (0);
+	   Corrector:     rsArray (0 .. nroots) := (others => 0);
 	   oldLambda:     rsArray (Lambda' Range);
 	begin
 	   Lambda          := (others	=> 0);
 --	Initializers: 
 	   Lambda   (0)    := 1;
 	   Corrector (1)   := 1;
---
-	   while K <= nroots loop
-	      oldLambda := Lambda;
+
+	   begin
+	      while K <= nroots loop
+--	      while K < nroots loop
+	         oldLambda := Lambda;
 --
 --	Compute new lambda
-	      for I in Lambda' Range loop
-	         Lambda (I) := addPoly (Lambda (I),
+	         for I in Lambda' Range loop
+	            Lambda (I) := addPoly (Lambda (I),
 	                                multiplyPoly (error, Corrector (I)));
-	      end loop;
-	      if 2 * L <  K and then error /= 0 then
-	         L := K - L;
-	         for I in Corrector' Range loop 
-	            Corrector (I) := dividePoly (oldLambda (I), error);
 	         end loop;
-	      end if;
+
+	         if 2 * L <  K and then error /= 0 then
+	            L := K - L;
+	            for I in Corrector' Range loop 
+	               Corrector (I) := dividePoly (oldLambda (I), error);
+	            end loop;
+	         end if;
 --
 --	multiply x * C (x), i.e. shift to the right, the 0-th order term is left
-	      Corrector (1 .. nroots) := Corrector (0 .. nroots - 1);
-	      Corrector (0) 	:= 0;
+	         Corrector (1 .. nroots) := Corrector (0 .. nroots - 1);
+	         Corrector (0) 	:= 0;
 
 --	and compute a new error
-	      error             := syndromes (K);	
-	      for i in 1 .. K loop
-	         error := addPoly (error,
+	         error             := syndromes (K);	
+	         for i in 1 .. K loop
+	            error := addPoly (error,
 	                              multiplyPoly (syndromes (K - i),
 	                                         Lambda (i)));
-	      end loop;
-	      K  := K + 1;
-	   end loop;	-- end of berlekamp loop
+	         end loop;
+	         K  := K + 1;
+	      end loop;	-- end of Berlekamp loop
+	   exception
+	      when others => put_line ("Berlekamp loop");
+	                     raise;
+	   end;
 
-	   for i in 0 .. nroots loop
+	   for i in 0 .. nroots  loop
 	      if Lambda (i) /= 0 then
 	         deg_lambda := i;
 	      end if;
@@ -190,13 +197,13 @@ package body reed_solomon is
 	                         locTable   : out rsArray;
 	                         rootCount  : out int16_t) is
 	   workRegister: rsArray := lambda;
-	   k:            int16_t;
+	   K:            int16_t;
 	   result:       int16_t;
 	begin
 	   rootCount   := 0;
 --
 --	reg is lambda in power notation
-	   k           := iprim - 1;
+	   K           := iprim - 1;
 	   for i in 1 .. codeLength loop
 	      result   := 1;	-- lambda [0] is always 1
 --	Note that for i + 1, the powers in the workregister just need
@@ -211,10 +218,10 @@ package body reed_solomon is
 
 	      if result = 0 then	-- it is a root
 	         rootTable (rootCount) := i;
-	         locTable  (rootCount) := k;
+	         locTable  (rootCount) := K;
 	         rootCount             := rootCount + 1;
 	      end if;
-	      k                        := k + iprim;
+	      K                        := K + iprim;
 	   end loop;
 	   if rootCount /= deg_lambda then
 	      rootCount                := -1;
@@ -261,33 +268,36 @@ package body reed_solomon is
 
 	procedure dec (data   : in out rsArray;
 	               corrs  : out int16_t) is
-	   syndromes : rsArray (0 .. nroots);
-	   Lambda    : rsArray (0 .. nroots);
-	   rootTable : rsArray (0 .. nroots - 1);
-	   locTable  : rsArray (0 .. nroots - 1);
-	   omega     : rsArray (0 .. nroots);
-	   lambda_degree: int16_t;
-	   omega_degree: int16_t;
-	   rootCount : int16_t;
-	   errors_found: Boolean;
+	   syndromes     : rsArray (0 .. nroots - 1);
+	   Lambda        : rsArray (0 .. nroots );
+	   rootTable     : rsArray (0 .. nroots - 1);
+	   locTable      : rsArray (0 .. nroots - 1);
+	   omega         : rsArray (0 .. nroots);
+	   lambda_degree : int16_t;
+	   omega_degree  : int16_t;
+	   rootCount     : int16_t;
+	   no_errors	 : Boolean;
 	begin
 --	step 1: syndromes in poly notation
-	   computeSyndromes (data, syndromes, errors_found);
-	   if errors_found then
+	   computeSyndromes (data, syndromes, no_errors);
+	   if no_errors then
 	      corrs	:= 0;
 	      return;
 	   end if;
+
 --	step 2: Berlekamp-Massey, lambda in power notation
 	   computeLambda (syndromes, Lambda, lambda_degree);
+
 --	step 3 evaluate lambda and compute error locations
 	   computeErrors (Lambda, lambda_degree,
-	                          rootTable, loctable, rootCount);
+	                             rootTable, loctable, rootCount);
 	   if rootCount < 0 then
 	      corrs := -1;
 	      return;
 	   end if;
+
 	   computeOmega (syndromes, Lambda, lambda_degree,
-	                            omega, omega_degree);
+	                                  omega, omega_degree);
 --
 --      Compute error values in poly-form.
 --      num1 = omega (inv (X (l))),
@@ -360,6 +370,8 @@ package body reed_solomon is
 	   end;
 	   corrs  := rootCount;
 	end dec;
+--
+--	p1 is used in the initialization
 	p1	: int16_t;
 begin
 	codeLength	:= short (Shift_left (uint16_t (1),
@@ -398,7 +410,7 @@ begin
 	end loop;
 --
 --	and finally:
-	for i in 0 ..  nroots loop
+	for i in 0 .. nroots - 1 loop
 	   generator (i) := poly2Power (generator (i));
 	end loop;
 end reed_solomon;

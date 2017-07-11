@@ -1,7 +1,7 @@
 --
 --    Copyright (C) 2016
 --    Jan van Katwijk (J.vanKatwijk@gmail.com)
---    Lazy Chair Programming
+--    Lazy Chair Computing
 --
 --    This file is part of the SDR-J (JSDR).
 --    SDR-J is free software; you can redistribute it and/or modify
@@ -33,118 +33,125 @@ package body dab_handler is
 	interleaveMap : constant shortArray (0 .. 16 - 1) :=
 	          (0,  8,  4, 12,  2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15);
 
-	task body dabProcessor is
-           procedure Free_uepProcessor is new Ada. Unchecked_DeAllocation (
-	      Object => uepProcessor, Name  => uepProcessor_P);
-           procedure Free_eepProcessor is new Ada. Unchecked_DeAllocation (
-	      Object => eepProcessor, Name => eepProcessor_P);
-	   procedure Free_mp2Processor is new Ada. Unchecked_Deallocation (
-	      Object => mp2_handler. mp2Processor,
-	      Name   => mp2_handler. mp2Processor_P);
-	   procedure Free_mp4Processor is new Ada. Unchecked_Deallocation (
-	      Object  => mp4_handler. mp4Processor,
-	      Name    => mp4_handler. mp4Processor_P);
-	   outV:       byteArray (0 ..  Integer (bitRate * 24 - 1));
+	procedure Free_uepProcessor is new Ada. Unchecked_DeAllocation (
+	    Object => uepProcessor, Name  => uepProcessor_P
+	);
+	procedure Free_eepProcessor is new Ada. Unchecked_DeAllocation (
+	   Object => eepProcessor, Name => eepProcessor_P
+	);
+	procedure Free_mp2Processor is new Ada. Unchecked_Deallocation (
+	   Object => mp2_handler. mp2Processor,
+	   Name   => mp2_handler. mp2Processor_P
+	);
+	procedure Free_mp4Processor is new Ada. Unchecked_Deallocation (
+	   Object  => mp4_handler. mp4Processor,
+	   Name    => mp4_handler. mp4Processor_P
+	);
 --
---	As may be guessed, the interleaveData array is the working env for
---	deinterleaving. When started, we first have to fill the
---	array, that is why the count is there.
---	The "current" row in the array is indicated by interleaverIndex
-	   interleaveData: shortBlock (0 .. 15, 0 .. fragmentSize - 1) :=
-	                                          (others => (others => 0));
-	   countforInterleaver: int16_t := 0;
-	   interleaverIndex   : int16_t := 0;
-
-	   The_ProtectionProcessor: protection_handler. protectionProcessor_P;
-
-	   Data_In           : shortArray (0 .. fragmentSize - 1);
-	   tempX             : shortArray (0 .. fragmentSize - 1);
-	   The_AudioProcessor: audio_handler. Audio_Processor_P;
-	   
+	procedure initialize (Object : in out dabProcessor) is
 	begin
-	   if uepFlag = 0 then
-	      The_ProtectionProcessor :=
-	                         new uepProcessor (bitRate, protLevel);
+	   Object. interleaveData         := (others => (others => 0));
+	   Object. countforInterleaver    := 0;
+	   Object. interleaverIndex       := 0;
+	   if Object. uepFlag = 0 then
+	      Object. The_ProtectionProcessor :=
+	                         new uepProcessor (Object. bitRate,
+	                                           Object. protLevel);
 	   else
-	      The_ProtectionProcessor :=
-	                         new eepProcessor (bitRate, protLevel);
+	      Object. The_ProtectionProcessor :=
+	                         new eepProcessor (Object. bitRate,
+	                                           Object. protLevel);
 	   end if;
 
-	   if dabModus = DAB then
-	      The_AudioProcessor :=
-	                       new mp2_handler. mp2Processor (bitRate, audio);
+	   if Object. dabModus = DAB then
+	      Object. The_AudioProcessor :=
+	                       new mp2_handler. mp2Processor (Object.bitRate,
+	                                                      Object. audio);
 	   else
-	      The_AudioProcessor :=
-	                       new mp4_handler. mp4Processor (bitRate, audio);
+	      Object. The_AudioProcessor :=
+	                       new mp4_handler. mp4Processor (Object. bitRate,
+	                                                      Object. audio);
 	   end if;
---
---	It looks strange to me that we can use a single pointer to these
---	two processors and that then deallocation should be as clumsy
---	as below
-	   loop
-	      select
-	         accept stop;
-	            if uepFlag = 0 then
-	               Free_uepProcessor (uepProcessor_P (The_ProtectionProcessor));
-	            else
-	               Free_eepProcessor (eepProcessor_P (The_ProtectionProcessor));
-	            end if;
+	end;
 
-	            if dabModus = DAB then
-	               Free_mp2Processor (mp2_handler.
-	                                  mp2Processor_P (The_AudioProcessor));
-	            else
-	               Free_mp4Processor (mp4_handler.
-	                                  mp4Processor_P (The_AudioProcessor));
-	            end if;
-	            exit;
-	         or 
-	            accept Process (Data: shortArray) do
-	               Data_in := data;
-	            end Process;
+	procedure Finalize (Object : in out dabProcessor) is
+	begin
+	   if Object. uepFlag = 0 then
+	      Free_uepProcessor (
+	               uepProcessor_P (Object. The_ProtectionProcessor));
+	   else
+	      Free_eepProcessor (
+	               eepProcessor_P (Object. The_ProtectionProcessor));
+	   end if;
+
+	   if Object. dabModus = DAB then
+	      Free_mp2Processor (mp2_handler.
+	                         mp2Processor_P (Object. The_AudioProcessor));
+	   else
+	      Free_mp4Processor (mp4_handler.
+	                         mp4Processor_P (Object. The_AudioProcessor));
+	   end if;
+	end;
+
+	procedure Process (Object : in out dabProcessor;
+	                                   data : shortArray) is
+	   tempX  : shortArray (0 .. Object. fragmentSize - 1);
+	   outV   : byteArray  (0 ..  Integer (Object. bitRate * 24 - 1));
+	begin
 -- first interleaving, we do it in-line
-	            for I in Integer range 0 .. fragmentSize - 1 loop
-	               declare
-	                  Index          : Integer := Integer (I mod 16);
-	                  currentRow     : int16_t :=
-	                      int16_t ((interleaverIndex +
-	                                       interleaveMap (Index)) mod 16);
-	               begin
-	                  tempX (I) := Interleavedata (currentRow, I);
-	                  interleaveData (InterleaverIndex, I) :=
-	                                                     Data_In (I);
-	               end;
-	            end loop;
-	            interleaverIndex :=
-	                  int16_t ((interleaverIndex + 1) mod 16);
+	   for I in Integer range 0 .. Object. fragmentSize - 1 loop
+	      declare
+	         Index          : Integer := Integer (I mod 16);
+	         currentRow     : int16_t :=
+	                 int16_t ((Object. interleaverIndex +
+	                                    interleaveMap (Index)) mod 16);
+	      begin
+	         tempX (I) := Object. Interleavedata (currentRow, I);
+	         Object. interleaveData (Object. InterleaverIndex, I) :=
+	                                                data (data' First + I);
+	      exception
+	         when Others => put_line ("in interleaving");
+              end;
+	   end loop;
+
+	   Object. interleaverIndex :=
+	                  int16_t ((Object. interleaverIndex + 1) mod 16);
 
 --	just wait until the interleaver is "filled"
-	            if countforInterleaver < 15 then
-	               countforInterleaver := countforInterleaver + 1;
-	            else
-	               The_ProtectionProcessor. deconvolve (tempX, outV);
+	   if Object. countforInterleaver < 15 then
+	      Object. countforInterleaver :=
+	                              Object. countforInterleaver + 1;
+	      return;
+	   end if;
 --
---	the in-line energy dispersal
-	               declare
-	                  shiftRegister: byteArray (0 .. 8) :=  (others => 1);
-	               begin
-	                  for I in outV' Range loop
-	                     declare
-	                        B: uint8_t := shiftRegister (8) xor
-	                                                shiftRegister (4);
-	                     begin
-	                        for J in reverse 1 .. 8 loop
-	                           shiftRegister (J) := shiftRegister (J - 1);
-	                        end loop;
-	                        shiftRegister (0)   := b;
-	                        outV (I)            := outV (I) xor b;
-	                     end;
-	                  end loop;
-	               end;
+--	tempX now contains the output of the interleaver, apply 
+--	deconvolution and energy dispersal
 
-	               The_AudioProcessor. Add_to_Frame (outV, 24 * bitRate);
-	            end if;
-	      end select;
-	   end loop;
-	end dabProcessor;
+	   begin
+	      Object. The_ProtectionProcessor. deconvolve (tempX, outV);
+	   exception
+	      when Others => put_line ("in prot handler");
+	      raise;
+	   end;
+--	the in-line energy dispersal
+	   declare
+	      shiftRegister: byteArray (0 .. 8) :=  (others => 1);
+	   begin
+	      for I in outV' Range loop
+	         declare
+	            B: uint8_t := shiftRegister (8) xor shiftRegister (4);
+	         begin
+	            for J in reverse 1 .. 8 loop
+	               shiftRegister (J) := shiftRegister (J - 1);
+	            end loop;
+	            shiftRegister (0)   := b;
+	            outV (I)            := outV (I) xor b;
+	         end;
+	      end loop;
+	   end;
+--
+--	and the result will be processed as audio
+	   Object. The_AudioProcessor. Add_to_Frame (outV,
+	                                                24 * Object. bitRate);
+	end Process;
 end dab_handler;

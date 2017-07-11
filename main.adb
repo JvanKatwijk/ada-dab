@@ -87,7 +87,6 @@ begin
 	   end case;
 	end loop;
 
-	theDevice := new rawfiles. raw_device;
 
 --	we set up the gui, just create the objects and layouts
 --	but the connects are made later on

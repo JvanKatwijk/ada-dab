@@ -42,9 +42,9 @@ package body Ofdm_Handler is
 --	Since the following three packages contain "plan" initializations
 --	for the fft, we put them here, garanteeing that there
 --	is no reentring the plan code
-	package my_phaseHandler is new phase_handler (The_Mode);
 	package my_fft is new fft_driver (FFTW_FORWARD, The_Mode);
 	package new_fft is new fft_driver (FFTW_FORWARD, the_Mode);
+	package my_phaseHandler is new phase_handler (The_Mode);
 
 	type framebufferElement is record
 	   blkno : Natural;
@@ -54,14 +54,14 @@ package body Ofdm_Handler is
 	theBuffer : frameBuffer. buffer (20);
 
 --	we might consider a hard reset
-	procedure reset is
+	procedure Reset is
 	begin
 	   Fine_Corrector	:= 0;
 	   Coarse_Corrector	:= 0;
 	   Correction_Flag	:= true;
 	end reset;
 --
-	procedure stop is
+	procedure Stop is
 	begin
 	   if Running then
 	      Running := false;

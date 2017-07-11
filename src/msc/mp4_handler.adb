@@ -174,7 +174,7 @@ package body mp4_handler is
 	                                                  rsOut (K);
 	      end loop;
 	   end loop;
---
+ 	   put_line (short_Integer' Image (Errors_in_RS));
 --      OK, the result is RSDims * 110 * 8 bits
 --      bits 0 .. 15 is firecode
 --      bit 16 is unused

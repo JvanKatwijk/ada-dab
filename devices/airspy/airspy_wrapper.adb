@@ -65,7 +65,7 @@ package body Airspy_Wrapper is
 --
 	   Handler_Returns :=
 	               Airspy_set_samplerate (Object. device_P. all,
-	                                      Object. Input_Rate);
+	                                      Object. Actual_Rate);
 	   if Handler_Returns /= AIRSPY_SUCCESS then
 	      put_line ("airspy_set_samplerate failed");
 	      return;
@@ -126,7 +126,7 @@ package body Airspy_Wrapper is
 	         localEnv. Conversion_Index :=
 	                                localEnv. Conversion_Index + 1;
 	         if localEnv. Conversion_Index >
-	                             localEnv. Input_Rate / 500 then
+	                             localEnv. Actual_Rate / 500 then
 --	            do for i.e. 2048000 / 500
 	            for J in localEnv. Local_Buffer' Range loop
 	               declare
@@ -151,7 +151,7 @@ package body Airspy_Wrapper is
 --	shift the sample at the end to the beginning, it is needed
 --	as the starting sample for the next time
                     localEnv. Conversion_Buffer (0) :=
-	                           localEnv. Conversion_Buffer (localEnv. Input_Rate / 500);
+	                           localEnv. Conversion_Buffer (localEnv. Actual_Rate / 500);
                     localEnv. Conversion_Index  := 1;
 	         end if;
 	      end loop;
@@ -200,8 +200,8 @@ package body Airspy_Wrapper is
 	function Fetchrates (Object : in out airspy_device) return Natural is
 	   type C_Array is array (Interfaces. C. int range <>)
 	                                             of Interfaces. C. int;
-	   Rates  :	Interfaces. C. int;
-	   Input_Rate : Natural := 10000000;
+	   Rates    : Interfaces. C. int;
+	   The_Rate : Natural := 10000000;
 	   procedure Airspy_Amount_of_Rates (Device      : system. Address;
 	                                     Amount_Rates: out Interfaces. C. int;
 	                                     Zero        : Interfaces.C.int);
@@ -226,12 +226,12 @@ package body Airspy_Wrapper is
 --	and look for the one closest to and larger than 2048000
 	      for I in 0 .. Rates - 1 loop
 	         if The_Ratebuffer (i) > 2048000 and then
-	            The_Ratebuffer (i) < Interfaces. C. int (Input_Rate) then
-	            Input_Rate :=  integer (The_Ratebuffer (i));
+	            The_Ratebuffer (i) < Interfaces. C. int (The_Rate) then
+	            The_Rate :=  integer (The_Ratebuffer (i));
 	         end if;
 	      end loop;
 	   end;
-	   return Input_Rate;
+	   return The_Rate;
 	end;
 
 	procedure Finalize   (Object: in out airspy_device) is
@@ -260,7 +260,7 @@ package body Airspy_Wrapper is
 --	we look for an inputrate that is as close as possible to
 --	the required 2048000 samples/second
 --	We know that all airspy's support
-	   Object. Input_Rate     := FetchRates (Object);
+	   Object. Actual_Rate     := FetchRates (Object);
 --
 --	the Maptable and ConvTable are used to convert the inputRate
 --	into a 2048000 rate
@@ -269,17 +269,17 @@ package body Airspy_Wrapper is
 	   for I in Object. Maptable_int' Range loop
 	      declare 
 	         Integral_Part	: Float := Float' Floor (
-	                   Float (I) * Float (Input_Rate / 500) / 4096.0);
+	                   Float (I) * Float (Object. Actual_Rate / 500) / 4096.0);
 	      begin
 	         Object. Maptable_int (I)          := Integral_Part;
 	         Object. Maptable_float (I)	:= 
-	                   Float (I) * Float (Input_Rate / 500) / 4096.0 -
+	                   Float (I) * Float (Object. Actual_Rate / 500) / 4096.0 -
 	                                            Object. Maptable_int (I);
 	      end;
 	   end loop;
 
 	   Object. Conversion_Buffer  :=
-	                    new complexArray (0 .. Object. Input_Rate / 500);
+	                    new complexArray (0 .. Object. Actual_Rate / 500);
 	   Object. Device_Is_Valid    := true;
 	   Object. Running            := false;
 	end Initialize;

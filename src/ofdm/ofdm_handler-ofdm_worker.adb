@@ -7,21 +7,20 @@
 	   Previous_1       : Integer := 1000;
 	   Previous_2       : Integer :=  999;
 	   Env_Buffer	    : floatArray (0 .. 16384);
+	   Reference_Vector : Tu_Sized_Buffer;
+	   Ofdm_Buffer      : Ts_Sized_Buffer;
+	   Null_Buffer      : Tnull_Sized_Buffer;
 	begin
 	   accept start;
 	   put_line ("ofdm_worker is gestart");
 	   Fine_Corrector    := 0;
-	   Signal_Level      := 0.0;
 	   Correction_Flag   := true;
+	   Signal_Level      := 0.0;
 
 --	Initing, to get a decent value for Signal_Level. The samples are just
 --	read, 
 	   for I in 0 .. 20 loop
-	      declare
-	         Dummy_Buf : Ts_Sized_Buffer;
-	      begin
-	         Get_Samples (Dummy_Buf, 0);
-	      end;
+	      Get_Samples (Ofdm_Buffer, 0);
 	   end loop;
 --
 --	This is then the main loop, implemented using goto's.
@@ -110,9 +109,9 @@
 	      goto notSynced;
 	   end if;
 
---	we have the start,  move the segment to the
+--	we have the start index,  move the segment following this start to the
 --	beginning of the referenceVector and
---	read in the samples from "block 0"
+--	read in the remaining samples for "block 0"
 	   Reference_Vector (0 .. Tu - Start_Index - 1) :=
 	                   Reference_Vector (Start_Index .. Tu - 1);
 	   if Start_Index > 0 then
@@ -161,7 +160,7 @@
 	         Phase_Error := Phase_Error +
 	                        conj (Ofdm_Buffer (I)) * Ofdm_Buffer (Tu + I);
 	      end loop;
-	      Ofdm_Decoder. Put (Symbolcount, Ofdm_Buffer (0 .. Tu - 1));
+	      Ofdm_Decoder. Put (Symbolcount, Ofdm_Buffer (Tg .. Ts - 1));
 	   end loop;
 --
 <<NewOffset>>
@@ -185,8 +184,8 @@
 	      Coarse_Corrector := Coarse_Corrector - Carrier_Diff;
 	      Fine_Corrector   := Fine_Corrector + Carrier_Diff;
 	   end if;
+
 <<ReadyForNewFrame>>
-	   delay 0.02;
 	   goto SyncOnPhase;
 
 	exception

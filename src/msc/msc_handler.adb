@@ -150,11 +150,6 @@ package body msc_handler is
 	      or
 	         accept stop;
 	         if The_Dabprocessor /= null then
-	            The_Dabprocessor. stop;
-	            while not The_Dabprocessor' terminated loop
-	               delay 0.01;
-	            end loop;
-	            put_line ("old dab handler now stopped");
 	            Free_dabProcessor (the_dabProcessor);
 	         end if;
 	         raise endMSC;
@@ -172,11 +167,6 @@ package body msc_handler is
 	         end if;
 
 	         if The_Dabprocessor /= null then
-	            The_Dabprocessor. stop;
-	            while not The_Dabprocessor' terminated loop
-	               delay 0.01;
-	            end loop;
-	            put_line ("old dab handler now stopped");
 	            Free_dabProcessor (the_dabProcessor);
 	         end if;
 	         The_Dabprocessor	:= new Dab_Handler. Dabprocessor
@@ -210,6 +200,10 @@ package body msc_handler is
 	   when endMSC	=> put_line ("msc_processor normally terminated");
 	   when Error: others		=> Put ("Exception in mscHandler: ");
 	                                   Put_Line (Exception_Name (Error));
+	   if not helper' Terminated then
+	      abort helper;
+	   end if;
+
 	   
 	end msc_processor;
 	res	: Boolean;

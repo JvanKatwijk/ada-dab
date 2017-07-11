@@ -7,7 +7,7 @@
 	   package my_freqInterleaver is new freq_interleaver (The_Mode);
 	   procedure process_Token (Buffer  : in out Tu_Sized_Buffer) is
 	   begin
-	      new_fft. do_FFT (Buffer);
+	      my_fft. do_FFT (Buffer);
 
 	      for I in 0 .. Carriers - 1 loop
 	         declare
@@ -20,7 +20,7 @@
 	            R1 := Buffer (Index) * conj (Reference (Index));
 --	Recall:  with this viterbi decoder
 --	we have 127 = max pos, -127 = max neg, so we scale
-	            if abs R1 < 0.0005 then
+	            if abs R1 < 0.00005 then
 	               Ibits (I)            := 0;
 	               Ibits (Carriers + i) := 0;
 	            else
@@ -56,7 +56,7 @@
 	         end;
 	      end select;
 	   end loop;
-	
+	   put_line ("Ofdm_decoder goes asleep");
 	exception
 	   when Error: others           => Put ("Exception in ofdm decoder: ");
                                            Put_Line (Exception_Name (Error));

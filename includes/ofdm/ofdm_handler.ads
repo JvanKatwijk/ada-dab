@@ -67,9 +67,9 @@ private
 	subtype Ibit_Vector          is shortArray   (0 .. 2 * Carriers - 1);
 
 --   some vectors
-	Reference_Vector  : Tu_Sized_Buffer;
-	Ofdm_Buffer       : Ts_Sized_Buffer;
-	Null_Buffer       : Tnull_Sized_Buffer;
+--	Reference_Vector  : Tu_Sized_Buffer;
+--	Ofdm_Buffer       : Ts_Sized_Buffer;
+--	Null_Buffer       : Tnull_Sized_Buffer;
 
 	task Ofdm_Worker is
 	   entry start;
