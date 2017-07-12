@@ -18,14 +18,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************/
 
+#include	<stdint.h>
 #define K 7
 #define RATE 4
 #define POLYS { 109, 79, 83, 109 }
 #define NUMSTATES 64
-#define FRAMEBITS 2048
-#define DECISIONTYPE unsigned int
+//#define FRAMEBITS 2048
+//#define DECISIONTYPE unsigned int
+#define DECISIONTYPE uint32_t
 #define DECISIONTYPE_BITSIZE 32
-#define COMPUTETYPE unsigned int
+//#define COMPUTETYPE unsigned int
+#define COMPUTETYPE uint32_t
 #define EBN0 3
 #define TRIALS 10000
 #define __int32 int

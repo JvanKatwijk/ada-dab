@@ -32,34 +32,34 @@ package fib_handler is
 private
 --	FIB;s are segments of 256 bits. When here
 --	we already passed the crc and start unpacking
-   procedure process_FIG0	(p: fib_buffer; offset: short_Integer);
-   procedure process_FIG1	(d: fib_buffer; offset: short_Integer);
-   procedure process_FIG2	(d: fib_buffer; offset: short_Integer);
-   procedure process_FIG3	(d: fib_buffer; offset: short_Integer);
+   procedure process_FIG0	(p: fib_buffer; offset: int16_t);
+   procedure process_FIG1	(d: fib_buffer; offset: int16_t);
+   procedure process_FIG2	(d: fib_buffer; offset: int16_t);
+   procedure process_FIG3	(d: fib_buffer; offset: int16_t);
 
-   procedure FIG0Extension1(d: fib_buffer; offset: short_Integer);
+   procedure FIG0Extension1(d: fib_buffer; offset: int16_t);
    function HandleFIG0Extension1 (d	: fib_buffer;
-	                          offset	: short_Integer;
-	                          PD_Bit	: short_Integer)
-	                                        return short_Integer;
-   procedure FIG0Extension2	(d	: fib_buffer; offset: short_Integer);
+	                          offset	: int16_t;
+	                          PD_Bit	: int16_t)
+	                                        return int16_t;
+   procedure FIG0Extension2	(d	: fib_buffer; offset: int16_t);
    function HandleFIG0Extension2	(d	: fib_buffer;
-	                         offset	: short_Integer;
-	                         cn	: short_Integer;
-	                         pd	: short_Integer) return short_Integer;
+	                         offset	: int16_t;
+	                         cn	: int16_t;
+	                         pd	: int16_t) return int16_t;
    function get_Bits	(d	: fib_buffer;
-	                 offset	: short_Integer;
-	                 size	: short_Integer) return uint16_t;
+	                 offset	: int16_t;
+	                 size	: int16_t) return uint16_t;
    function getLBits	(d	: fib_buffer;
-	                 offset	: short_Integer;
-	                 size	: short_Integer) return uint32_t;
+	                 offset	: int16_t;
+	                 size	: int16_t) return uint32_t;
 
-   function findServiceId      (Service_Id : uint32_t) return short_Integer;
-   procedure bind_audioService (TMid       : short_Integer;
+   function findServiceId      (Service_Id : uint32_t) return int16_t;
+   procedure bind_audioService (TMid       : int16_t;
 	                        SId        : uint32_t;
-	                        compnr     : short_Integer;
-	                        subChId    : short_Integer;
-	                        ps_flag    : short_Integer;
-	                        ASCTy      : short_Integer);
+	                        compnr     : int16_t;
+	                        subChId    : int16_t;
+	                        ps_flag    : int16_t;
+	                        ASCTy      : int16_t);
 end fib_handler;
 

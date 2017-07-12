@@ -25,7 +25,7 @@ with Text_IO;	      use Text_IO;
 
 package body faad_decoder is
 	amount	: Integer	:= 0;
-	function get_aac_channel_configuration (m_mpeg_surround_config: int16_t;
+	function get_aac_channel_configuration (m_mpeg_surround_config : int16_t;
 	                                        aacChannelMode		: int16_t) 
 	                                       return int16_t is
 	begin
@@ -46,10 +46,10 @@ package body faad_decoder is
 	   aacInitialized	:= false;
 	end reset;
 
-	procedure mp42pcm (dacRate	: int16_t;
-	                   sbrFlag	: int16_t;
-	                   mpegSurround	: int16_t;
-	                   aacChannelMode	: int16_t;
+	procedure mp42pcm (dacRate	: uint8_t;
+	                   sbrFlag	: uint8_t;
+	                   mpegSurround	: uint8_t;
+	                   aacChannelMode	: uint8_t;
 	                   buffer	: byteArray;
 	                   bufferLength	: uint16_t;
 	                   samples_out	: out Integer;
@@ -96,8 +96,8 @@ package body faad_decoder is
 	            core_sr_index	:= 5;
 	         end if;
 
-	         core_ch_config	:= get_aac_channel_configuration (mpegSurround,
-	                                                          aacChannelMode);
+	         core_ch_config	:= get_aac_channel_configuration (int16_t (mpegSurround),
+	                                                          int16_t (aacChannelMode));
 	         if core_ch_config < 0 then
 	            put_line ("unrecognized mpeg surround config");
 	            samples_out	:= -1;

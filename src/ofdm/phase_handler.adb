@@ -60,7 +60,7 @@ package body phase_handler is
 	   end loop;
 --
 	   Max	:= -10000.0;
-	   for I in Res_Vector' range loop
+	   for I in Res_Vector' Range loop
 	      if abs (Res_Vector (I)) > Max then
 	         Max_Index 	:= I;
 	         Max 		:= abs Res_Vector (I);

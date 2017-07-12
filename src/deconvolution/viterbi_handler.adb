@@ -30,14 +30,14 @@ package body Viterbi_Handler is
 	      Object. isOK	:= false;
 	   else
 	      Object. isOK	:= true;
+	      Object. Symbols	:= new c_intArray (0 .. 4 * (Object. wordlength + (K - 1)) - 1);
 	   end if;
-	   Object. Symbols	:= new c_intArray (0 .. 4 * (Object. wordlength + (K - 1)) - 1);
 	end Initialize;
 
 	procedure Finalize	(Object: in out Viterbi_Processor) is
 	begin
 	   if Object. isOK then
-	      delete_viterbi (Object. handler);
+	      delete_viterbi  (Object. handler);
 	      Free_c_intArray (Object. Symbols);
 	   end if;
 	end Finalize;
@@ -54,7 +54,7 @@ package body Viterbi_Handler is
 	procedure Deconvolve (Object : in out Viterbi_Processor;
 	                      Input  : shortArray;
 	                      Output : out byteArray) is
-	   Temp_Value	: Integer;
+	   Temp_Value	: int16_t;
 	   subtype outBuffer is
 	           byteArray (0 .. (Object. wordlength + (K - 1)) / 8 - 1);
 	   Data	: outBuffer;
@@ -68,19 +68,22 @@ package body Viterbi_Handler is
 	                                Wordlength : Interfaces. C. int;
                                         EndState   : Interfaces. C. int);
 	   pragma Import (C, Chainback_Viterbi, "chainback_viterbi");
+
 	begin
 	   if not Object. isOK then
 	      return;
 	   end if;
+
 	   Init_Viterbi (Object. handler, 0);
-	   for I in 0 .. (Object. wordLength + (K - 1)) * rate - 1 loop
-	      Temp_Value	:= Integer (-input (Integer (I))) + 127;
+	   
+	   for I in  Object. Symbols' Range loop
+	      Temp_Value	:= -Input (Input' First + I) + 127;
 	      if Temp_Value < 0 then
 	         Temp_Value := 0;
 	      elsif Temp_Value > 255 then
 	         Temp_Value := 255;
 	      end if;
-	      Object. symbols (I) := Interfaces. C. int (Temp_Value);
+	      Object. Symbols (I) := Interfaces. C. int (Temp_Value);
 	   end loop;
 --
 --	The real work is done by C functions
@@ -91,10 +94,10 @@ package body Viterbi_Handler is
 	                      Data,
 	                      Interfaces. C. int (Object. Wordlength), 0);
 
-	   for I in 0 .. uint16_t (Object. Wordlength) - 1 loop
-	      output (Integer (I)) :=
-	                Getbit (data (Integer (Shift_Right (i, 3))),
-	                                         Integer (i and 8#07#));
+	   for I in  0 ..  uint16_t (Object. Wordlength) - 1 loop
+	      Output (Output' First + Integer (I)) :=
+	                Getbit (Data (Integer (Shift_Right (I, 3))),
+	                                         Integer (I and 8#07#));
 	   end loop;
 	end Deconvolve;
 end viterbi_handler;

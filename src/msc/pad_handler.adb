@@ -105,7 +105,7 @@ package body pad_handler is
 	                               Contents_Indicator_flag : uint8_t) is
 	   Contents_Indicator_Table   : byteArray (0 .. 3);
 	   Contents_Indicator_Index   : Integer       := 0;
-	   Base                       : short_Integer := buffer' Length - 2 - 1;
+	   Base                       : int16_t := buffer' Length - 2 - 1;
 	begin
 	   if Contents_indicator_flag = 0 then
 	      return;
@@ -148,11 +148,11 @@ package body pad_handler is
 	                  Data (J) := Buffer (Integer (base) - J);
 	               end loop;
 	               Dynamic_Label (Data,
-	                              short_Integer (Subfield_Length),
+	                              int16_t (Subfield_Length),
 	                              Contents_Indicator_Table (I));
 	            end;
 	         end if;
-	         Base            := Base -  short_Integer (Subfield_Length);
+	         Base            := Base -  int16_t (Subfield_Length);
 	      
 	       exception
 	        when Error: others	=> Put ("Exception in pad handler: ");
@@ -165,18 +165,18 @@ package body pad_handler is
 --	for the dynamic label we need
 	moreXPad               : Boolean       := false;
 	isLast_Segment         : Boolean       := false;
-	remaining_Data	       : short_Integer := 0;
-	segment_Number         : short_Integer := 0;
-	current_Fillpoint      : short_Integer := 0;
+	remaining_Data	       : int16_t := 0;
+	segment_Number         : int16_t := 0;
+	current_Fillpoint      : int16_t := 0;
 	dynamicLabelSegment    : byteArray (0 .. 8192);
 --
 --      A dynamic label is created from a sequence of xpad
 --      fields, starting with CI = 2, continuing with CI = 3
 	procedure Dynamic_Label (Data    : byteArray;
-	                         length  : short_Integer;
+	                         length  : int16_t;
 	                         CI      : uint8_t) is
-	   Data_Length     : short_Integer;
-	   totalDataLength : short_Integer;
+	   Data_Length     : int16_t;
+	   totalDataLength : int16_t;
 	begin
 	   if (CI and 8#037#) = 02 then     -- start with new segment
 	      declare
@@ -196,7 +196,7 @@ package body pad_handler is
 	            dynamicLabelSegment (0) := Character' Pos (' ');
 	            current_Fillpoint  := 1;
 	         else
-	            segment_Number     := short_Integer (
+	            segment_Number     := int16_t (
 	                                  Shift_Right (data (1), 4) and 8#07#) + 1;
 	         end if;
 
@@ -204,7 +204,7 @@ package body pad_handler is
 --	The only specified command is to clear the display
 	            current_Fillpoint  := 0;
 	         else              -- dynamic text length
-	            totalDataLength  := short_Integer (field_1) + 1;
+	            totalDataLength  := int16_t (field_1) + 1;
 	            if length - 2 < totalDataLength then
 	               Data_Length := length - 2;
 	               moreXPad   := true;

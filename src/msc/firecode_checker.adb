@@ -51,10 +51,10 @@ package body firecode_checker is
 	g1: constant byteArray (0 .. 15) :=
 	                           (1,1,1,1,0,1,0,0,0,0,0,1,1,1,1,0);
 
-	procedure run8 (regs: in out byteArray;
-	                result: out uint16_t) is
-	   z:      uint16_t;
-	   v:      uint16_t   := 0;
+	procedure run8 (regs   : in out byteArray;
+	                result : out uint16_t) is
+	   z : uint16_t;
+	   v : uint16_t   := 0;
 	begin
            for i in 0 .. 8 - 1 loop
               z :=  uint16_t (regs (15));

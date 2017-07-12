@@ -78,6 +78,8 @@ begin
 	           theDevice := new rawfiles. raw_device;
 	         elsif parameter = "airspy" then
 	           theDevice := new airspy_wrapper. airspy_device;
+	         elsif Parameter = "sdrplay" then
+	           theDevice := new sdrplay_wrapper. sdrplay_device;
 	         else
 	           theDevice := new rawfiles. raw_device;
 	         end if;

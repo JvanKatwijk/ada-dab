@@ -135,8 +135,8 @@ package body msc_handler is
 	   Dabmodus        : dataMode;
 	   Current_Block   : Integer          := 0;
 	   Work_To_Be_Done : Boolean          := False;
-	   Start_Address   : short_Integer;
-	   Length          : short_Integer;
+	   Start_Address   : int16_t;
+	   Length          : int16_t;
 	   The_Dabprocessor: Dab_Handler. Dabprocessor_P := null;
 	   endMSC          : exception;
 	begin

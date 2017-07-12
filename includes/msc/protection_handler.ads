@@ -24,8 +24,8 @@ with header; use header;
 with Ada. Finalization; use Ada. Finalization;
 package protection_handler is
 
-	type protectionProcessor (bitRate    : short_Integer;
-	                          protLevel  : short_Integer) 
+	type protectionProcessor (bitRate    : int16_t;
+	                          protLevel  : int16_t) 
 	     is new Ada. Finalization. Controlled with record null; end record;
 	type protectionProcessor_P is access all protectionProcessor'Class;
 	procedure deconvolve     (Object     : in out protectionProcessor;

@@ -27,7 +27,7 @@ with Ada. Finalization; use Ada. Finalization;
 with Interfaces; use Interfaces;
 with audiopackage;
 package audio_handler is
-	type Audio_Processor (bitRate:    short_Integer;
+	type Audio_Processor (bitRate:    int16_t;
 	                      pcmHandler: audiopackage. audioSink_P) is
 	           new Ada. Finalization. Controlled with
 	   record
@@ -37,6 +37,6 @@ package audio_handler is
 
 	procedure Add_to_Frame (Object  : in out Audio_Processor;
 	                        Data    : byteArray;
-	                        Nbits   : short_Integer);
+	                        Nbits   : int16_t);
 end audio_handler;
 

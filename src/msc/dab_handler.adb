@@ -109,8 +109,6 @@ package body dab_handler is
 	         tempX (I) := Object. Interleavedata (currentRow, I);
 	         Object. interleaveData (Object. InterleaverIndex, I) :=
 	                                                data (data' First + I);
-	      exception
-	         when Others => put_line ("in interleaving");
               end;
 	   end loop;
 

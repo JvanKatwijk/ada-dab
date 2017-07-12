@@ -136,16 +136,17 @@ package body reed_solomon is
 	   K:             int16_t	:= 1;
 	   L:             int16_t	:= 0;
 	   error:         int16_t	:= syndromes (0);
-	   Corrector:     rsArray (Lambda' Range) := (others => 0);
+	   Corrector:     rsArray (0 .. nroots) := (others => 0);
 	   oldLambda:     rsArray (Lambda' Range);
 	begin
 	   Lambda          := (others	=> 0);
 --	Initializers: 
-	   Lambda    (0)   := 1;
+	   Lambda   (0)    := 1;
 	   Corrector (1)   := 1;
 
 	   begin
 	      while K <= nroots loop
+--	      while K < nroots loop
 	         oldLambda := Lambda;
 --
 --	Compute new lambda
@@ -162,7 +163,7 @@ package body reed_solomon is
 	         end if;
 --
 --	multiply x * C (x), i.e. shift to the right, the 0-th order term is left
-	         Corrector (1 .. nroots - 1) := Corrector (0 .. nroots - 2);
+	         Corrector (1 .. nroots) := Corrector (0 .. nroots - 1);
 	         Corrector (0) 	:= 0;
 
 --	and compute a new error
@@ -179,7 +180,7 @@ package body reed_solomon is
 	                     raise;
 	   end;
 
-	   for i in Lambda' Range  loop
+	   for i in 0 .. nroots  loop
 	      if Lambda (i) /= 0 then
 	         deg_lambda := i;
 	      end if;
@@ -268,10 +269,10 @@ package body reed_solomon is
 	procedure dec (data   : in out rsArray;
 	               corrs  : out int16_t) is
 	   syndromes     : rsArray (0 .. nroots - 1);
-	   Lambda        : rsArray (0 .. nroots - 1 );
+	   Lambda        : rsArray (0 .. nroots );
 	   rootTable     : rsArray (0 .. nroots - 1);
 	   locTable      : rsArray (0 .. nroots - 1);
-	   omega         : rsArray (0 .. nroots - 1);
+	   omega         : rsArray (0 .. nroots);
 	   lambda_degree : int16_t;
 	   omega_degree  : int16_t;
 	   rootCount     : int16_t;

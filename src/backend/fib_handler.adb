@@ -40,8 +40,8 @@ package body fib_handler is
 	      Service_Id   : uint32_t;
 	      serviceLabel : Dab_Label;
 	      Has_Language : Boolean;
-	      The_Language : short_Integer;
-	      Program_Type : short_Integer;
+	      The_Language : int16_t;
+	      Program_Type : int16_t;
 	      HasPNum      : Boolean;
 	      pNum         : Integer;
 	   end record;
@@ -49,26 +49,26 @@ package body fib_handler is
 	type ServiceComponent is
 	   record
 	      In_Use       : Boolean      := false;
-	      TMid         : short_Integer;
-	      Service      : short_Integer;	-- index in other vector
-	      Component_Nr : short_Integer;
-	      ASCTy        : short_Integer;	-- used for audio
-	      PS_flag      : short_Integer;	-- used for audio
-	      Subchannel_Id: short_Integer;
+	      TMid         : int16_t;
+	      Service      : int16_t;	-- index in other vector
+	      Component_Nr : int16_t;
+	      ASCTy        : int16_t;	-- used for audio
+	      PS_flag      : int16_t;	-- used for audio
+	      Subchannel_Id: int16_t;
 	   end record;
 
 	type Subchannel_Map is
 	   record
 	      Sub_ChId     : Integer;
-	      startAddr    : short_Integer;
-	      Length       : short_Integer;
-	      UepFlag      : short_Integer;	-- could be Boolean
-	      Prot_Level   : short_Integer;
-	      bitRate      : short_Integer;
-	      language     : short_Integer;	-- double ???
+	      startAddr    : int16_t;
+	      Length       : int16_t;
+	      UepFlag      : int16_t;	-- could be Boolean
+	      Prot_Level   : int16_t;
+	      bitRate      : int16_t;
+	      language     : int16_t;	-- double ???
 	   end record;
 
-	subtype shortRange is short_Integer range 0 .. 63;
+	subtype shortRange is int16_t range 0 .. 63;
 
 	type subchannelMaps    is array (shortRange) of Subchannel_Map;
 	type serviceComponents is array (shortRange) of serviceComponent;
@@ -83,7 +83,7 @@ package body fib_handler is
 -- Tabelle ETSI EN 300 401 Page 50
 -- Table is copied from the work of Michael Hoehn
 	type Protections is array (shortRange,
-	                   short_Integer range 0 .. 2) of short_Integer;
+	                   int16_t range 0 .. 2) of int16_t;
 	Prot_Levels	: constant Protections := (
 	(16,	5,	32),		-- Index 0
 	(21,	4,	32),	
@@ -154,9 +154,9 @@ package body fib_handler is
 --
 --	offset is now in bits
 	procedure process_FIG0	(p      : fib_buffer;
-	                         offset : short_Integer) is
-	   extension : short_Integer :=
-	            short_Integer (get_Bits (p, offset + 8 + 3, 5));
+	                         offset : int16_t) is
+	   extension : int16_t :=
+	            int16_t (get_Bits (p, offset + 8 + 3, 5));
 	begin
 	   case extension is
 --	      when 0	=> FIG0Extension0 (p, offset);
@@ -188,12 +188,12 @@ package body fib_handler is
 	end process_FIG0;
 
 	procedure FIG0Extension1 (d      : fib_buffer;
-	                          offset : short_Integer) is
-	   bitOffset : short_Integer := offset + 2 * 8;	-- offset in bytes
-	   Length    : short_Integer :=
-	                        short_Integer (get_Bits (d, offset + 3, 5));
-	   PD_Bit    : short_Integer :=
-	                        short_Integer (get_Bits (d, offset + 8 + 2, 1));
+	                          offset : int16_t) is
+	   bitOffset : int16_t := offset + 2 * 8;	-- offset in bytes
+	   Length    : int16_t :=
+	                        int16_t (get_Bits (d, offset + 3, 5));
+	   PD_Bit    : int16_t :=
+	                        int16_t (get_Bits (d, offset + 8 + 2, 1));
 	begin
 	   while bitOffset / 8 < Length - 1 loop
 	      bitOffset := bitOffset / 8;
@@ -203,23 +203,23 @@ package body fib_handler is
 --
 --	Note that below the offset is in bytes
 	function HandleFIG0Extension1 (d      : fib_buffer;
-	                               offset : short_Integer;
-	                               PD_Bit : short_Integer)
-	                                          return short_Integer is
-	   bitOffset     : short_Integer   := offset;
-	   subChId       : short_Integer   :=
-	                        short_Integer (get_Bits (d, bitOffset, 6));
-	   startAddr     : short_Integer   :=
-	                        short_Integer (get_Bits (d, bitOffset + 6, 10));
-	   tableIndex    : short_Integer;
-	   option        : short_Integer;
-	   Prot_Level    : short_Integer;
-	   subChannelSize: short_Integer;
+	                               offset : int16_t;
+	                               PD_Bit : int16_t)
+	                                          return int16_t is
+	   bitOffset     : int16_t   := offset;
+	   subChId       : int16_t   :=
+	                        int16_t (get_Bits (d, bitOffset, 6));
+	   startAddr     : int16_t   :=
+	                        int16_t (get_Bits (d, bitOffset + 6, 10));
+	   tableIndex    : int16_t;
+	   option        : int16_t;
+	   Prot_Level    : int16_t;
+	   subChannelSize: int16_t;
 	begin
 	   ficList (subChId). startAddr := startAddr;
 	   if Integer (get_Bits (d, bitOffset + 16, 1)) = 0 then -- short form
 	      tableIndex                  :=
-	                  short_Integer (get_Bits (d, bitOffset + 18, 6));
+	                  int16_t (get_Bits (d, bitOffset + 18, 6));
 	      ficList (subChId). Length	  := Prot_Levels (tableIndex, 0);
 	      ficList (subChId). uepFlag  := 0;
 	      ficList (subChId). Prot_Level := Prot_Levels (tableIndex, 1);
@@ -227,13 +227,13 @@ package body fib_handler is
 	      bitOffset	                  := bitOffset + 24;
 	   else		-- eep long form
 	      ficList (subChId). uepFlag  := 1;
-	      option       := short_Integer (get_Bits (d, bitOffset + 17, 3));
+	      option       := int16_t (get_Bits (d, bitOffset + 17, 3));
 	      if option = 0 then		 -- A Level protection
-	         Prot_Level   := short_Integer
+	         Prot_Level   := int16_t
 	                            (get_Bits (d, bitOffset + 20, 2)) + 1;
  --	we encode the A level protection by adding 0100 to the level
                  ficList (subChId). Prot_Level 	:= Prot_Level + 8#100#;
-                 subChannelSize	:= short_Integer 
+                 subChannelSize	:= int16_t 
 	                             (get_Bits (d, bitOffset + 22, 10));
                  ficList (subChId). Length   := subChannelSize;
 
@@ -249,10 +249,10 @@ package body fib_handler is
 	            when others	=> null;
 	         end case;
 	      else		-- option should be 01
-	         Prot_Level  := short_Integer (get_Bits (d, bitOffset + 20, 2)) + 1;
+	         Prot_Level  := int16_t (get_Bits (d, bitOffset + 20, 2)) + 1;
 --	we encode the B protection levels by adding a 0200 to the level
                  ficList (subChId). Prot_Level := Prot_Level + 8#200#;
-                 subChannelSize  := short_Integer (get_Bits (d, bitOffset + 22, 10));
+                 subChannelSize  := int16_t (get_Bits (d, bitOffset + 22, 10));
                  ficList (subChId). Length  := subChannelSize;
 	         case Prot_Level is
 	            when 1   =>
@@ -272,11 +272,11 @@ package body fib_handler is
 	end HandleFIG0Extension1;
 
 	procedure FIG0Extension2 (d:      fib_buffer;
-	                          offset: short_Integer) is
-	   bitOffset   : short_Integer  := offset + 2 * 8; -- offset in bits
-	   Length      : short_Integer  := short_Integer (get_Bits (d, offset + 3, 5));
-	   CN          : short_Integer  := short_Integer (get_Bits (d, offset + 8 + 0, 1));
-	   PD_Bit      : short_Integer  := short_Integer (get_Bits (d, offset + 8 + 2, 1));
+	                          offset: int16_t) is
+	   bitOffset   : int16_t  := offset + 2 * 8; -- offset in bits
+	   Length      : int16_t  := int16_t (get_Bits (d, offset + 3, 5));
+	   CN          : int16_t  := int16_t (get_Bits (d, offset + 8 + 0, 1));
+	   PD_Bit      : int16_t  := int16_t (get_Bits (d, offset + 8 + 2, 1));
 	begin
 	   while bitOffset / 8 < Length loop
 	      bitOffset := bitOffset / 8;
@@ -294,13 +294,13 @@ package body fib_handler is
 --	SCId		Service Component Identifier
 --
 	function HandleFIG0Extension2 (d      : fib_buffer;
-	                               offset : short_Integer;
-	                               cn     : short_Integer;
-	                               pd     : short_Integer)
-	                                     return short_Integer is
-	   bitOffset          : short_Integer := offset;
+	                               offset : int16_t;
+	                               cn     : int16_t;
+	                               pd     : int16_t)
+	                                     return int16_t is
+	   bitOffset          : int16_t := offset;
 	   SId                : uint32_t;
-	   numberofComponents : short_Integer;
+	   numberofComponents : int16_t;
 	begin
 	   if pd = 1 then	--  long Sid
 	      SId        := getLBits (d, bitOffset, 32);
@@ -311,18 +311,18 @@ package body fib_handler is
 	   end if;
 
 	   numberofComponents	:=
-	                    short_Integer (get_Bits (d, bitOffset + 4, 4));
+	                    int16_t (get_Bits (d, bitOffset + 4, 4));
 	   bitOffset		:=  bitOffset + 8;
 
-	   for i in 0 ..  short_Integer (numberofComponents) - 1 loop
+	   for i in 0 ..  int16_t (numberofComponents) - 1 loop
 	      if get_Bits (d, bitOffset, 2) = 0 then	      -- TMid
 	         declare
-	            ASCTy:   short_Integer :=
-	                    short_Integer (get_Bits (d, bitOffset + 2, 6));
-	            SubChId: short_Integer :=
-	                    short_Integer (get_Bits (d, bitOffset + 8, 6));
-	            PS_flag: short_Integer :=
-	                    short_Integer (get_Bits (d, bitOffset + 14, 1));
+	            ASCTy:   int16_t :=
+	                    int16_t (get_Bits (d, bitOffset + 2, 6));
+	            SubChId: int16_t :=
+	                    int16_t (get_Bits (d, bitOffset + 8, 6));
+	            PS_flag: int16_t :=
+	                    int16_t (get_Bits (d, bitOffset + 14, 1));
 	         begin
 	            bind_audioService (0, SId, i, SubChId, PS_flag, ASCTy);
 	         end;
@@ -336,14 +336,14 @@ package body fib_handler is
 	end HandleFIG0Extension2;
 
 	procedure process_FIG1  (d      : fib_buffer;
-	                         offset : short_Integer) is
+	                         offset : int16_t) is
 	   charSet   : uint16_t;
 	   oe        : uint16_t;
 	   extension : uint16_t;
 	   SId       : uint32_t;
 	   label     : String (1 .. 16);
-	   loffset   : short_Integer  := offset;
-	   myIndex   : short_Integer;
+	   loffset   : int16_t  := offset;
+	   myIndex   : shortRange;
 	begin
 	   charSet   := get_Bits (d, offset + 8, 4);
            oe        := get_Bits (d, offset + 8 + 4, 1);
@@ -356,7 +356,7 @@ package body fib_handler is
 	         for i in 0 .. 15 loop
 	            declare
 	              t : uint16_t := get_Bits (d,
-	                                        loffset + 8 * short_Integer (i),                                                 8);
+	                                        loffset + 8 * int16_t (i),                                                 8);
 	            begin
 	              label (i + 1) := Character' Val (Integer (t));
 	            end;
@@ -375,7 +375,7 @@ package body fib_handler is
 	         if  not listofServices (myIndex). serviceLabel. Has_Name then
 	            for i in 0 .. 15 loop
 	               label (i + 1) := Character' Val (
-	                         Integer (get_Bits (d, loffset + 8 *  short_Integer (i), 8)));
+	                         Integer (get_Bits (d, loffset + 8 *  int16_t (i), 8)));
 	            end loop;
 	            listofServices (myIndex). serviceLabel. label := label;
 	            listofServices (myIndex). serviceLabel. Has_Name := true;
@@ -388,24 +388,24 @@ package body fib_handler is
 	end process_FIG1;
 
 	procedure process_FIG2  (d      : fib_buffer;
-	                         offset : short_Integer) is
+	                         offset : int16_t) is
 	begin
 	   null;
 	end process_FIG2;
 
 	procedure process_FIG3  (d      : fib_buffer;
-	                         offset : short_Integer) is
+	                         offset : int16_t) is
 	begin
 	   null;
 	end process_FIG3;
 
 	function get_Bits (d:      fib_Buffer;
-	                   offset: short_Integer;
-	                   size:   short_Integer) return uint16_t is
+	                   offset: int16_t;
+	                   size:   int16_t) return uint16_t is
 	   result:       uint16_t  := uint16_t (0);
-	   realOffset:   short_Integer	:= offset +  short_Integer (d'First);
+	   realOffset:   int16_t	:= offset +  int16_t (d'First);
 	begin
-	   for I in short_Integer Range 0 .. size - 1 loop
+	   for I in int16_t Range 0 .. size - 1 loop
 	      result := Interfaces. Shift_Left (result, 1);
 	      result := result or uint16_t (d (Integer (realOffset + I)));
 	   end loop;
@@ -413,12 +413,12 @@ package body fib_handler is
 	end get_Bits;
 
 	function getLBits (d      : fib_Buffer;
-	                   offset : short_Integer;
-	                   size   : short_Integer) return uint32_t is
+	                   offset : int16_t;
+	                   size   : int16_t) return uint32_t is
 	   result     : uint32_t        := uint32_t (0);
-	   realOffset : short_Integer   := offset +  short_Integer (d'First);
+	   realOffset : int16_t   := offset +  int16_t (d'First);
 	begin
-	   for I in short_Integer Range 0 .. size - 1 loop
+	   for I in int16_t Range 0 .. size - 1 loop
 	      result := Interfaces. Shift_Left (result, 1);
 	      result := result or uint32_t (d (Integer (realOffset + I)));
 	   end loop;
@@ -427,7 +427,7 @@ package body fib_handler is
 --
 --	locate - and create if needed - a reference to
 --	the entry in the list of services
-	function findServiceId (Service_Id : uint32_t) return short_Integer is
+	function findServiceId (Service_Id : uint32_t) return int16_t is
 	begin
 	   for I in listofServices' Range loop
 	      if listofServices (I). In_Use and then
@@ -442,7 +442,7 @@ package body fib_handler is
 	         listofServices (I). In_Use     := true;
 	         listofServices (I). serviceLabel. Has_Name := false;
 	         listofServices (I). Service_Id	:= Service_Id;
-	         return  short_Integer (I);
+	         return  int16_t (I);
 	      end if;
 	   end loop;
 	   return 0;
@@ -450,14 +450,14 @@ package body fib_handler is
 --
 --	bind_audioService is the main processor for - what the name suggests -
 --	connecting the description of an audioservice to the Service Identifier
-	procedure bind_audioService (TMid    : short_Integer;
+	procedure bind_audioService (TMid    : int16_t;
 	                             SId     : uint32_t;
-	                             compnr  : short_Integer;
-	                             subChId : short_Integer;
-	                             ps_flag : short_Integer;
-	                             ASCTy   : short_Integer) is
-	   S         : short_Integer := findServiceId (SId);
-	   firstFree : short_Integer := -1;
+	                             compnr  : int16_t;
+	                             subChId : int16_t;
+	                             ps_flag : int16_t;
+	                             ASCTy   : int16_t) is
+	   S         : int16_t := findServiceId (SId);
+	   firstFree : int16_t := -1;
 	begin
 	   for i in shortRange loop
 	      if not components (i). In_Use then
@@ -481,8 +481,8 @@ package body fib_handler is
 
 	procedure process_FIB (p  : fib_buffer) is
 	   FIGtype        : uint16_t;
-	   processedBytes : short_Integer         := 0;
-	   bitOffset      : short_Integer         := 0;
+	   processedBytes : int16_t         := 0;
+	   bitOffset      : int16_t         := 0;
 	begin
 	   while processedBytes < 30 loop
 	      FIGtype   := get_Bits (p, bitOffset, 3);
@@ -492,7 +492,7 @@ package body fib_handler is
 	         when others   => null;	-- for now
 	      end case;
 	      processedBytes   := processedBytes +
-	                              short_Integer (get_Bits (p, bitOffset + 3, 5)) + 1;
+	                              int16_t (get_Bits (p, bitOffset + 3, 5)) + 1;
 	      bitOffset        := processedBytes * 8;
 	   end loop;
 	end process_FIB;
@@ -531,7 +531,7 @@ package body fib_handler is
 	               components (J). service = i and then
 	                  components (J). TMid = 0 then	
 	               declare
-	                 Subch_Id: short_Integer :=
+	                 Subch_Id: int16_t :=
 	                                    components (J). Subchannel_Id;
 	               begin
 	                  Data. dataIsThere   := true;

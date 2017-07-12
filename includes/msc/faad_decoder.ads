@@ -28,10 +28,10 @@ with Interfaces;	use Interfaces;
 with Interfaces.C;	use Interfaces. C;
 
 package faad_decoder is
-	procedure mp42pcm (dacRate       : int16_t;
-	                   sbrFlag       : int16_t;
-	                   mpegSurround  : int16_t;
-	                   aacChannelMode: int16_t;
+	procedure mp42pcm (dacRate       : uint8_t;
+	                   sbrFlag       : uint8_t;
+	                   mpegSurround  : uint8_t;
+	                   aacChannelMode: uint8_t;
 	                   buffer        : byteArray;
 	                   bufferLength  : uint16_t;
 	                   samples_out   : out Integer;

@@ -21,7 +21,7 @@ private
 	procedure initialize (Object : in out dabProcessor);
 	procedure finalize (Object : in out dabProcessor);
 	type shortBlock	is array (short_integer Range <>,
-	                          Integer range <>) of short_Integer;
+	                          Integer range <>) of int16_t;
 	type shortBlock_P	is access all shortBlock;
 	type dabProcessor (dabModus      : dataMode;
 	                   fragmentSize  : Natural;

@@ -27,19 +27,19 @@ with Ada. Unchecked_Deallocation;
 package body uep_handler is
 	type	protectionProfile is
 	   record
-	      bitRate:      short_Integer;
-	      protLevel:    short_Integer;
-	      L1:           short_Integer;
-	      L2:           short_Integer;
-	      L3:           short_Integer;
-	      L4:           short_Integer;
-	      PI1:          short_Integer;
-	      PI2:          short_Integer;
-	      PI3:          short_Integer;
-	      PI4:          short_Integer;
+	      bitRate:      int16_t;
+	      protLevel:    int16_t;
+	      L1:           int16_t;
+	      L2:           int16_t;
+	      L3:           int16_t;
+	      L4:           int16_t;
+	      PI1:          int16_t;
+	      PI2:          int16_t;
+	      PI3:          int16_t;
+	      PI4:          int16_t;
 	   end record;
 
-	type profiles is array (short_Integer Range <>) of protectionProfile;
+	type profiles is array (int16_t Range <>) of protectionProfile;
 	profileTable	: profiles := (
 	   (32,	5,	3, 4, 17, 0,	5, 3, 2, -1),
 	   (32,	4,	3, 3, 18, 0,	11, 6, 5, -1),
@@ -118,9 +118,9 @@ package body uep_handler is
 	);
 
 --
-	function findIndex (bitRate	: short_Integer;
-	                    protLevel	: short_Integer)
-	                                    return short_Integer is
+	function findIndex (bitRate	: int16_t;
+	                    protLevel	: int16_t)
+	                                    return int16_t is
 	begin
 	   for i in profileTable' Range loop
 	      if profileTable (i). bitRate = bitRate and then
@@ -132,7 +132,7 @@ package body uep_handler is
 	end findIndex;
 
 	procedure Initialize (Object: in out uepProcessor) is
-	   Index	: short_Integer;
+	   Index	: int16_t;
 	begin
 	   Index	:= findIndex (Object. bitRate, Object. protLevel);
 	   if index = -1 then	-- should not happen
@@ -183,7 +183,7 @@ package body uep_handler is
 --	only the non-punctured ones are set
 	   Object. viterbiBlock. all	:= (Others => 0);
 	   for I in 0 .. Object. L1 - 1 loop
-	      for J in short_Integer Range 0 .. 128 - 1 loop
+	      for J in int16_t Range 0 .. 128 - 1 loop
 	         if get_PCode (Object. PI1_Index, J mod 32) = 1 then
 	            Object. viterbiBlock (viterbiCounter) :=
 	                                     inBuffer (first + inputCounter);
@@ -194,7 +194,7 @@ package body uep_handler is
 	   end loop;
 
 	   for I in 0 .. Object. L2 - 1 loop
-              for J in short_Integer Range 0 .. 128 - 1 loop
+              for J in int16_t Range 0 .. 128 - 1 loop
                  if get_PCode (Object. PI2_Index, j mod 32) = 1 then
                     Object. viterbiBlock (viterbiCounter) :=
 	                                     inBuffer (first + inputCounter);
@@ -205,7 +205,7 @@ package body uep_handler is
 	   end loop;
 
 	   for I in 0 .. Object. L3 - 1 loop
-	      for J in short_Integer Range 0 .. 128 - 1 loop
+	      for J in int16_t Range 0 .. 128 - 1 loop
                  if get_PCode (Object. PI3_Index, j mod 32) = 1 then
                     Object. viterbiBlock (viterbiCounter) :=
 	                                     inBuffer (first + inputCounter);
@@ -217,7 +217,7 @@ package body uep_handler is
 
 	   if Object. PI4_Index /= -1 then
               for I in 0 .. Object. L4 - 1 loop 
-                 for J in short_Integer Range 0 .. 128 - 1 loop
+                 for J in int16_t Range 0 .. 128 - 1 loop
                     if get_PCode (Object. PI4_Index, J mod 32) = 1 then
                        Object. viterbiBlock (viterbiCounter) :=
 	                                       inBuffer (first + inputCounter);

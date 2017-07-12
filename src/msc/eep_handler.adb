@@ -124,7 +124,7 @@ package body eep_handler is
 --	(L1, PI1), (L2, PI2), (L3, PI3), (L4, PI4)
 --
            for i in 0 .. Object. L1 - 1 loop
-              for j in short_Integer Range 0 .. 128 - 1 loop
+              for j in int16_t Range 0 .. 128 - 1 loop
                  if get_PCode (Object. PI1_Index, j mod 32) = 1 then
                     Object. viterbiBlock (viterbiCounter) :=
 	                                    inBuffer (first + inputCounter);
@@ -135,7 +135,7 @@ package body eep_handler is
 	   end loop;
 
            for i in 0 ..  Object. L2 - 1 loop
-              for j in short_Integer Range 0 .. 128 - 1 loop
+              for j in int16_t Range 0 .. 128 - 1 loop
                  if get_PCode (Object. PI2_Index,  j mod 32) = 1 then
                     Object. viterbiBlock (viterbiCounter) :=
 	                                    inBuffer (first + inputCounter);

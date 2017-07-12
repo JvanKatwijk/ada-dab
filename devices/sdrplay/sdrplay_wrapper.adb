@@ -46,7 +46,7 @@ package body sdrplay_wrapper is
 --      xi_buffer and xq_buffer are actually  C arrays,
 --	provided for by the underlying sdrplay library
 --	We convert them to Ada-like arrays by an "arrayConverter"
-	   type shortArray is Array (0 .. Integer (numSamples) - 1) of short_Integer;
+	   type shortArray is Array (0 .. Integer (numSamples) - 1) of int16_t;
 	   package arrayConverter is
 	         new System. Address_To_Access_Conversions (shortArray);
 	   xi_buffer      : arrayConverter. Object_Pointer :=

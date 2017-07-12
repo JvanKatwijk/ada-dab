@@ -112,7 +112,7 @@ package body mp4_handler is
 --	the superframe
 	   processSuperFrame (Object,
 	                      Object. RSin_Data. all,
-	                      int16_t (Block_FillIndex * nbytes),
+	                      int16_t (Block_FillIndex * Nbytes),
 	                      result);
 
 	   if not result then	-- we will try it again, next time
@@ -139,7 +139,7 @@ package body mp4_handler is
 	   sbrFlag        : uint8_t;
 	   aacChannelMode : uint8_t;
 	   psFlag         : uint8_t;
-	   mpegSurround   : uint16_t;
+	   mpegSurround   : uint8_t;
 	   RSout_Data     : byteArray renames Object. RSout_Data. all;
 	   bitRate        : int16_t renames Object. bitRate;
 	   RSDims         : Integer renames Object. RSDims;
@@ -174,7 +174,6 @@ package body mp4_handler is
 	                                                  rsOut (K);
 	      end loop;
 	   end loop;
- 	   put_line (short_Integer' Image (Errors_in_RS));
 --      OK, the result is RSDims * 110 * 8 bits
 --      bits 0 .. 15 is firecode
 --      bit 16 is unused
@@ -183,7 +182,7 @@ package body mp4_handler is
 	   sbrFlag    := Shift_Right (RSout_Data (2), 5) and 8#01#; -- bit 18
 	   aacChannelMode := Shift_Right (RSout_Data (2), 4) and 8#01#; -- bit 19
            psFlag       := Shift_Right (RSout_Data (2), 3) and 8#01#;  -- bit 20
-           mpegSurround	:= uint16_t (RSout_Data (2) and 8#07#); -- bits 21 .. 23
+           mpegSurround	:= RSout_Data (2) and 8#07#; -- bits 21 .. 23
 
 	   case 2 * dacRate + sbrFlag is
 	      when 0	=> 
@@ -256,7 +255,7 @@ package body mp4_handler is
 
 	         aac_frame_length  := au_start (i + 1) - au_start (i) - 2;
 	         if aac_frame_length > 2 * 960 then
-	            put_line ("cannot happen");
+	            put_line ("should not happen (2)");
 	            result	:= false;
 	            return;
 	         end if;
@@ -280,10 +279,10 @@ package body mp4_handler is
 	               theAU (Integer (J)) := 0;
 	            end loop;
 
-	            faad_decoder. mp42pcm (int16_t (dacRate),
-	                                   int16_t (sbrFlag),
-	                                   int16_t (mpegSurround),
-	                                   int16_t (aacChannelMode),
+	            faad_decoder. mp42pcm (dacRate,
+	                                   sbrFlag,
+	                                   mpegSurround,
+	                                   aacChannelMode,
 	                                   theAU,
 	                                   aac_frame_length,
 	                                   Samples_Out,

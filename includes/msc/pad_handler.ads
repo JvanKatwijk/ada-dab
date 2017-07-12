@@ -29,7 +29,7 @@ private
 	procedure Handle_Variable_PAD (Buffer                  : byteArray;
 	                               Contents_Indicator_flag : uint8_t);
 	procedure Dynamic_Label       (Data    : byteArray;
-	                               Length  : short_Integer;
+	                               Length  : int16_t;
 	                               CI      : uint8_t);
 
 	function Map_Length (EncodedLength : uint8_t) return uint8_t;

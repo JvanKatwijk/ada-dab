@@ -35,7 +35,7 @@ package reed_solomon is
 	                     result : out byteArray;
 	                     corrs  : out int16_t);
 private
-	type rsArray is Array (int16_t Range <>) of short_Integer;
+	type rsArray is Array (int16_t Range <>) of int16_t;
 	subtype nrootsArray is rsArray (0 .. nroots);
 	procedure enc       (data   : rsArray;
 	                     parityBytes: out rsArray);

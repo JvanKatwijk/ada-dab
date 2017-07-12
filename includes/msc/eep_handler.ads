@@ -37,13 +37,13 @@ private
 	procedure Finalize     (Object: in out eepProcessor);
 	type eepProcessor is new protectionProcessor with 
 	   record 
-	      outSize:      short_Integer;
+	      outSize:      int16_t;
 	      viterbi:      Viterbi_Processor_P;
 	      viterbiBlock: shortArray_P;
-	      L1:           short_Integer;
-	      L2:           short_Integer;
-	      PI1_Index:    short_Integer;
-	      PI2_Index:    short_Integer;
+	      L1:           int16_t;
+	      L2:           int16_t;
+	      PI1_Index:    int16_t;
+	      PI2_Index:    int16_t;
 	   end record;
 end eep_handler;
 

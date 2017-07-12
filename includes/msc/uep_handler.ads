@@ -34,25 +34,25 @@ package uep_handler is
 	                 inBuffer	: shortArray;
 	                 outBuffer	: out byteArray);
 private
-   function	findIndex (bitRate	: short_Integer;
-	                   protLevel	: short_Integer) return short_Integer;
+   function	findIndex (bitRate	: int16_t;
+	                   protLevel	: int16_t) return int16_t;
    procedure Initialize	(Object: in out uepProcessor);
    procedure Finalize	(Object: in out uepProcessor);
--- type uepProcessor (bitRate	: short_Integer;
---	              protLevel	: short_Integer) is
+-- type uepProcessor (bitRate	: int16_t;
+--	              protLevel	: int16_t) is
 	type uepProcessor is                        new protectionProcessor with 
 	record 
-	   outSize		: short_Integer;
+	   outSize		: int16_t;
 	   viterbi		: Viterbi_Processor_P;
 	   viterbiBlock		: shortArray_P;
-	   L1			: short_Integer;
-	   L2			: short_Integer;
-	   L3			: short_Integer;
-	   L4			: short_Integer;
-	   PI1_Index		: short_Integer;
-	   PI2_Index		: short_Integer;
-	   PI3_Index		: short_Integer;
-	   PI4_Index		: short_Integer;
+	   L1			: int16_t;
+	   L2			: int16_t;
+	   L3			: int16_t;
+	   L4			: int16_t;
+	   PI1_Index		: int16_t;
+	   PI2_Index		: int16_t;
+	   PI3_Index		: int16_t;
+	   PI4_Index		: int16_t;
 	end record;
 end uep_handler;
 

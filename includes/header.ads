@@ -50,13 +50,13 @@ package Header is
 
 	subtype short is short_Integer;
 	subtype int16_t is short_Integer;
-	type shortArray is Array (Integer Range <>) of short_Integer;
+	type shortArray is Array (Integer Range <>) of int16_t;
 	pragma Convention (C, shortArray);
 	type shortArray_P is access all shortArray;
 	procedure Free_shortArray is new Ada. Unchecked_Deallocation (
 	          Object => shortArray, Name => shortArray_P);
 
-	type shortshortArray is Array (short_Integer Range <>) of short_Integer;
+	type shortshortArray is Array (int16_t Range <>) of int16_t;
 	pragma Convention (C, shortshortArray);
 	type shortshortArray_P is access all shortshortArray;
 	procedure Free_shortshortArray is new Ada. Unchecked_Deallocation (
