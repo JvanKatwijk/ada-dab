@@ -51,12 +51,13 @@ procedure main is
 	Result		: Boolean;
 ---------------------------------------------------------------------------
 	thedevice	: device_P;
+	Gain		: Natural := 0;
 begin
 --
 	theDevice := null;
 --	we allow command line parameters to be set for mode, band and device
 	loop
-           case Getopt ("m:  b: d:") is   
+           case Getopt ("m:  b: d: g:") is   
 	      when 'm' =>
 	         if Parameter = "Mode_1" then
 	            the_Mode := Mode_1;
@@ -83,13 +84,19 @@ begin
 	         else
 	           theDevice := new rawfiles. raw_device;
 	         end if;
-	       
+
+	      when 'g' =>
+	         Gain := Natural' Value (Parameter);
+	
 	      when others => 
 	         exit;
 	   end case;
 	end loop;
 
 
+	if Gain /= -1 then
+	   theDevice. setGain (Gain);
+	end if;
 --	we set up the gui, just create the objects and layouts
 --	but the connects are made later on
 	Create_GUI;
@@ -117,7 +124,6 @@ begin
 	   begin
 	      if Running then
 	         Running := false;
-	         put_line ("plaats 1");
 	         my_ofdmHandler. stop;
 	         my_ficHandler. stop;
 	         my_mscHandler. stop;
@@ -131,7 +137,6 @@ begin
 	   begin
 	      if Running then
 	         Running := false;
-	         put_line ("plaats 2");
 	         my_ofdmHandler. stop;
 	         my_ficHandler. stop;
 	         my_mscHandler. stop;
@@ -153,6 +158,7 @@ begin
 	      theDevice. Restart_Reader (result);	
 	      if not Result then
 	         put_line ("device did not start");
+	         Running	:= false;
 	      else
 	         Running := true;
 	         programSelector. Remove_All;
@@ -189,16 +195,8 @@ begin
 	      if theDevice. Valid_Device then
 	            theDevice. Restart_Reader (result);
 	      end if;
-	      begin
-	         my_ofdmHandler. Reset;
-	      exception
-	         when others => put_line ("het was ofdm");
-	      end;
-	      begin
-	         my_ficHandler. Reset;
-	      exception
-	         when others => put_line ("het was fic");
-	      end;
+	      my_ofdmHandler. Reset;
+	      my_ficHandler. Reset;
 	   end channelSelector_clicked;
 
 	   procedure Programselector_clicked

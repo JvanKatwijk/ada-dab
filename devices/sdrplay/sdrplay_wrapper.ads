@@ -88,7 +88,7 @@ private
 	pragma Convention (C, Sdrplay_Gain_Callback_Type);
 
 --	functions to be used:
-	function mir_sdr_StreamInit (gain             : out Interfaces. C. int;
+	function mir_sdr_StreamInit (gain             : in out Interfaces. C. int;
 	                             inputRate        : Interfaces. C. double;
 	                             vfoFreq          : Interfaces. C. double;
 	                             bandWidth        : Interfaces. C. int;

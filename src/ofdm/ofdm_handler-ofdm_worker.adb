@@ -60,7 +60,7 @@
 	                                   Env_Buffer (Syncbuffer_Index - 50);
 	         Syncbuffer_Index              := Syncbuffer_Index + 1;
 	         Counter                       := Counter + 1;
-	         if Counter > 3 * Ts then	-- hopeless
+	         if Counter > 4 * T_s then	-- hopeless
 	            goto notSynced;
 	         end if;
 	      end;

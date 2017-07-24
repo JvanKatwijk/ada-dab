@@ -96,7 +96,7 @@ package body dab_handler is
 	procedure Process (Object : in out dabProcessor;
 	                                   data : shortArray) is
 	   tempX  : shortArray (0 .. Object. fragmentSize - 1);
-	   outV   : byteArray  (0 ..  Integer (Object. bitRate * 24 - 1));
+	   outV   : byteArray  (0 .. Integer (Object. bitRate * 24 - 1));
 	begin
 -- first interleaving, we do it in-line
 	   for I in Integer range 0 .. Object. fragmentSize - 1 loop

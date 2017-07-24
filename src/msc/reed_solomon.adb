@@ -144,40 +144,35 @@ package body reed_solomon is
 	   Lambda    (0)   := 1;
 	   Corrector (1)   := 1;
 
-	   begin
-	      while K <= nroots loop
-	         oldLambda := Lambda;
+	   while K <= nroots loop
+	      oldLambda := Lambda;
 --
 --	Compute new lambda
-	         for I in Lambda' Range loop
-	            Lambda (I) := addPoly (Lambda (I),
+	      for I in Lambda' Range loop
+	         Lambda (I) := addPoly (Lambda (I),
 	                                multiplyPoly (error, Corrector (I)));
-	         end loop;
+	      end loop;
 
-	         if 2 * L <  K and then error /= 0 then
-	            L := K - L;
-	            for I in Corrector' Range loop 
-	               Corrector (I) := dividePoly (oldLambda (I), error);
-	            end loop;
-	         end if;
+	      if 2 * L <  K and then error /= 0 then
+	         L := K - L;
+	         for I in Corrector' Range loop 
+	            Corrector (I) := dividePoly (oldLambda (I), error);
+	         end loop;
+	      end if;
 --
 --	multiply x * C (x), i.e. shift to the right, the 0-th order term is left
-	         Corrector (1 .. nroots - 1) := Corrector (0 .. nroots - 2);
-	         Corrector (0) 	:= 0;
+	      Corrector (1 .. nroots - 1) := Corrector (0 .. nroots - 2);
+	      Corrector (0) 	:= 0;
 
 --	and compute a new error
-	         error             := syndromes (K);	
-	         for i in 1 .. K loop
-	            error := addPoly (error,
+	      error             := syndromes (K);	
+	      for i in 1 .. K loop
+	         error := addPoly (error,
 	                              multiplyPoly (syndromes (K - i),
 	                                         Lambda (i)));
-	         end loop;
-	         K  := K + 1;
-	      end loop;	-- end of Berlekamp loop
-	   exception
-	      when others => put_line ("Berlekamp loop");
-	                     raise;
-	   end;
+	      end loop;
+	      K  := K + 1;
+	   end loop;	-- end of Berlekamp loop
 
 	   for i in Lambda' Range  loop
 	      if Lambda (i) /= 0 then

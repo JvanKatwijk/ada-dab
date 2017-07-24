@@ -237,7 +237,7 @@ package body sdrplay_wrapper is
 	      put_line (Float' Image (Float (Object. Library_Version)));
 	   end if;
 
-	   mir_sdr_DebugEnable;
+--	   mir_sdr_DebugEnable;
 	   mir_sdr_GetDevices (devDesc, numofDevs, 4);
 	   put ("Gevonden "); put (Integer' Image (numofDevs));
 	   put_line (" devices");

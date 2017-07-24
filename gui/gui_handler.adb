@@ -76,7 +76,7 @@ package body Gui_Handler is
 	end build_new_text_line;
 
 --	we handle the GUI on package level, since that gives the opportunity
---	to handle requests  processing of which requires
+--	to handle processing requests that require
 --	calling functions and procedures in the different packages
 --	in front and backend.
 	procedure Create_GUI is
