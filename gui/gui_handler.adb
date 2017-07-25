@@ -79,7 +79,7 @@ package body Gui_Handler is
 --	to handle processing requests that require
 --	calling functions and procedures in the different packages
 --	in front and backend.
-	procedure Create_GUI is
+	procedure Create_GUI (devicename : String) is
 	begin
 	   --  Initialize GtkAda.
 	   Gtk.Main.Init;
@@ -87,7 +87,7 @@ package body Gui_Handler is
 
 	   -- create a top level window
 	   Gtk_New (Win);
-	   Win.Set_Title ("dab-ada");
+	   Win.Set_Title ("dab-ada " & devicename);
 
 	   -- set the border width of the window
 	   Win.Set_Border_Width (10);

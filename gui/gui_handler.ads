@@ -39,7 +39,7 @@ with Gdk.Event;
 
 package Gui_Handler is
 	function Dispatch return boolean;
-	procedure Create_GUI;
+	procedure Create_GUI (devicename : String);
 --
 --	apart from start/stop, we have two selectors
 	Gain_Selector	: Gtk_Combo_Box_Text;

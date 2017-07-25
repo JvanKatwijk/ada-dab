@@ -47,7 +47,6 @@ private
 	procedure Initialize (Object: in out airspy_device);
 	procedure Finalize   (Object: in out airspy_device);
 
-	use header. complexTypes;
 	package Airspy_Buffer is new ringBuffer (complex);
 	use Airspy_Buffer;
 

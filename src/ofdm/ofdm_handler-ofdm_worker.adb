@@ -60,7 +60,7 @@
 	                                   Env_Buffer (Syncbuffer_Index - 50);
 	         Syncbuffer_Index              := Syncbuffer_Index + 1;
 	         Counter                       := Counter + 1;
-	         if Counter > 4 * T_s then	-- hopeless
+	         if Counter > 4 * Ts then	-- hopeless
 	            goto notSynced;
 	         end if;
 	      end;
@@ -82,7 +82,7 @@
 --	update 
 	         Current_Strength      :=
 	             Current_Strength + Env_Buffer (Syncbuffer_Index) -
-	                                 Env_Buffer (Syncbuffer_Index - 50);
+	                                Env_Buffer (Syncbuffer_Index - 50);
 	         Syncbuffer_Index              := Syncbuffer_Index + 1;
 	         Counter                       := Counter + 1;
 	         if Counter >  Tnull then	-- hopeless 

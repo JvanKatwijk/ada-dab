@@ -36,11 +36,11 @@ with Gui_Handler;	use Gui_Handler;
 with GNAT. Command_Line; use GNAT. Command_Line;
 with Text_IO;		use Text_IO;
 
-with device_handler; use device_handler;
-with rtlsdr_wrapper; use rtlsdr_wrapper;
-with rawfiles; use rawfiles;
-with airspy_wrapper; use airspy_wrapper;
-with sdrplay_wrapper; use sdrplay_wrapper;
+with device_handler;    use device_handler;
+with rtlsdr_wrapper;    use rtlsdr_wrapper;
+with rawfiles;          use rawfiles;
+with airspy_wrapper;    use airspy_wrapper;
+with sdrplay_wrapper;   use sdrplay_wrapper;
 --
 --	We do know the device we want to support, the (dab)Mode
 --	and the Band may be selected in the command line
@@ -52,6 +52,7 @@ procedure main is
 ---------------------------------------------------------------------------
 	thedevice	: device_P;
 	Gain		: Natural := 0;
+	deviceName	: string (1 .. 10) := (Others => ' ');
 begin
 --
 	theDevice := null;
@@ -77,12 +78,19 @@ begin
 	      when 'd' =>
 	         if Parameter = "raw" then
 	           theDevice := new rawfiles. raw_device;
+	           deviceName := "raw       ";
 	         elsif parameter = "airspy" then
 	           theDevice := new airspy_wrapper. airspy_device;
+	           deviceName := "Airspy    ";
 	         elsif Parameter = "sdrplay" then
 	           theDevice := new sdrplay_wrapper. sdrplay_device;
+	           deviceName := "SDRplay   ";
+	         elsif Parameter = "rtlsdr" then
+	           theDevice := new rtlsdr_wrapper. rtlsdr_device;
+	           deviceName := "rtlsdr    ";
 	         else
 	           theDevice := new rawfiles. raw_device;
+	           devicename := "raw       ";
 	         end if;
 
 	      when 'g' =>
@@ -95,11 +103,11 @@ begin
 
 
 	if Gain /= -1 then
-	   theDevice. setGain (Gain);
+	   theDevice. set_Gain (Gain);
 	end if;
 --	we set up the gui, just create the objects and layouts
 --	but the connects are made later on
-	Create_GUI;
+	Create_GUI (deviceName);
 
 --	the channel_handler, for the selected band
 	Channel_Handler. Setup_Channels (Channel_Selector, The_Band);
@@ -178,7 +186,7 @@ begin
 	      my_ofdmHandler. reset;
 	      my_ficHandler. reset;	-- go for a new fib
 	      if theDevice. Valid_Device then
-	         theDevice. Stop_Reader;
+--	         theDevice. Stop_Reader;
 	         theDevice. Set_VFOFrequency (kHz (Frequency));
 	      end if;
 	      string_messages. string_messages. Reset;

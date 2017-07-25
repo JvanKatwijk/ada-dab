@@ -18,37 +18,80 @@
 --    along with SDR-J; if not, write to the Free Software
 --    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --
-with Gtk.Main;
-with Gtk.Window;	use Gtk.Window;
-with Gtk.Widget;	use Gtk.Widget;
-with Glib.Object;
-with Glib.Main;		use Glib.Main;
-with Gtk.Grid;		use Gtk.Grid;
-with Gtk.Button;	use Gtk.Button;
-with Gtk.Label;		use Gtk.Label;
-with Gtk.Combo_Box;	use Gtk. Combo_Box;
-with Gtk.Combo_Box_Text;	use Gtk. Combo_Box_Text;
 with System; use System;
 with ringbuffer;
+with header;	        use header;
+with device_handler;    use device_handler;
 with Ada. Finalization; use Ada. Finalization;
 with Ada. Unchecked_Deallocation;
-with header; use header;
 with Interfaces. C;
 package rtlsdr_wrapper is
-	procedure Set_VFOFrequency (frequency    : Positive);
-	function  Get_VFOFrequency  return Integer;
-	procedure Restart_Reader   (result       : out Boolean);
-	procedure Stop_Reader;
-	procedure Set_Gain         (gain         : Natural);
-	procedure Get_Samples      (outV         : out complexArray;
-	                            amount       : out Integer);
-	function Available_Samples return Integer;
-	function Valid_Device      return Boolean;
+	use header. complexTypes;
+        type rtlsdr_device is new device with private;
+        type rtlsdr_device_p is access all rtlsdr_device;
+
+	subtype rtlsdr_dev_t	is System. Address;
+	type rtlsdr_dev_P	is access all rtlsdr_dev_t;
+
+	overriding
+        procedure Restart_Reader   (Object       : in out rtlsdr_device;
+                                    Success      : out Boolean);
+        procedure Stop_Reader      (Object       : in out rtlsdr_device);
+        procedure Set_VFOFrequency (Object       : in out rtlsdr_device;
+                                    New_Frequency: Natural);
+        procedure Set_Gain         (Object       : in out rtlsdr_device;
+                                    New_Gain     : Natural);
+        procedure Get_Samples      (Object       : in out rtlsdr_device;
+                                    Out_V        : out complexArray;
+                                    Amount       : out Natural);
+        function Available_Samples (Object       : rtlsdr_device)
+	                                                  return Natural;
+        function Valid_Device      (Object       : rtlsdr_device)
+	                                                  return Boolean;
+
 private
-	type rtlsdr_dev	   is new System. Address;
-	type rtlsdr_dev_t  is access rtlsdr_dev;
-	type devicePointer is access rtlsdr_dev_t;
+	procedure Initialize (Object: in out rtlsdr_device);
+        procedure Finalize   (Object: in out rtlsdr_device);
+
+        package rtlsdr_Buffer is new ringBuffer (byte);
+        use rtlsdr_Buffer;
+
 	READLEN_DEFAULT	: constant	:= 2 * 8192;
+--
+--	The "worker task" is created dynamically and
+--	needs the address of the "context", passing it on to
+--	the callback function
+	task type rtlsdr_reader is
+	   entry start (context : System. Address);
+	end;
+	type rtlsdr_reader_P is access all rtlsdr_reader;
+
+	procedure Free_Handler is new Ada. Unchecked_Deallocation (
+                 Object => rtlsdr_reader, Name  => rtlsdr_reader_P);
+
+	type gainsArray is Array (Positive Range <>) of
+                                                 Interfaces. C. int;
+        type gainsArray_P is access all gainsArray;
+        procedure Free_gainsArray is new Ada. Unchecked_Deallocation (
+                  Object => gainsArray, Name => gainsArray_P);
+
+	type rtlsdr_device is new device with
+	record
+	   The_Buffer      : rtlsdr_Buffer. ringBuffer_data (16 * 32768);
+	   device          : rtlsdr_dev_P;
+	   inputRate	   : Natural;
+	   deviceCount	   : Interfaces. C. int;
+	   deviceIndex	   : Interfaces. C. int;
+	   Running         : Boolean;
+	   Last_Frequency  : Natural;
+	   workerHandle    : rtlsdr_reader_P; 
+	   res	           : Interfaces. C. int;
+	   gains           : gainsArray_P;
+	   gainsCount      : Interfaces. C. int;
+	   theGain         : Integer;
+	   vfoOffset       : Integer;
+	   valid           : Boolean;
+	end record;
 
 	type rtlsdr_CallbackType is access
 	                procedure (buffer   : System. Address;
@@ -56,7 +99,7 @@ private
 	                           userData : System. Address);
 	pragma Convention (C, rtlsdr_CallbackType);
 
-	function rtlsdr_open_ada (device_p     : devicePointer;
+	function rtlsdr_open_ada (device_p     : rtlsdr_dev_P;
 	                          deviceNumber : Interfaces. C. int)
 	                                           return Interfaces. C. int;
 	pragma Import (C, rtlsdr_open_ada,  "rtlsdr_open");
@@ -117,24 +160,6 @@ private
 	                                             return Interfaces. C. int;
 	pragma Import (C, rtlsdr_set_freq_correction_ada,
 	                                         "rtlsdr_set_freq_correction");
-
-	package rtlsdr_buffer is new ringbuffer (Byte);
-	use rtlsdr_buffer;
-	task type rtlsdr_reader;
-	type rtlsdr_reader_P	is access all rtlsdr_reader;
-	device		: aliased devicePointer;
-	inputRate	: Integer;
-	theBuffer	: rtlsdr_buffer. ringbuffer_data (32 * 32768);
-	lastFrequency	: Integer;
-	workerHandle	: rtlsdr_reader_P;
-	type gainsArray is Array (Positive Range <>) of 
-	                                         Interfaces. C. int;
-	type gains_P is access all gainsArray;
-	gains		: gains_P;
-	gainsCount	: Interfaces. C. int;
-	theGain		: Integer;
-	vfoOffset	: Integer := 0;
-	valid		: Boolean;
 
 	procedure rtlsdr_Callback (buffer   : System. Address;
 	                           size     : Interfaces. C. int;

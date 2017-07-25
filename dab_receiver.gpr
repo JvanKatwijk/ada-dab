@@ -6,7 +6,7 @@ project dab_receiver is
 	for Exec_dir use "bin";
 	type Build_Mode_Type is ("Normal", "Fast");
 	Build_Mode	: Build_Mode_Type	:= external ("Build_Mode", "Fast");
-	for Source_Dirs use (".", "devices",  "devices/dabstick", "devices/rawfiles", "devices/airspy", "devices/sdrplay", "src", "src/utilities", "src/ofdm", "src/backend", "src/msc", "src/output", "includes", "includes/utilities", "includes/ofdm", "includes/backend", "includes/msc", "includes/output", "src/deconvolution", "gui",  "c_files");
+	for Source_Dirs use (".", "devices",  "devices/rtlsdr_wrapper", "devices/rawfiles", "devices/airspy_wrapper", "devices/sdrplay_wrapper", "src", "src/utilities", "src/ofdm", "src/backend", "src/msc", "src/output", "includes", "includes/utilities", "includes/ofdm", "includes/backend", "includes/msc", "includes/output", "src/deconvolution", "gui",  "c_files");
 
 	case Build_Mode is
 	   when "Normal"	=>
