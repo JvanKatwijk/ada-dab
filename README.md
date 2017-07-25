@@ -39,6 +39,7 @@ appropriate line out in main.adb
 
 and
 comment the appropriate line(s) out in main.adb
+
 	when 'd' =>
 	   if Parameter = "raw" then
 	     theDevice := new rawfiles. raw_device;
